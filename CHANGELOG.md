@@ -16,6 +16,12 @@ every branch merges.
 
 ### Fixed
 
+- **AFC mail sent as @aheedfoodcentre.co.uk through a relay Worker (#1627, 2026-11-15).** Production's test email failed with "domain is not owned by the same account". The AFC Workers run in the Merqify Cloudflare account, while `aheedfoodcentre.co.uk` is onboarded for Email Sending in the Aheed Food Centre account.
+  - **Relay Worker.** The new `workers/mail-relay` (`afc-mail-relay`, deployed in the Aheed account) accepts token-authenticated `POST /send` and sends only from `@aheedfoodcentre.co.uk`.
+  - **App routing.** Senders whose domain is in `EMAIL_RELAY_DOMAINS` resolve `via: "relay"` and go out as the store, through the new `lib/email/relay.ts`. A relay failure falls back to `EMAIL_FROM` with Reply-To the store.
+  - **Client Setup** shows "(verified, via relay)".
+  - **Config.** New `EMAIL_RELAY_URL` / `EMAIL_RELAY_DOMAINS` (AFC vars) and `EMAIL_RELAY_TOKEN` (secret).
+
 - **Hashed static assets cached for a year (#1624, 2026-11-15).** `/_next/static/*` (JS and CSS) was served `public, max-age=14400, must-revalidate`, so returning visitors re-checked about 50 files every 4 hours. The new `public/_headers` sets `public, max-age=31536000, immutable`, which is safe because Next.js content-hashes those file names. Pages stay `no-store`. Alongside the owner's dashboard changes the same day: `merqify.com` Browser Cache TTL set to Respect Existing Headers, and a 1-year Cache Rule for the image hosts.
 
 - **Random 503/524 errors from the Worker CPU limit (#1621, 2026-11-15).** On AFC staging, requests landing on a freshly started isolate were killed with `exceededCpu` ("Worker exceeded CPU time limit"). Seen as 503s, and as Cloudflare 524 timeouts at sign-in, on `/checkout` and `/categories`. Cold-start SSR plus Prisma WASM instantiation had outgrown `[limits] cpu_ms = 300`. It is raised to `30000`, the Workers Paid standard, for every environment. Billing is by CPU used, not the limit.

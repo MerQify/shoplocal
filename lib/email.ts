@@ -1,6 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import {
   DEFAULT_PLATFORM_NAME,
+  activeRelayDomains,
   getAppEnvironment,
   getEmailEnv,
   getPlatformBrandingEnv,
@@ -12,6 +13,7 @@ import { withEnvironmentTag } from "./email/environment-tag";
 import { htmlToText } from "./email/layout/text";
 import { createLogAdapter } from "./email/log";
 import { isRecipientAllowed, resolveSender } from "./email/policy";
+import { createRelayAdapter } from "./email/relay";
 import { createResendAdapter } from "./email/resend";
 import type { EmailAdapter, EmailSendResult, OutgoingEmail, SendEmailBinding } from "./email/types";
 
@@ -142,12 +144,40 @@ export function getEmailService(): EmailService {
       const resolved = resolveSender({
         sender,
         verifiedDomains: env.EMAIL_VERIFIED_DOMAINS,
+        relayDomains: activeRelayDomains(env),
         platformFrom: env.EMAIL_FROM ?? "",
         platformName: getPlatformSenderName(),
       });
 
       const from = resolved.from;
       const replyTo = replyToOverride?.trim() ? replyToOverride.trim() : resolved.replyTo;
+
+      // #1627 — a store sending as its own domain through the mail relay Worker. A relay failure
+      // falls back to the platform sender with Reply-To the store, so the mail still goes out.
+      if (resolved.via === "relay" && env.EMAIL_RELAY_URL && env.EMAIL_RELAY_TOKEN) {
+        const relay = createRelayAdapter(env.EMAIL_RELAY_URL, env.EMAIL_RELAY_TOKEN, (u, i) =>
+          fetch(u, i),
+        );
+        const relayed = await relay.deliver({ from, replyTo, to, subject, html, text });
+        if (relayed.status === "sent") return relayed;
+        console.error(
+          `email send failed via relay (${relayed.status === "failed" ? relayed.reason : relayed.status}); falling back to the platform sender: ${subject}`,
+        );
+        const fallback = await adapter.deliver({
+          from: { name: from.name, email: env.EMAIL_FROM ?? "" },
+          replyTo: replyToOverride?.trim() ? replyToOverride.trim() : from.email,
+          to,
+          subject,
+          html,
+          text,
+        });
+        if (fallback.status !== "sent") {
+          console.error(
+            `email send failed via ${adapter.name} after relay failure: ${fallback.status === "failed" ? fallback.reason : fallback.status}`,
+          );
+        }
+        return fallback;
+      }
 
       const result = await adapter.deliver({ from, replyTo, to, subject, html, text });
       if (result.status === "failed") {

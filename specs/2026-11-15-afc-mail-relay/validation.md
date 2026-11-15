@@ -9,9 +9,9 @@
 |-----|--------------|---------------|
 | R1  | Unit | `npx vitest run tests/mail-relay-worker.test.ts --maxWorkers=4` passes. Read the test: each row of the R1 table is asserted. |
 | R2  | Static | Read `workers/mail-relay/wrangler.toml` and confirm it matches R2. |
-| R3  | Unit | `npx vitest run tests/email-policy-relay.test.ts --maxWorkers=4` passes, covering all three branches. |
-| R4  | Unit | `npx vitest run tests/email-relay-adapter.test.ts --maxWorkers=4` passes: 2xx gives sent, 500 gives failed, and a thrown fetch gives failed. |
-| R5  | Unit | Same file as R4 (or `tests/email-relay-fallback.test.ts`): a relay failure leads to a second delivery through the binding, with the platform From and the store Reply-To. |
+| R3  | Unit | `npx vitest run tests/email-relay.test.ts --maxWorkers=4` passes; its "R3" block covers all three branches. |
+| R4  | Unit | Same file, "R4" block: 2xx gives sent, 500 gives failed, and a thrown fetch gives failed. |
+| R5  | Unit | Same file, "R5/R6" block: a relay failure leads to a second delivery through the binding, with the platform From and the store Reply-To. |
 | R6  | Unit | Same file: without `EMAIL_RELAY_TOKEN`, the sender resolves to the platform sender and the relay is never called. |
 | R7  | Read | Read `lib/client-setup-service.ts` and the client-setup page. The relay domains are passed in, and the label is `(verified, via relay)`. |
 | R8  | Static | `grep -n "EMAIL_RELAY" wrangler.toml` shows exactly the four lines, under `afc-staging` and `afc-production`. |
