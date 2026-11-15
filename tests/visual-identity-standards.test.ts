@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ICON_REGISTRY } from "@/components/icons/registry";
+import { ICON_FAMILY_MAP, ICON_REGISTRY, type IconName } from "@/components/icons/registry";
 import {
   ICON_BASE_GRID,
   ICON_CORNER_RADIUS_PX,
-  ICON_FAMILY_MAP,
   ICON_LINE_CAP,
   ICON_LINE_JOIN,
   ICON_SAFE_AREA_PX,
@@ -33,7 +32,7 @@ describe("Visual Identity Standards & Icon Families (#1602)", () => {
   });
 
   it("maps every registered icon in ICON_REGISTRY to a distinct IconFamily", () => {
-    const registryKeys = Object.keys(ICON_REGISTRY);
+    const registryKeys = Object.keys(ICON_REGISTRY) as IconName[];
     const validFamilies: readonly IconFamily[] = ["functional", "category", "promotional"];
 
     expect(registryKeys.length).toBeGreaterThan(0);
@@ -49,7 +48,7 @@ describe("Visual Identity Standards & Icon Families (#1602)", () => {
   });
 
   it("classifies core functional navigation and control icons under the functional family", () => {
-    const functionalKeys = [
+    const functionalKeys: IconName[] = [
       "search",
       "shopping-cart",
       "shopping-bag",
@@ -74,7 +73,7 @@ describe("Visual Identity Standards & Icon Families (#1602)", () => {
   });
 
   it("classifies department and grocery classification icons under the category family", () => {
-    const categoryKeys = [
+    const categoryKeys: IconName[] = [
       "apple",
       "beef",
       "boxes",
@@ -93,7 +92,7 @@ describe("Visual Identity Standards & Icon Families (#1602)", () => {
   });
 
   it("classifies promotional, rewards, and trust badges under the promotional family", () => {
-    const promoKeys = [
+    const promoKeys: IconName[] = [
       "badge-check",
       "banknote",
       "featured-star",
