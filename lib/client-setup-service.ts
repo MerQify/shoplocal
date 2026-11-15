@@ -1,5 +1,6 @@
 import { getPrisma } from "@/lib/db";
 import {
+  activeRelayDomains,
   getAiEnv,
   getEmailEnv,
   getInboundDefaultForward,
@@ -64,6 +65,8 @@ export interface EmailPlatformStatus {
   platformFrom: string | null;
   recipientMode: "open" | "allowlist";
   verifiedDomains: string[];
+  /** #1627 — domains sent through the mail relay Worker (empty unless the relay is configured). */
+  relayDomains: string[];
   configError: boolean;
   /** #1399 — INBOUND_DEFAULT_FORWARD, prefilled as a new receiving address's forward-to. */
   defaultForward: InboundDefaultForward;
@@ -74,6 +77,8 @@ export interface EmailSectionData {
   senderEmail: string;
   senderDomain: string;
   senderDomainVerified: boolean;
+  /** #1627 — the vendor's own domain is sent through the mail relay Worker. */
+  senderDomainViaRelay: boolean;
   /** The From address this vendor's mail actually goes out with — R5's function, not a copy. */
   effectiveFrom: { name: string; email: string };
   effectiveReplyTo: string | null;
@@ -104,6 +109,7 @@ export function getEmailPlatformStatus(): EmailPlatformStatus {
     platformFrom: env?.EMAIL_FROM ?? null,
     recipientMode: mode,
     verifiedDomains: parseEmailList(env?.EMAIL_VERIFIED_DOMAINS),
+    relayDomains: parseEmailList(activeRelayDomains(env)),
     configError: env === undefined,
     defaultForward: getInboundDefaultForward(),
   };
@@ -128,6 +134,7 @@ export async function getEmailSectionData(vendorId: string): Promise<EmailSectio
   const resolved = resolveSender({
     sender: { name: profile.senderName, email: profile.senderEmail },
     verifiedDomains: platform.verifiedDomains.join(","),
+    relayDomains: platform.relayDomains.join(","),
     platformFrom: platform.platformFrom ?? "",
     platformName: getPlatformSenderName(),
   });
@@ -135,7 +142,11 @@ export async function getEmailSectionData(vendorId: string): Promise<EmailSectio
     senderName: profile.senderName,
     senderEmail: profile.senderEmail,
     senderDomain,
-    senderDomainVerified: senderDomain !== "" && platform.verifiedDomains.includes(senderDomain),
+    senderDomainVerified:
+      senderDomain !== "" &&
+      (platform.verifiedDomains.includes(senderDomain) ||
+        platform.relayDomains.includes(senderDomain)),
+    senderDomainViaRelay: resolved.via === "relay",
     effectiveFrom: resolved.from,
     effectiveReplyTo: resolved.replyTo ?? null,
     addresses,

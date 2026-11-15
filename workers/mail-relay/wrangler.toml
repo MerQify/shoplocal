@@ -1,0 +1,25 @@
+#:schema ../../node_modules/wrangler/config-schema.json
+#
+# The AFC mail relay Worker (#1627). Runs in the **Aheed Food Centre** Cloudflare account — NOT the
+# Merqify account every other Worker here uses — because Cloudflare only lets a `send_email` binding
+# send from a domain onboarded for Email Sending in its own account, and `aheedfoodcentre.co.uk` is
+# onboarded there. See workers/mail-relay/src/index.ts.
+#
+# Deployed manually, never by CI (CI holds no Aheed-account credentials):
+#   credentials from secrets/afc-mail-relay.vars (CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN),
+#   then `npx wrangler deploy --config workers/mail-relay/wrangler.toml`.
+# Its one secret, RELAY_TOKEN, must equal EMAIL_RELAY_TOKEN on the AFC application Workers.
+# docs/developer-portal/env-setup.md "AFC mail relay" has the setup and rotation steps.
+name = "afc-mail-relay"
+main = "src/index.ts"
+compatibility_date = "2025-03-25"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[[send_email]]
+name = "EMAIL"
+
+[vars]
+ALLOWED_FROM_DOMAINS = "aheedfoodcentre.co.uk"

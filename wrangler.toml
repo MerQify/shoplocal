@@ -201,6 +201,10 @@ UK_LOCATION_REF_POSTCODE_AREAS = "MK,RG"
 PLATFORM_NAME = "Aheed Food Centre"
 PLATFORM_TAGLINE = "Independent Quality Groceries"
 EMAIL_FROM = "no-reply@merqify.com"
+# #1627 — store mail as @aheedfoodcentre.co.uk via workers/mail-relay (Aheed Food Centre account).
+# Active only once the EMAIL_RELAY_TOKEN Worker secret is also set.
+EMAIL_RELAY_URL = "https://afc-mail-relay.aheed-food-centre-f85.workers.dev"
+EMAIL_RELAY_DOMAINS = "aheedfoodcentre.co.uk"
 # EMAIL_RECIPIENT_MODE deliberately unset: allowlist (see [env.staging.vars], #1482).
 INBOUND_DEFAULT_FORWARD = "info-afc@googlegroups.com"
 APP_ENV = "staging"
@@ -245,6 +249,9 @@ SEO_INDEXABLE = "true"
 PLATFORM_NAME = "Aheed Food Centre"
 PLATFORM_TAGLINE = "Independent Quality Groceries"
 EMAIL_FROM = "no-reply@merqify.com"
+# #1627 — see [env.afc-staging.vars].
+EMAIL_RELAY_URL = "https://afc-mail-relay.aheed-food-centre-f85.workers.dev"
+EMAIL_RELAY_DOMAINS = "aheedfoodcentre.co.uk"
 EMAIL_RECIPIENT_MODE = "open"
 INBOUND_DEFAULT_FORWARD = "info-afc@googlegroups.com"
 APP_ENV = "production"
