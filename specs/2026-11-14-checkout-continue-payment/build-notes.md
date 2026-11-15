@@ -103,3 +103,50 @@ The GitHub repo now resolves as `sriahead/merqify` (gh redirects from `aheed-onl
 - **The `Next-Action`-based server actions under Workers** have not been driven with curl here. A
   `"use server"` export violation shows only at runtime. Both action files were checked with
   `grep "^export"` (one async function each), but only a live submit proves it.
+
+## Validation run 1 (local, pre-ship)
+
+Run on commit `dfa366a1` on 2026-11-15. **Not independent:** the same Opus 5.5 context that built the
+slice ran it, with no `/clear` (the owner skips the clear below ~60% context). Rows were checked
+against files on disk and command output, not memory. Treat the result as a self-check.
+**Result: PASS for every row this environment can run. R28–R35 are UNVERIFIED and move to staging.**
+
+**Pre-flight, each exit 0:** `npm run lint`, `npm run format:check`, `npx tsc --noEmit` (0 errors),
+`npm run build` (`check-client-syntax`: 174 client files parse on Safari / iOS 15.4),
+`kms:validate` (0 failing), `kms:check-generated` (current), and the internal docs-site build
+(`kms:assemble:internal`, then `next build` in `kms/site-internal`). `npx vitest run --maxWorkers=4`
+with no `.env` in the worktree: **466 files passed, 6831 tests passed, 4 skipped** (at `34454ec0`; only
+docs and generated files changed since). With the dev `.env` copied in, 4 DB integration files
+(`aheed-stock-import-safeguards`, `concurrency-slot-booking`, `express-sla`, `slot-capacity`) ran
+instead of skipping, and all 4 failed on `password authentication failed for user 'neondb_owner'`.
+Rerun without the env files, they skip (4 files, 8 tests). These are environmental and unrelated to
+this slice.
+
+**Pass:**
+- R1, R2 (`tests/payments.test.ts`; R1 with the recorded optional-field deviation).
+- R3 (only `import type`) and R4 (`tests/resume-payment.test.ts`, rows a–g, including paid-over-expired).
+- R5 (`tests/resume-payment-service.test.ts`).
+- R6 (`"use server"`, one export), R7 and R8 (`tests/resume-payment-action.test.ts`, no `try` around
+  `redirect`, no write-path imports).
+- R9–R11 (`tests/cancel-order-action.test.ts`, including the call order and the double submit) and R12
+  (one export).
+- R13–R18 (`tests/unfinished-payment-choices.test.tsx`; no vendor name in the component).
+- R19 (title and `<h1>`) and R20 (page and `unfinishedPaymentView` read; the helper's 8-case table passes).
+- R21 and R22 (no old link, no `"/cart"`, no "Cancel this order" in the JSX) and R24 (imports read).
+- R25 (member page read: both components inside one PENDING_PAYMENT condition, before
+  `OrderProgressTracker`).
+- R26 and R27 (`git diff --stat origin/staging` on every listed file is empty; no migration added;
+  `tests/payments.test.ts` has 0 removed lines).
+- R36 (guide bullet), R37 (#1594 open, named here), R38 (CHANGELOG names #1589), R39 (pre-flight above).
+
+**UNVERIFIED, with the reason:**
+- R23's live half, and **R28–R35**. The dev Neon branch rejects the password in `.env` and
+  `.dev.vars` (host `ep-dry-morning-zab7dx08`, the only non-staging, non-production host), so
+  `npm run preview` cannot read an order.
+- The owner chose (2026-11-15) to **run these eight rows on the staging deploy** (Stripe test mode)
+  after the staging merge, and before the production promotion is requested. The promotion must not
+  be requested until they pass or are explicitly waived.
+- The dev password needs rotating or refreshing in both local files, separately from this slice.
+
+**Spec observations:** none blocking. R1's literal type conflicts with R27 (recorded deviation). R20's
+derivation lives in `lib/unfinished-payment.ts` rather than inline; the requirement's behaviour holds.
