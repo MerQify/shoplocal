@@ -13,10 +13,36 @@ export interface PromptItem {
 
 const MAX_ITEMS = 6;
 
+/**
+ * Art direction guidelines and quality standards for realistic commercial food photography.
+ */
+export const AI_ART_DIRECTION_STANDARDS = {
+  style: "Commercial food photography, appetising, authentic, natural, realistic.",
+  lighting:
+    "Soft natural studio daylight, subtle specular highlights, soft ambient contact shadows.",
+  composition:
+    "Single clear focal point, 3/4 camera perspective, shallow depth of field, sharp focus on subject.",
+  background:
+    "Clean neutral surface (slate, light marble, natural wood, or subtle ceramic), zero visual clutter.",
+  negativeConstraints:
+    "No live animals, no people, no hands, no distorted textures, no floating text, no lettering, no labels, no logos, no watermarks, no price tags.",
+} as const;
+
 /** The exclusions every generated photo carries. */
 export const IMAGE_PROMPT_GUARDRAILS =
   "Show only the goods as a shop sells them: food raw or prepared and ready to cook, packaged goods in their packs. " +
   "No live animals, no people, no hands. No text, no lettering, no labels, no logos, no price tags.";
+
+/**
+ * Applies visual art direction guardrails and negative prompt constraints to any raw AI image prompt.
+ */
+export function applyArtDirectionGuardrails(rawPrompt: string, isBanner = false): string {
+  const base = rawPrompt.trim();
+  const compositionRule = isBanner
+    ? " Wide banner composition, generous negative space on the left for text overlay, primary subject arranged on the right."
+    : " Clean neutral surface, three-quarter view, soft studio lighting, shallow depth of field.";
+  return `${base}.${compositionRule} ${IMAGE_PROMPT_GUARDRAILS}`;
+}
 
 /** "4 × Medium Chicken (1100–1200g), 2 × Lamb Chops" — the first few items, largest quantity first. */
 export function describeItems(items: readonly PromptItem[]): string {
