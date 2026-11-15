@@ -6,6 +6,14 @@ every branch merges.
 
 ## [Unreleased]
 
+### Added
+
+- **Staff and Store Email Setup Guide on Help Centre (/help) (#1619, 2026-11-15).** Added step-by-step guidance for store admins and staff to reply to customer enquiries as the store (`info@aheedfoodcentre.co.uk`) directly from personal Gmail or Google Groups.
+  - Added quick-jump navigation chip and dedicated `#staff-email` section on `/help` (`app/(storefront)/help/page.tsx`) detailing Google App Password creation and Gmail "Send mail as" SMTP configuration.
+  - Clarified Google Groups distribution mechanics (inbound distribution automatic; outbound replies require individual sender authentication or Staff Panel).
+  - Documented in Store Admin Guide (`docs/store-admin-guide/admin-tabs-guide.md`) and Staff Playbook (`docs/staff-playbook/staff-tabs-guide.md`).
+  - No migration.
+
 ### Fixed
 
 - **Weekly opening hours control checkout slots (#1615, 2026-11-15).** A weekday ticked Closed all day in Opening hours still offered slots. `#1605` had wired only the dated Holiday & closure entries.
