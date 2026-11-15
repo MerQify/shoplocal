@@ -6,7 +6,17 @@ every branch merges.
 
 ## [Unreleased]
 
+### Added
+
+- **Staff and Store Email Setup Guide on Help Centre (/help) (#1619, 2026-11-15).** Added step-by-step guidance for store admins and staff to reply to customer enquiries as the store (`info@aheedfoodcentre.co.uk`) directly from personal Gmail or Google Groups.
+  - Added quick-jump navigation chip and dedicated `#staff-email` section on `/help` (`app/(storefront)/help/page.tsx`) detailing Google App Password creation and Gmail "Send mail as" SMTP configuration.
+  - Clarified Google Groups distribution mechanics (inbound distribution automatic; outbound replies require individual sender authentication or Staff Panel).
+  - Documented in Store Admin Guide (`docs/store-admin-guide/admin-tabs-guide.md`) and Staff Playbook (`docs/staff-playbook/staff-tabs-guide.md`).
+  - No migration.
+
 ### Fixed
+
+- **Random 503/524 errors from the Worker CPU limit (#1621, 2026-11-15).** On AFC staging, requests landing on a freshly started isolate were killed with `exceededCpu` ("Worker exceeded CPU time limit"). Seen as 503s, and as Cloudflare 524 timeouts at sign-in, on `/checkout` and `/categories`. Cold-start SSR plus Prisma WASM instantiation had outgrown `[limits] cpu_ms = 300`. It is raised to `30000`, the Workers Paid standard, for every environment. Billing is by CPU used, not the limit.
 
 - **Weekly opening hours control checkout slots (#1615, 2026-11-15).** A weekday ticked Closed all day in Opening hours still offered slots. `#1605` had wired only the dated Holiday & closure entries.
   - The new `effectiveDayHours` (`lib/slot-closure.ts`) applies the dated entry when one exists, otherwise that weekday's `VendorWeeklyHours`, by the same rules. A closed weekday offers no slot and shows "Closed every Wednesday". Collection slots must fit the opening hours, while delivery is unchanged.
