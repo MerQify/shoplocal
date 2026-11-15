@@ -4,7 +4,7 @@ import type { CatalogueWriteResult } from "@/lib/repositories/products";
 import type { ExpressWindowInput, FulfilmentSettingsInput, SlotInput } from "@/lib/fulfilment-form";
 import { STORE_TIMEZONE, calendarDayToUtcMidnight } from "@/lib/local-datetime";
 import { isSlotBookable } from "@/lib/slot-cutoff";
-import { closedDayLabel, slotFitsOverride } from "@/lib/slot-closure";
+import { closedDayLabel, effectiveDayHours, slotFitsOverride } from "@/lib/slot-closure";
 
 export type { FulfilmentMethod };
 
@@ -80,11 +80,16 @@ export async function getSlotDayForDate(
       fulfilmentSlots: { where: { method, dayOfWeek } },
       // #1605 — at most one row: `@@unique([vendorId, date])`.
       hoursOverrides: { where: { date } },
+      // #1615 — the weekday's usual hours, which govern when there is no dated entry.
+      weeklyHours: { where: { dayOfWeek } },
     },
   });
 
   // #1605 — a closed day is closed whether or not this weekday carries slots.
-  const override = vendor?.hoursOverrides?.[0] ?? null;
+  const override = effectiveDayHours(
+    vendor?.hoursOverrides?.[0] ?? null,
+    vendor?.weeklyHours?.[0] ?? null,
+  );
   const closedLabel = closedDayLabel(override);
   if (closedLabel !== null) return { slots: [], closedLabel };
 

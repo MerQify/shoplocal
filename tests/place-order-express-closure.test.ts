@@ -26,6 +26,12 @@ const m = vi.hoisted(() => ({
       openTime: string | null;
       closeTime: string | null;
     }[],
+    weeklyHours: [] as {
+      dayOfWeek: number;
+      closed: boolean;
+      openTime: string | null;
+      closeTime: string | null;
+    }[],
   },
 }));
 
@@ -74,6 +80,7 @@ beforeEach(() => {
   vi.setSystemTime(new Date(`${TODAY}T10:00:00Z`));
   vi.clearAllMocks();
   m.profile.hoursOverrides = [];
+  m.profile.weeklyHours = [];
   m.createOrder.mockResolvedValue({
     orderNumber: "AHE-1",
     redirectUrl: "/pay",
@@ -117,6 +124,36 @@ describe("#1605 R17 — Express collection obeys today's closure and changed hou
   it("ignores an override on another day", async () => {
     m.profile.hoursOverrides = [
       { date: "2026-11-17", label: "Closed", closed: true, openTime: null, closeTime: null },
+    ];
+    await placeOrderAction({ error: null }, expressForm());
+    expect(m.createOrder).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("#1615 R6 — Express obeys today's usual weekly hours when there is no dated entry", () => {
+  // TODAY (2026-11-16) is a Monday.
+  it("refuses on a weekly-closed day", async () => {
+    m.profile.weeklyHours = [{ dayOfWeek: 1, closed: true, openTime: null, closeTime: null }];
+    expect(await placeOrderAction({ error: null }, expressForm())).toEqual({
+      error: "We're closed on that day. Please choose another day.",
+    });
+    expect(m.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("refuses outside today's weekly hours", async () => {
+    m.profile.weeklyHours = [
+      { dayOfWeek: 1, closed: false, openTime: "12:00", closeTime: "20:00" },
+    ];
+    expect(await placeOrderAction({ error: null }, expressForm())).toEqual({
+      error: "Express collection isn't available right now. Please choose a time slot.",
+    });
+    expect(m.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("a dated open entry wins over a weekly closed day", async () => {
+    m.profile.weeklyHours = [{ dayOfWeek: 1, closed: true, openTime: null, closeTime: null }];
+    m.profile.hoursOverrides = [
+      { date: TODAY, label: "Opening", closed: false, openTime: "09:00", closeTime: "13:00" },
     ];
     await placeOrderAction({ error: null }, expressForm());
     expect(m.createOrder).toHaveBeenCalledTimes(1);

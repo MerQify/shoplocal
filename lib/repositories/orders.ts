@@ -52,7 +52,7 @@ import { listActiveTiersForProducts } from "@/lib/repositories/product-tiers";
 import { NOTE_ACCEPTANCE_SELECT, productAcceptsNote } from "@/lib/custom-note";
 import { slotLabel } from "@/lib/order-notifications/slot";
 import { isSlotBookable } from "@/lib/slot-cutoff";
-import { CLOSED_DAY_MESSAGE, slotFitsOverride } from "@/lib/slot-closure";
+import { CLOSED_DAY_MESSAGE, effectiveDayHours, slotFitsOverride } from "@/lib/slot-closure";
 
 /**
  * Order read/write path (P3b, #96) — the ONLY DB access for orders. Pages,
@@ -192,11 +192,21 @@ export async function placeOrder(
       // #1605 — a dated closure / changed-hours override (#1060), read for the order's day. The slot
       // list applies the same rules (`lib/slot-closure.ts`), so a grid loaded before staff saved the
       // closure, or a direct server-action call, cannot book the day either.
-      const override = input.fulfilmentDate
+      // #1615 — with no dated entry, that weekday's usual hours govern, by the same rules.
+      const dated = input.fulfilmentDate
         ? await tx.vendorHoursOverride.findUnique({
             where: { vendorId_date: { vendorId, date: input.fulfilmentDate } },
           })
         : null;
+      const weekly =
+        input.fulfilmentDate && !dated
+          ? await tx.vendorWeeklyHours.findUnique({
+              where: {
+                vendorId_dayOfWeek: { vendorId, dayOfWeek: input.fulfilmentDate.getUTCDay() },
+              },
+            })
+          : null;
+      const override = effectiveDayHours(dated, weekly);
       if (override?.closed) {
         throw new CheckoutError("STORE_CLOSED", CLOSED_DAY_MESSAGE);
       }
