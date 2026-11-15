@@ -39,6 +39,21 @@ reconciliation. If overall project state did not materially change, leave this f
 
 ## Last Verified
 
+- **2026-11-15: AFC go-live staging check, and `#1605` in flight.**
+  - **Owner goal: go live ASAP.**
+    - **Go-live path:** `#1344` checklist → `#1332` demo accounts deleted last.
+    - **Owner-gated:**
+      - `#113` live Stripe keys. My recommendation was direct keys on Aheed's own account, not Connect (`#1310`); the owner had not answered yet.
+      - `#104` verified sending domain.
+      - Product photos. Only 8 of the 76 live production products show a photo.
+    - **Already live:** `www.aheedfoodcentre.co.uk` serves the dedicated cell, the bare domain redirects to `www`, and `robots`/`sitemap` list the real host. `#1329` is still open on the board and needs closing.
+  - **Staging check results:**
+    - A Click & Collect test-card order went end to end (`AHE-20261115-9DJC63`).
+    - Found: an out-of-area delivery (`SW1A 1AA`) reached Stripe, and holiday closures did not block slots.
+  - **`#1605` fixes both.** Branch `feature/1605-delivery-area-closure-fixes`, worktree `E:\GitRepositories\aheed-wt-1605`. State and next steps: `specs/2026-11-15-delivery-area-closure-fixes/build-notes.md`.
+    - The owner said to validate it **on AFC staging after the `staging` merge**. R9, R18 and R19 need a staff sign-in.
+  - **`#1589` is already in production** (`b15277d` promoted everything on staging). Its owner-run R31 and R33 below are therefore owed on production, not before promotion.
+  - **Future slot work:** capacity gaps are in `#1604`, the Express server check is `#1607`.
 - **2026-11-15 (`#1589`): Continue to payment after leaving Stripe MERGED TO STAGING** (PR #1596 `ea6f488`), board `In Review`, live on AFC staging.
   - **Do not request its promotion yet.** Owed first: R31 (an order paid in another tab is not cancelled from a stale page) and R33 (the member order page shows the choices). Both need the owner, for a test-card payment and a sign-in. R32 (Stripe unreachable) cannot run on staging and needs an explicit owner waiver. State and steps: `specs/2026-11-14-checkout-continue-payment/build-notes.md` → "Validation run 2", and the sanity guide on the issue.
   - **Local DB-touching validation is blocked**: the dev Neon password in `.env`/`.dev.vars` is rejected (`#1599`, owner action). Until it is fixed, `npm run preview` cannot read orders.

@@ -51,6 +51,14 @@ every branch merges.
 
 ### Fixed
 
+- **Out-of-area delivery refused, and closure days close slots (#1605, 2026-11-15).** Go-live fixes found on AFC staging.
+  - A delivery to `SW1A 1AA` reached Stripe: `evaluateDeliveryEligibility` answered `UNVERIFIED` for any postcode outside the reference coverage (MK/RG only), even when it was outside the vendor's own areas, and `blocksCheckout` never blocks `UNVERIFIED`. A well-formed postcode outside the vendor's areas is now `OUTSIDE_DELIVERY_AREA` (with `verified: false`) whatever the coverage. It is refused at checkout and counted by district in "Districts you turned away", which previously missed every postcode outside MK/RG.
+  - Holiday & closure dates (`VendorHoursOverride`, #1060) now gate slots, through the new `lib/slot-closure.ts`, in the slot list, `placeOrder` (new `STORE_CLOSED` code) and `placeOrderAction` (Express).
+    - A closed day offers and books no slot, and the checkout grid shows it as **Closed** with its name.
+    - Changed hours hide only collection slots outside them, while delivery stays as scheduled.
+    - Express collection obeys today's closure and changed hours.
+  - No migration.
+
 - **Internal docs site build restored (#1558, 2026-11-13).** Bare `<you>` (#1557) and `<store>` (#1559) placeholders in `docs/developer-portal/notification-matrix.md` were parsed by MDX as unclosed HTML tags, so `deploy-docs-internal` failed on every staging push since `44f88ec5` while the app deploys stayed green. Wrapped in code spans; verified by compiling the assembled MDX (the unfixed file reproduces CI's `Expected a closing tag for <store>` error).
 
 ### Added
