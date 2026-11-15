@@ -16,6 +16,7 @@ import {
   type CheckoutSectionKey,
 } from "@/lib/checkout-sections";
 import { SlotPicker } from "./SlotPicker";
+import type { HoursOverrideRow } from "@/lib/footer-hours";
 import { readCheckoutDetails, writeCheckoutDetails } from "@/lib/checkout-details-storage";
 import { Icon } from "@/components/icons/Icon";
 
@@ -44,6 +45,7 @@ export function CheckoutForm({
   offerDeliverySlots,
   expressCollectionEnabled,
   expressSchedules,
+  hoursOverrides,
   timezone,
   method,
   savedAddresses = [],
@@ -69,6 +71,8 @@ export function CheckoutForm({
   offerDeliverySlots: boolean;
   expressCollectionEnabled?: boolean;
   expressSchedules?: { dayOfWeek: number; openTime: string; closeTime: string }[];
+  /** #1605 — dated closures / changed hours, passed straight through to `SlotPicker` for Express. */
+  hoursOverrides?: HoursOverrideRow[];
   /** #363/#811 — the vendor's IANA zone, passed straight through to `SlotPicker`. */
   timezone: string;
   /**
@@ -624,6 +628,7 @@ export function CheckoutForm({
             required={true}
             expressCollectionEnabled={expressCollectionEnabled}
             expressSchedules={expressSchedules}
+            hoursOverrides={hoursOverrides}
             timezone={timezone}
           />
         </section>

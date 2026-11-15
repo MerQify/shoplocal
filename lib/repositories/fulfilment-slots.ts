@@ -4,6 +4,7 @@ import type { CatalogueWriteResult } from "@/lib/repositories/products";
 import type { ExpressWindowInput, FulfilmentSettingsInput, SlotInput } from "@/lib/fulfilment-form";
 import { STORE_TIMEZONE, calendarDayToUtcMidnight } from "@/lib/local-datetime";
 import { isSlotBookable } from "@/lib/slot-cutoff";
+import { closedDayLabel, slotFitsOverride } from "@/lib/slot-closure";
 
 export type { FulfilmentMethod };
 
@@ -33,6 +34,27 @@ export async function getAvailableSlotsForDate(
   /** #1441 — the clock the booking cut-off is measured from. A parameter so tests can fix it. */
   now: Date = new Date(),
 ): Promise<AvailableSlot[]> {
+  return (await getSlotDayForDate(prisma, vendorId, method, day, now)).slots;
+}
+
+/** One day of the checkout slot grid: its bookable slots and, when closed, the closure's label. */
+export interface SlotDay {
+  slots: AvailableSlot[];
+  /** #1605 — the `VendorHoursOverride` label when the store is closed all day, else null. */
+  closedLabel: string | null;
+}
+
+/**
+ * `getAvailableSlotsForDate` plus the day's closure label (#1605), for the week grid, which must
+ * tell a shopper WHY a day has no slots rather than show an empty column.
+ */
+export async function getSlotDayForDate(
+  prisma: Db,
+  vendorId: string,
+  method: FulfilmentMethod,
+  day: string,
+  now: Date = new Date(),
+): Promise<SlotDay> {
   /*
    * #811. `day` is a bare `YYYY-MM-DD` CALENDAR DAY, never an instant, and this is the whole fix.
    *
@@ -46,24 +68,38 @@ export async function getAvailableSlotsForDate(
    * gone from this path rather than answered. An unparsable day yields no slots rather than a
    * query on `NaN`, which Prisma would reject at the driver with a much less obvious message.
    */
+  const none: SlotDay = { slots: [], closedLabel: null };
   const date = calendarDayToUtcMidnight(day);
-  if (date === null) return [];
+  if (date === null) return none;
   const dayOfWeek = date.getUTCDay(); // 0 = Sunday
 
   const vendor = await prisma.vendor.findUnique({
     where: { id: vendorId },
-    include: { config: true, fulfilmentSlots: { where: { method, dayOfWeek } } },
+    include: {
+      config: true,
+      fulfilmentSlots: { where: { method, dayOfWeek } },
+      // #1605 — at most one row: `@@unique([vendorId, date])`.
+      hoursOverrides: { where: { date } },
+    },
   });
 
-  if (!vendor || !vendor.config || vendor.fulfilmentSlots.length === 0) return [];
+  // #1605 — a closed day is closed whether or not this weekday carries slots.
+  const override = vendor?.hoursOverrides?.[0] ?? null;
+  const closedLabel = closedDayLabel(override);
+  if (closedLabel !== null) return { slots: [], closedLabel };
+
+  if (!vendor || !vendor.config || vendor.fulfilmentSlots.length === 0) return none;
 
   // #1441 — a slot that has started, or starts within the store's cut-off, is not offered at all.
   // `placeOrder` applies the same rule, so a grid loaded before the cut-off cannot book it either.
+  // #1605 — likewise a collection slot outside a changed-hours day's opening hours.
   const { timezone, slotBookingCutoffMinutes } = vendor.config;
-  const bookable = vendor.fulfilmentSlots.filter((slot) =>
-    isSlotBookable(day, slot.startTime, timezone, slotBookingCutoffMinutes, now),
+  const bookable = vendor.fulfilmentSlots.filter(
+    (slot) =>
+      isSlotBookable(day, slot.startTime, timezone, slotBookingCutoffMinutes, now) &&
+      slotFitsOverride(method, slot, override),
   );
-  if (bookable.length === 0) return [];
+  if (bookable.length === 0) return none;
 
   const holdMinutes = vendor.config.slotHoldDurationMinutes;
   const cutoff = new Date(Date.now() - holdMinutes * 60000);
@@ -91,7 +127,7 @@ export async function getAvailableSlotsForDate(
 
   const usedMap = new Map(usedCounts.map((u) => [u.fulfilmentSlotId, u._count.id]));
 
-  return bookable
+  const slots = bookable
     .map((slot) => {
       const used = usedMap.get(slot.id) || 0;
       return {
@@ -103,6 +139,7 @@ export async function getAvailableSlotsForDate(
       };
     })
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  return { slots, closedLabel: null };
 }
 
 /* -------------------------------------------------------------------------------------------- *

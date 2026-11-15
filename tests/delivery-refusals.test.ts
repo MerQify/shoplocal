@@ -110,6 +110,26 @@ describe("refusalRecordFor (R30)", () => {
     },
   );
 
+  it("#1605 — counts an unverified out-of-area postcode (outside the reference coverage)", () => {
+    const sw1a: DeliveryEligibility = {
+      status: "OUTSIDE_DELIVERY_AREA",
+      postcode: "SW1A 1AA",
+      deliverable: false,
+      verified: false,
+      areaCovered: false,
+    };
+    expect(refusalRecordFor(sw1a, now, "Europe/London")).toEqual({
+      district: "SW1A",
+      day: new Date("2026-09-24T00:00:00.000Z"),
+    });
+  });
+
+  it("#1605 — records nothing for an unverified postcode the vendor serves", () => {
+    expect(
+      refusalRecordFor({ ...eligibility("UNVERIFIED"), deliverable: true }, now, "Europe/London"),
+    ).toBeNull();
+  });
+
   it("uses the vendor-local calendar day, not the UTC one", () => {
     // 20:00 UTC on the 24th is already the 25th in Auckland.
     const late = new Date("2026-09-24T20:00:00.000Z");
