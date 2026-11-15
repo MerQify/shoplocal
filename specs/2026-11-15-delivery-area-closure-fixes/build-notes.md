@@ -153,3 +153,32 @@ staging → main does.
 - **Not built (deliberately excluded in `plan.md`):** the first-paint "No slots available" flash,
   and orders already booked on a newly closed date. Both are recorded on `#1604` (comment of
   2026-11-15). General server-side checking of the weekly express schedule is `#1607`.
+
+## Validation run 1 (2026-11-15, in-session, not independent)
+
+The owner chose to validate in the building session (on Opus) rather than after a Clear, so this
+run is **not independent**.
+
+| Req | Result |
+| --- | --- |
+| R1–R5 | **Pass.** Targeted vitest (10 files, 121 tests) green, and each named assertion is present. |
+| R6 | **Pass.** Read both comment blocks. |
+| R7–R9 | **Unverified.** Live on AFC staging, after the `staging` merge. |
+| R10–R17 | **Pass.** Unit and component tests green, and each named assertion is present. |
+| R12 | **Pass.** Diff of the four named files is the single `vendorHoursOverride` fixture only. |
+| R18, R19 | **Unverified.** Live on AFC staging, after the `staging` merge. Needs a staff sign-in. |
+| R20 | **Pass.** Read the guide; each sentence traces to R10–R19. |
+| R21 | **Pass.** No `prisma/` paths in the diff. |
+| R22 | **Pass.** CHANGELOG diff cites `#1605`. |
+| R23 | **Pass locally:** lint, `tsc --noEmit`, format:check and kms:validate exit 0. Full vitest: 6881 passed, 3 failed in 4 live-DB files (`slot-capacity`, `concurrency-slot-booking`, `express-sla`, `aheed-stock-import-safeguards`), all "Authentication failed against the database server" (`#1599`), and identical with the change stashed. CI is the authority. |
+
+Also run:
+- `npm run build` → exit 0, with `check-client-syntax` OK for 174 client files on Safari 15.4.
+- `kms:assemble:internal` plus `next build --webpack` in `kms/site-internal` → success. The
+  worktree needed a second junction, for `kms/site-internal/node_modules`. Remove it with `rmdir`
+  before `git worktree remove`.
+
+Caller check: `lib/address-lookup-service.ts` now reports `OUTSIDE_DELIVERY_AREA` (instead of
+`UNVERIFIED`) for an uncovered out-of-area postcode. `CheckoutForm` treats every non-`INVALID`
+status alike (it fills the town, with no error), so there is no behaviour change. The refusal comes
+at submit (R7).
