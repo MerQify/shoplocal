@@ -4,8 +4,8 @@ title: "Store Admin Management Guide"
 audience: [store-admin]
 type: runbook
 status: approved
-version: "2.27.0"
-updated: 2026-11-13
+version: "2.28.0"
+updated: 2026-11-15
 visibility: internal
 summary: "How to use every owner-only page in the Store Admin Panel: discounts, loyalty, storefront configuration, delivery areas, reports, customers, payment issues, and team access."
 tags: ["admin", "guide", "ui", "configuration", "vendor", "payments", "team"]
@@ -773,6 +773,14 @@ the email address on the order. Check that address first if they still do not re
 are for store admins only; staff accounts do not see them. Customers coming back from the payment
 page are checked automatically, so most "I paid but it still says pending" cases resolve themselves
 within seconds.
+
+**A customer who left the payment page without paying:** they are shown **Continue to payment**,
+which reopens the same payment for the same order, and **Change my order**, which cancels the order
+and puts their items back in their basket. Signed-in customers see the same choices on the order's
+page in their account. A customer can no longer cancel an order the payment provider reports as
+paid: the system checks first and confirms the order instead. If the provider cannot be reached,
+nothing is cancelled, and the customer is asked to try again. An order a customer cancels this way
+shows as *Cancelled* and is not an abandoned checkout.
 
 **What happens after changes are saved:** Reconciling asks the payment provider and updates the order
 to match reality — it never assumes. Recovering a genuinely paid order moves it into the normal flow,

@@ -4,8 +4,8 @@ title: "Client & Role User Journey Maps"
 audience: [store-admin, staff, platform-admin]
 type: guide
 status: approved
-version: "1.1.0"
-updated: 2026-11-01
+version: "1.2.0"
+updated: 2026-11-15
 visibility: internal
 summary: "Comprehensive end-to-end user journey maps with Mermaid flowcharts, step-by-step guides, permissions, and checklists for Platform Admin, Store Admin, Staff, and Customer."
 tags: [journey-maps, user-journeys, onboarding, roles, platform-admin, store-admin, staff, customer]
@@ -240,6 +240,7 @@ flowchart TD
 8. **Fulfilment Window:** Choose delivery date and time slot, or select click-and-collect.
 9. **Discount / Referral:** Enter promotional or friend referral code. System applies instant price reduction and displays net total in pence.
 10. **Secure Payment:** Card payment securely handled via Stripe Elements. Sensitive card data never touches the application servers.
+    - Left the payment page without paying: "Your payment wasn't finished" offers **Continue to payment** (same order, same payment) or **Change my order** (cancel, items back in the basket).
 11. **Confirmation & Tracking (`/orders/lookup`):** Immediate order confirmation page displaying order summary, delivery slot, and live status indicator (`PENDING_PAYMENT` -> `CONFIRMED` -> `PREPARING` -> `OUT_FOR_DELIVERY` -> `DELIVERED`).
 12. **Help & Role Journeys (`/help`):** Shopper visits Help Centre for interactive User Journey Maps, delivery rules, FAQs, and WhatsApp support.
 13. **Share Feedback (`/feedback`):** Customers can rate their shopping experience (1 to 5 stars) and write comments, displayed on the homepage 3D carousel once reviewed by store staff.
@@ -361,6 +362,7 @@ flowchart TD
 8. **Fulfilment Window:** Choose delivery date and time slot, or select click-and-collect.
 9. **Discount / Referral:** Enter promotional or friend referral code. System applies instant price reduction and displays net total in pence.
 10. **Secure Payment:** Card payment securely handled via Stripe Elements. Sensitive card data never touches the application servers.
+    - Left the payment page without paying: "Your payment wasn't finished" offers **Continue to payment** (same order, same payment) or **Change my order** (cancel, items back in the basket).
 11. **Confirmation & Tracking (`/order/[id]`):** Immediate order confirmation page displaying order summary, delivery slot, and live status indicator (`PENDING_PAYMENT` -> `CONFIRMED` -> `PREPARING` -> `OUT_FOR_DELIVERY` -> `DELIVERED`).
 12. **Help & Inquiries (`/help`):** If questions arise, shopper visits Help Centre for vendor FAQs, delivery rules, or instant WhatsApp messaging.
 

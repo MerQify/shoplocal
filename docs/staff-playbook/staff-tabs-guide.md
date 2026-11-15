@@ -4,8 +4,8 @@ title: "Staff Daily Operations Playbook"
 audience: [staff]
 type: runbook
 status: approved
-version: "2.22.0"
-updated: "2026-11-13"
+version: "2.23.0"
+updated: "2026-11-15"
 visibility: internal
 summary: "How to use every page in the Staff Panel: picking and dispatching orders, managing catalogue products, categories, brands, filters, bundles, promotions, inventory, search dictionary, customer feedback, enquiries & inbox, and runbooks. One section per menu item."
 tags: ["staff", "guide", "ui", "fulfillment", "inventory", "catalogue", "synonyms", "feedback", "enquiries", "inbox"]
@@ -125,7 +125,9 @@ current filter with it.
 
 **Common mistakes and limitations:** An order sitting in *Pending payment* is not yours to advance —
 the customer's payment never completed, and there is no control to push it forward. Those are
-handled on the Payment Issues page. If you filter to a status and then think the store has lost
+handled on the Payment Issues page. If a customer says they left the payment page before paying,
+they can finish paying themselves: the page they were returned to, and their order's page if they are
+signed in, both offer **Continue to payment**. If you filter to a status and then think the store has lost
 orders, check the filter first: leaving the queue is an explicit act, so it is easy to forget you are
 still in a filtered view. The banner at the top tells you which view you are in.
 
