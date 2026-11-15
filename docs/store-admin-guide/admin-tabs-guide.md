@@ -262,6 +262,15 @@ Delivery slots on that date stay as scheduled, because deliveries can go out aft
 Orders already booked before you add a closure are not moved or cancelled, so review any orders
 already booked for that date and contact those customers yourself.
 
+**Your usual Opening hours control checkout slots the same way.** A weekday ticked **Closed all
+day** takes no delivery or Click & Collect bookings, and checkout shows it as **Closed every
+Wednesday** (or whichever day it is). On an open weekday, Click & Collect slots must fit inside that
+day's opening and closing times — for example, a shop that closes at 19:00 on Sunday offers no
+18:00–20:00 Sunday collection slot — while delivery slots stay as scheduled. A weekday left with no
+times and not ticked closed limits nothing. A **Holiday & closure date** always takes priority over
+the usual hours for its date, so you can open on a normally closed day by adding that date with its
+hours.
+
 **Common mistakes and limitations:** Colour choices affect the readability of text sitting on them.
 After changing a brand colour, look at a real page rather than only the colour swatch. Because your
 branding is applied on top of the site's defaults, a very light or very dark choice can reduce

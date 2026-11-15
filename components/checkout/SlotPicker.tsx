@@ -17,8 +17,8 @@ import {
   calendarDayToUtcMidnight,
   zoneWallClock,
 } from "@/lib/local-datetime";
-import { expressOverrideVerdict } from "@/lib/slot-closure";
-import type { HoursOverrideRow } from "@/lib/footer-hours";
+import { effectiveDayHours, expressOverrideVerdict } from "@/lib/slot-closure";
+import type { HoursOverrideRow, WeeklyHoursRow } from "@/lib/footer-hours";
 
 /**
  * The checkout slot picker as a week grid (#1305): days across, time ranges down, one radio per
@@ -32,6 +32,7 @@ export function SlotPicker({
   expressCollectionEnabled,
   expressSchedules,
   hoursOverrides,
+  weeklyHours,
   timezone,
 }: {
   vendorId: string;
@@ -42,6 +43,8 @@ export function SlotPicker({
   expressSchedules?: { dayOfWeek: number; openTime: string; closeTime: string }[];
   /** #1605 — dated closures / changed hours; only TODAY's matters here, for Express. */
   hoursOverrides?: HoursOverrideRow[];
+  /** #1615 — the store's usual weekly hours, which govern today when there is no dated entry. */
+  weeklyHours?: WeeklyHoursRow[];
   /**
    * #363/#811 — the VENDOR's IANA zone, not the shopper's. Everything below is a calendar day in
    * this zone; the browser's own zone is never consulted.
@@ -85,13 +88,17 @@ export function SlotPicker({
     const { dayOfWeek: day, hhmm: time } = zoneWallClock(now, timezone);
     // #1605 — today's closure or changed hours also gate Express; `placeOrderAction` re-checks.
     const today = calendarDayInZone(now, timezone);
-    const override = hoursOverrides?.find((o) => o.date === today) ?? null;
+    // #1615 — today's dated entry, else today's usual weekly hours.
+    const override = effectiveDayHours(
+      hoursOverrides?.find((o) => o.date === today) ?? null,
+      weeklyHours?.find((w) => w.dayOfWeek === day) ?? null,
+    );
     const available =
       expressOverrideVerdict(override, time) === "OK" &&
       expressSchedules.some((s) => s.dayOfWeek === day && time >= s.openTime && time < s.closeTime);
     setShowExpress(available);
     if (!available) setIsExpress(false);
-  }, [method, expressCollectionEnabled, expressSchedules, hoursOverrides, timezone]);
+  }, [method, expressCollectionEnabled, expressSchedules, hoursOverrides, weeklyHours, timezone]);
 
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(0);

@@ -14,6 +14,7 @@ import { calendarDayInZone, calendarDayToUtcMidnight, zoneWallClock } from "@/li
 import {
   CLOSED_DAY_MESSAGE,
   EXPRESS_OUTSIDE_HOURS_MESSAGE,
+  effectiveDayHours,
   expressOverrideVerdict,
 } from "@/lib/slot-closure";
 import { quoteMatches, resolveDeliveryRules } from "@/lib/delivery-pricing";
@@ -199,8 +200,13 @@ export async function placeOrderAction(
     if (isExpress) {
       const now = new Date();
       const today = calendarDayInZone(now, vendor.timezone);
-      const override = vendor.hoursOverrides.find((o) => o.date === today) ?? null;
-      const verdict = expressOverrideVerdict(override, zoneWallClock(now, vendor.timezone).hhmm);
+      const clock = zoneWallClock(now, vendor.timezone);
+      // #1615 — today's dated entry, else today's usual weekly hours.
+      const override = effectiveDayHours(
+        vendor.hoursOverrides.find((o) => o.date === today) ?? null,
+        vendor.weeklyHours.find((w) => w.dayOfWeek === clock.dayOfWeek) ?? null,
+      );
+      const verdict = expressOverrideVerdict(override, clock.hhmm);
       if (verdict === "CLOSED_DAY") return { error: CLOSED_DAY_MESSAGE };
       if (verdict === "OUTSIDE_HOURS") return { error: EXPRESS_OUTSIDE_HOURS_MESSAGE };
     }

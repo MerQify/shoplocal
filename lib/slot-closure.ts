@@ -32,6 +32,54 @@ export const CLOSED_DAY_MESSAGE = "We're closed on that day. Please choose anoth
 export const EXPRESS_OUTSIDE_HOURS_MESSAGE =
   "Express collection isn't available right now. Please choose a time slot.";
 
+/** One weekday of the store's usual hours (`VendorWeeklyHours`), as read. */
+export interface WeeklyDayHours {
+  dayOfWeek: number;
+  closed: boolean;
+  openTime: string | null;
+  closeTime: string | null;
+}
+
+const WEEKDAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+/**
+ * #1615 — the hours that govern one date: the dated holiday / closure entry when there is one,
+ * otherwise that weekday's usual hours, read with exactly the same rules. A weekday with no times
+ * and not closed (left out of the footer) governs nothing.
+ */
+export function effectiveDayHours(
+  dated: DayOverride | null,
+  weekly: WeeklyDayHours | null,
+): DayOverride | null {
+  if (dated) return dated;
+  if (!weekly) return null;
+  if (weekly.closed) {
+    return {
+      label: `Closed every ${WEEKDAY_NAMES[weekly.dayOfWeek] ?? "week"}`,
+      closed: true,
+      openTime: null,
+      closeTime: null,
+    };
+  }
+  if (weekly.openTime && weekly.closeTime) {
+    return {
+      label: "Opening hours",
+      closed: false,
+      openTime: weekly.openTime,
+      closeTime: weekly.closeTime,
+    };
+  }
+  return null;
+}
+
 function changedHours(override: DayOverride | null): { open: string; close: string } | null {
   if (!override || override.closed || !override.openTime || !override.closeTime) return null;
   return { open: override.openTime, close: override.closeTime };

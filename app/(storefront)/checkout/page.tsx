@@ -191,6 +191,7 @@ export default async function CheckoutPage() {
               expressCollectionEnabled={vendor?.expressCollectionEnabled ?? false}
               expressSchedules={vendor?.expressSchedules ?? []}
               hoursOverrides={vendor?.hoursOverrides ?? []}
+              weeklyHours={vendor?.weeklyHours ?? []}
               timezone={vendor?.timezone ?? STORE_TIMEZONE}
               signedInEmail={signedInEmail}
               redeemable={redeemable}

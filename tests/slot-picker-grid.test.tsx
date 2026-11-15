@@ -390,4 +390,29 @@ describe("#1605 closure days and Express", () => {
     });
     expect(await screen.findByRole("switch")).toBeTruthy();
   });
+
+  // TODAY (2026-10-27) is a Tuesday, dayOfWeek 2.
+  it("#1615 R6 — hides Express on a weekly-closed day and outside today's weekly hours", async () => {
+    renderPicker({
+      ...express,
+      weeklyHours: [{ dayOfWeek: 2, closed: true, openTime: null, closeTime: null }],
+    });
+    await screen.findByRole("table");
+    expect(screen.queryByRole("switch")).toBeNull();
+    cleanup();
+
+    renderPicker({
+      ...express,
+      weeklyHours: [{ dayOfWeek: 2, closed: false, openTime: "12:00", closeTime: "20:00" }],
+    });
+    await screen.findByRole("table");
+    expect(screen.queryByRole("switch")).toBeNull();
+    cleanup();
+
+    renderPicker({
+      ...express,
+      weeklyHours: [{ dayOfWeek: 2, closed: false, openTime: "09:00", closeTime: "20:00" }],
+    });
+    expect(await screen.findByRole("switch")).toBeTruthy();
+  });
 });

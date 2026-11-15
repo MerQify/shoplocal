@@ -98,6 +98,8 @@ describe("placeOrder — booking cut-off (R8, R9)", () => {
     const tx = {
       // #1605 — no closure / changed-hours override on the order's day.
       vendorHoursOverride: { findUnique: async () => null },
+      // #1615 — no usual weekly hours either.
+      vendorWeeklyHours: { findUnique: async () => null },
       vendorFulfilmentSlot: { findUnique: async () => ({ ...slot, method: "DELIVERY" }) },
       vendorConfig: {
         findUnique: async () => ({
