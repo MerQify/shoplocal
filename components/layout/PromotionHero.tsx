@@ -97,6 +97,8 @@ export function PromotionHero({
                     alt={promo.altText ?? promo.headline}
                     className="absolute inset-0 h-full w-full object-cover"
                     fallback={null}
+                    fetchPriority={index === 0 ? "high" : "auto"}
+                    loading={index === 0 ? "eager" : "lazy"}
                   />
                   <div
                     className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/20"
@@ -171,40 +173,44 @@ export function PromotionHero({
                   </Link>
                 </div>
               </div>
-
-              {/* Pause / Resume Controls & Indicator Dots */}
-              {count >= 2 && (
-                <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setChoiceMade(true);
-                      setPaused((prev) => !prev);
-                    }}
-                    aria-label={paused ? "Resume promotions rotation" : "Pause promotions rotation"}
-                    className="text-white/80 hover:text-white"
-                  >
-                    <Icon name={paused ? "play" : "pause"} className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="flex gap-1.5">
-                    {promotions.map((_, dotIdx) => (
-                      <button
-                        key={dotIdx}
-                        type="button"
-                        onClick={() => setCurrent(dotIdx)}
-                        aria-label={`Go to promotion ${dotIdx + 1}`}
-                        className={`h-2 rounded-full transition-all ${
-                          dotIdx === current ? "w-4 bg-white" : "w-2 bg-white/40"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}
       </div>
+
+      {/* Pause / Resume Controls & Indicator Dots - Outside slides so hidden slides never contain focusable controls */}
+      {count >= 2 && (
+        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+          <button
+            type="button"
+            onClick={() => {
+              setChoiceMade(true);
+              setPaused((prev) => !prev);
+            }}
+            aria-label={paused ? "Resume promotions rotation" : "Pause promotions rotation"}
+            className="flex items-center justify-center min-w-[24px] min-h-[24px] text-white/80 hover:text-white"
+          >
+            <Icon name={paused ? "play" : "pause"} className="h-3.5 w-3.5" />
+          </button>
+          <div className="flex items-center gap-0.5">
+            {promotions.map((_, dotIdx) => (
+              <button
+                key={dotIdx}
+                type="button"
+                onClick={() => setCurrent(dotIdx)}
+                aria-label={`Go to promotion ${dotIdx + 1}`}
+                className="flex items-center justify-center min-w-[24px] min-h-[24px] p-1"
+              >
+                <span
+                  className={`block h-2 rounded-full transition-all ${
+                    dotIdx === current ? "w-4 bg-white" : "w-2 bg-white/40"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
