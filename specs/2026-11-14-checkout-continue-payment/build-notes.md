@@ -150,3 +150,50 @@ this slice.
 
 **Spec observations:** none blocking. R1's literal type conflicts with R27 (recorded deviation). R20's
 derivation lives in `lib/unfinished-payment.ts` rather than inline; the requirement's behaviour holds.
+
+## Validation run 2 (live, AFC staging)
+
+Run on 2026-11-15 against `https://staging.aheedfoodcentre.co.uk`, which served `ea6f488` (the
+squash of PR #1596; `/api/health` `db.ok: true`, reference reachable, 2 sources), in Stripe test
+mode. **Still not independent** (same Opus 5.5 context). DB reads came from a read-only probe
+pinned to the AFC staging host `ep-super-cherry-zaeyqtsy`, which refuses any other host. Test data
+was fake: `Validation Test 1589`, `validation-1589@example.com`, `07700900123`.
+**Result: PASS for every row run. R31 and R33 are owed to the owner, and R32 can only be waived.**
+
+**Pass:**
+- **R28** — guest order `AHE-20261115-7EHJHY` (Reef Cod ×2 with the note "validation note 1589",
+  King Fish ×1). Stripe's "Back to Aheed Food Centre" link landed on the new page, and the basket
+  read empty. **Continue to payment** reopened `cs_test_a04SLOIO…`, which equals the stored
+  `providerReference`. 1 `Payment` row, `PENDING_PAYMENT`.
+- **R29 and R30** — **Change my order** was sent twice concurrently, as two `fetch` POSTs of the
+  form's own `FormData` (including `$ACTION_ID_…`), which bypassed the pending-button lock. The order
+  went `CANCELLED` with exactly one `CANCELLED` status event. The basket held quantity 2 with the
+  note, and quantity 1. Not doubled. `/cart` showed both lines.
+- **R34** — guest order `AHE-20261115-2JZ4KG`, created 01:19:03Z, so Stripe's `expires_at` was
+  01:54:03Z. At 01:55 the order was still `PENDING_PAYMENT`: neither the webhook nor the sweep had
+  released it. The page showed "This payment link may have expired" with Continue still offered (the
+  clock only softened the wording). **Continue to payment** went to `?payment=expired`, showing the
+  expired sentence and only **Put my items back in the basket**. That button gave `CANCELLED`, one
+  event, and the items back with the note.
+- **R35** — the Continue form's hidden `t` was changed to `wrong` → `/orders/lookup?orderNumber=…`,
+  with no Stripe navigation.
+- **R23 (live half)** — the cancelled order's cancel URL with its token returned 307 to
+  `/checkout/<order>?t=…`. Without a token, 307 to `/orders/lookup?orderNumber=<order>`.
+- R19, R20 and R22 were seen rendered: the heading, both buttons, the past-ttl line, and no old link
+  or red button.
+
+**Owed, with the reason:**
+- **R31** (a payment in another tab is not cancelled from a stale page) and **R33** (the member order
+  page shows the choices). The assistant may not enter card numbers or sign in on a hosted site.
+  The steps are posted on #1589 (sanity guide, steps 9–10). On staging the webhook will usually
+  confirm the payment before the stale-page press, so R31 there proves "paid is not cancelled" but
+  not which path did it. The check-first path is proven by unit tests (R10).
+- **R32** (Stripe unreachable) cannot run on staging without breaking staging's Stripe key for
+  everyone. Unit tests only (R8, R10). Needs an explicit owner waiver before promotion.
+
+**Observed, not caused by this slice:**
+- `/checkout` rendered its error state once with a filled basket, then loaded on reload. This slice
+  does not touch that route.
+- Auto mode refused calling Stripe with a key read from `secrets/*.vars`, so R34 used natural
+  expiry instead of the API `expire` call.
+- The local dev DB password is rejected; tracked as #1599.

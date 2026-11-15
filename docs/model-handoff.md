@@ -4,8 +4,8 @@ title: "Model handoff: repository orientation snapshot"
 audience: [dev]
 type: doc
 status: approved
-version: "1.168.0"
-updated: 2026-11-09
+version: "1.169.0"
+updated: 2026-11-15
 visibility: internal
 summary: "Concise project-state handoff for fresh-session recovery, covering current position, owner priorities, blockers, reconciliation gaps, and the volatile facts Orient must verify live."
 tags: [handoff, orientation, roadmap, backlog, operations]
@@ -38,6 +38,11 @@ Build Notes across the pre-validation Clear. Remove or replace stale information
 reconciliation. If overall project state did not materially change, leave this file untouched.
 
 ## Last Verified
+
+- **2026-11-15 (`#1589`): Continue to payment after leaving Stripe MERGED TO STAGING** (PR #1596 `ea6f488`), board `In Review`, live on AFC staging.
+  - **Do not request its promotion yet.** Owed first: R31 (an order paid in another tab is not cancelled from a stale page) and R33 (the member order page shows the choices). Both need the owner, for a test-card payment and a sign-in. R32 (Stripe unreachable) cannot run on staging and needs an explicit owner waiver. State and steps: `specs/2026-11-14-checkout-continue-payment/build-notes.md` → "Validation run 2", and the sanity guide on the issue.
+  - **Local DB-touching validation is blocked**: the dev Neon password in `.env`/`.dev.vars` is rejected (`#1599`, owner action). Until it is fixed, `npm run preview` cannot read orders.
+  - **Auto mode refuses Stripe API calls made with keys read from `secrets/*.vars`**, even test keys. Plan live Stripe steps (expiring a session) as natural expiry or owner steps.
 
 - **2026-11-09 (`#1331`, `#1476`): Dedicated Cell Isolation and Cloudflare for SaaS Onboarding Runbook MERGED TO STAGING** (PR #1478 `25bc9fe`, PR #1477 `e94ebbb`).
   - **`#1331` (Aheed Food Centre Dedicated Cell Isolation)** is MERGED TO STAGING (`25bc9fe`). Configured dedicated cell topology (`[env.afc-staging]`, `[env.afc-production]`) in `wrangler.toml`, `workers/scheduler/wrangler.toml`, and `workers/inbound-email/wrangler.toml` targeting `staging.aheedfoodcentre.co.uk` and `www.aheedfoodcentre.co.uk`. Set up sequential lockstep CI deployment pipeline in `deploy-staging.yml` and `deploy-production.yml` guarded with `if: env.AFC_DIRECT_URL != ''`. Added `scripts/bootstrap-dedicated-cell.ts` for automated vendor, domain, and satellite seeding with production demo-account refusal guard. Approved ADR-009 ("Platform Cell plus Dedicated Client Cells"). All 13 unit tests pass.
