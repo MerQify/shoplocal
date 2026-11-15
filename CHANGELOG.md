@@ -8,6 +8,8 @@ every branch merges.
 
 ### Fixed
 
+- **Checkout keeps what the shopper typed when an order is refused (#1613, 2026-11-15).** A refusal such as "Sorry — we don't deliver to SW1A 1AA yet." used to clear the name, email, phone and address. Cause: React 19 resets a form's uncontrolled fields after a form `action` completes, errors included. `CheckoutForm` now submits through `onSubmit` → `startTransition(() => formAction(formData))`, which is not followed by that reset. `action={formAction}` stays as the no-JavaScript fallback.
+
 - **Header Navigation Controls Consistency, Sizing & Alignment (#1610, 2026-11-15)**
   - Unified all interactive storefront header navigation controls (`LocationControl`, `DepartmentSearchBar`, `Shop`, `Quick Shop`, `Account` / `Sign In`, `ViewSwitcher`) to the standard `h-10` (40px) desktop control height and `min-h-tap` (44px) mobile touch target.
   - Standardised icon medallion sizing to 24px (`size={24}`) across all header navigation actions, eliminating optical baseline shifts between `LocationControl` (was 18px), `Shop` (24px), `Quick Shop` (24px), `Account` (24px), and `ViewSwitcher` (was 18px).

@@ -100,6 +100,18 @@ export function CheckoutForm({
   quotedDeliveryRules: string;
 }) {
   const [state, formAction, pending] = useActionState(placeOrderAction, initialState);
+  /*
+   * #1613 — submit through a transition, not the form's own `action`. React 19 resets a form's
+   * uncontrolled fields after a form `action` completes, refusals included, so "we don't deliver to
+   * …" used to arrive with the name, email, phone and address all wiped. A manual dispatch is not
+   * followed by that reset. `action={formAction}` stays below as the no-JavaScript fallback.
+   */
+  const [, startSubmitTransition] = useTransition();
+  const submitKeepingFields = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startSubmitTransition(() => formAction(formData));
+  };
   // #973 — the code, the points and every figure derived from them live in `CheckoutPricing`, which
   // the order summary reads too, so the two totals on this page can never disagree.
   const pricing = useCheckoutPricing();
@@ -342,6 +354,7 @@ export function CheckoutForm({
     <form
       ref={formRef}
       action={formAction}
+      onSubmit={submitKeepingFields}
       onChange={handleFormChange}
       className="space-y-6"
       data-checkout-form
