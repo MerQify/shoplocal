@@ -6,6 +6,17 @@ every branch merges.
 
 ## [Unreleased]
 
+### Performance & Accessibility
+
+- **Storefront Landing Hero LCP & Accessibility Optimizations (#1597, 2026-11-15)**
+  - Optimized Largest Contentful Paint (LCP) in `components/layout/PromotionHero.tsx`: assigned `fetchPriority="high"` and `loading="eager"` to the initial visible slide (`index === 0`), and `loading="lazy"` to subsequent offscreen slides. Prevents React 19 from preloading offscreen banners into document `<head>`, eliminating multi-megabyte concurrent image contention on page load.
+  - Resolved `[aria-hidden="true"]` focusable descendants defect and improved Agentic Browsing tree structure: moved rotation pause/play controls and pagination dots outside the slide track so inactive slides never contain focusable `<button>` elements.
+  - Added minimum touch target sizing (`min-w-[24px] min-h-[24px]`) to carousel pagination buttons.
+  - Fixed landing page heading hierarchy in `app/(landing)/page.tsx`: replaced `<h4>` trust values with `<h3>` to eliminate skipped heading levels under section `<h2>`.
+  - Resolved WCAG 2.5.3 (Label in Name) mismatch in `components/layout/Header.tsx`: updated phone link accessible name to include the visible dialling text (`Call ${name} at ${bannerPhone}`).
+  - Injected Schema.org `GroceryStore` JSON-LD structured data into `app/(landing)/layout.tsx` so the root homepage has local business schema alongside storefront routes.
+
+
 ### Added
 
 - **Checkout: Continue to payment after leaving Stripe (#1589, 2026-11-14).** Stripe's `cancel_url` page is now "Your payment wasn't finished": **Continue to payment** reopens the order's own Stripe session (never a second one), **Change my order** cancels and puts the items back in the basket, and only **Put my items back in the basket** is offered once Stripe reports the session expired. The old "No — keep it and go to my basket" link, which led to an empty basket and an unreachable unpaid order, is gone. `/account/orders/<order>` shows the same choices while awaiting payment. Stripe's verified status decides, never the order's age: a payment wins over expiry, an unreachable Stripe is a retryable notice, and `cancelOrder` now asks Stripe first, so a paid order is confirmed instead of cancelled and nothing is cancelled while Stripe is unreachable. It also restores the basket only after its own compare-and-set cancel, so a double submit no longer doubles it. No schema change. Follow-up: #1594 (expire the session on shopper cancel).
