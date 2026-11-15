@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-15T13:38:59.084Z` · commit `91f6ba75` · `359` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-15T15:52:57.375Z` · commit `e57b83d7` · `360` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -339,6 +339,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Stock Data Import & Update Manager (plan)](specs/2026-11-14-stock-data-import/plan.md) | spec | 1.0.0 | 2026-11-14 | approved | internal | Pure library lib/stock-import (profile, normalise, match, merge, plan), one Node script scripts/stock-import.ts (plan → review xlsx → apply → report), store profiles under scripts/stock-import/profiles, and the stock-import skill. |
 | [Checkout keeps what the shopper typed when an order is refused (plan)](specs/2026-11-15-checkout-keeps-fields/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1613. A refused checkout cleared every typed field because React 19 resets a form after its action completes; submit through onSubmit and a transition so the fields survive. |
 | [Go-live fixes: refuse out-of-area delivery postcodes, stop slot booking on closure days (plan)](specs/2026-11-15-delivery-area-closure-fixes/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1605. Checkout refuses delivery postcodes outside the store's areas even without reference data, and counts every such refusal; holiday closures block slot booking, and changed hours trim collection slots. |
+| [Staff & Store Email Setup Guide on /help (plan)](specs/2026-11-15-help-staff-email-guide/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1619. Add clear, self-service email instructions to the storefront Help Centre (/help) for store staff and administrators to reply as the store via personal Gmail or Google Groups. |
 | [Storefront Landing Hero LCP and Accessibility Optimization (plan)](specs/2026-11-15-perf-lcp-and-a11y-landing/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Optimize storefront landing hero Largest Contentful Paint (LCP) and resolve accessibility deductions identified in Google PageSpeed Insights (zb8uu21j1p). |
 | [Website-Wide UI Component Standards and Visual Consistency Optimisation (plan)](specs/2026-11-15-ui-component-consistency/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish comprehensive design and implementation standards for UI components across Aheed Food Centre, including component sizing tokens, unified 4px spacing scale, standardized Button/Badge primitives, Card variant consolidation, and accessibility guarantees. |
 | [Visual Identity Standards, Icon System, and AI Visual Art Direction (plan)](specs/2026-11-15-visual-identity-standards/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish a cohesive, professional and conversion-conscious visual identity across Aheed Food Centre by standardising icon specifications into 3 families, creating reusable icon design tokens, codifying strict AI art direction guardrails, and applying CRO principles. |
