@@ -269,7 +269,11 @@ async function ClientSetupSections({
                   <dt className="text-primary-muted">Store domain</dt>
                   <dd className="font-semibold">
                     {email.senderDomain || "None"}{" "}
-                    {email.senderDomainVerified ? "(verified)" : "(not verified)"}
+                    {email.senderDomainViaRelay
+                      ? "(verified, via relay)"
+                      : email.senderDomainVerified
+                        ? "(verified)"
+                        : "(not verified)"}
                   </dd>
                   <dt className="text-primary-muted">Mail goes out as</dt>
                   <dd className="font-semibold" data-effective-from>

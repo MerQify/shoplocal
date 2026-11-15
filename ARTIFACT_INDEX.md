@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-15T17:39:28.707Z` · commit `aab4c16d` · `362` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-15T18:55:16.654Z` · commit `320cf5f6` · `363` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -337,6 +337,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Staff products: brand filter/sort, low stock, store-wide threshold (plan)](specs/2026-11-14-staff-products-brand-low-stock/plan.md) | spec | 1.0.0 | 2026-11-14 | approved | internal | Brand filter and sort, a Low stock filter/quick view/label and per-kg price on /staff/products, plus VendorConfig.lowStockThreshold as the store-wide default used by every stock-record create path. |
 | [Staff stock import: upload, review and apply price lists (plan)](specs/2026-11-14-staff-stock-import/plan.md) | spec | 1.0.0 | 2026-11-14 | approved | internal | Moves the stock import (#1570, #1573) into the staff panel: per-store settings in relational tables, first-time column setup, stored runs with a review screen, chunked apply with one transaction per line, undo, and a shared apply library for the CLI. |
 | [Stock Data Import & Update Manager (plan)](specs/2026-11-14-stock-data-import/plan.md) | spec | 1.0.0 | 2026-11-14 | approved | internal | Pure library lib/stock-import (profile, normalise, match, merge, plan), one Node script scripts/stock-import.ts (plan → review xlsx → apply → report), store profiles under scripts/stock-import/profiles, and the stock-import skill. |
+| [AFC mail sent as @aheedfoodcentre.co.uk through a relay Worker (plan)](specs/2026-11-15-afc-mail-relay/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1627. AFC Workers run in the Merqify account but aheedfoodcentre.co.uk is onboarded for sending in the Aheed Food Centre account. A token-guarded relay Worker there sends store mail as the store; the app falls back to the platform sender. |
 | [Checkout keeps what the shopper typed when an order is refused (plan)](specs/2026-11-15-checkout-keeps-fields/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1613. A refused checkout cleared every typed field because React 19 resets a form after its action completes; submit through onSubmit and a transition so the fields survive. |
 | [Go-live fixes: refuse out-of-area delivery postcodes, stop slot booking on closure days (plan)](specs/2026-11-15-delivery-area-closure-fixes/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1605. Checkout refuses delivery postcodes outside the store's areas even without reference data, and counts every such refusal; holiday closures block slot booking, and changed hours trim collection slots. |
 | [Staff & Store Email Setup Guide on /help (plan)](specs/2026-11-15-help-staff-email-guide/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1619. Add clear, self-service email instructions to the storefront Help Centre (/help) for store staff and administrators to reply as the store via personal Gmail or Google Groups. |

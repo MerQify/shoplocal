@@ -100,6 +100,11 @@ const emailSchema = z
     EMAIL_VERIFIED_DOMAINS: z.string().optional(),
     EMAIL_RECIPIENT_MODE: z.string().optional(),
     EMAIL_ALLOWED_RECIPIENTS: z.string().optional(),
+    // #1627 — the AFC mail relay (workers/mail-relay): store senders whose domain is listed in
+    // EMAIL_RELAY_DOMAINS send as themselves through it. Used only when URL and token are both set.
+    EMAIL_RELAY_URL: z.string().optional(),
+    EMAIL_RELAY_TOKEN: z.string().optional(),
+    EMAIL_RELAY_DOMAINS: z.string().optional(),
     // Only read when EMAIL_PROVIDER=resend.
     RESEND_API_KEY: z.string().optional(),
   })
@@ -132,8 +137,17 @@ export function getEmailEnv(): EmailEnv {
     EMAIL_VERIFIED_DOMAINS: readEnv("EMAIL_VERIFIED_DOMAINS"),
     EMAIL_RECIPIENT_MODE: readEnv("EMAIL_RECIPIENT_MODE"),
     EMAIL_ALLOWED_RECIPIENTS: readEnv("EMAIL_ALLOWED_RECIPIENTS"),
+    EMAIL_RELAY_URL: readEnv("EMAIL_RELAY_URL"),
+    EMAIL_RELAY_TOKEN: readEnv("EMAIL_RELAY_TOKEN"),
+    EMAIL_RELAY_DOMAINS: readEnv("EMAIL_RELAY_DOMAINS"),
     RESEND_API_KEY: readEnv("RESEND_API_KEY"),
   });
+}
+
+/** #1627 — the relay's domains, or "" when the relay is not fully configured (URL and token). */
+export function activeRelayDomains(env: EmailEnv | undefined): string {
+  if (!env?.EMAIL_RELAY_URL?.trim() || !env.EMAIL_RELAY_TOKEN?.trim()) return "";
+  return env.EMAIL_RELAY_DOMAINS ?? "";
 }
 
 // #1217 — the inbound-email resolve route (app/api/inbound-email/resolve). Its own schema, like

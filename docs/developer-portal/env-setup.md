@@ -999,7 +999,10 @@ sender name and address, and the receiving addresses with the mailbox each forwa
 | `EMAIL_FROM` | `wrangler.toml` `[vars]` (both envs) | The platform sender, used whenever a store's own domain is not verified. Required in production builds. |
 | `EMAIL_RECIPIENT_MODE` | `wrangler.toml` `[env.production.vars]` only | `open` mails anyone. **Unset means allowlist**, so staging only mails `EMAIL_ALLOWED_RECIPIENTS`. `NODE_ENV` cannot tell staging from production, so this is the only switch. |
 | `EMAIL_ALLOWED_RECIPIENTS` | Worker secret (staging) | Comma list of tester inboxes. A secret, so no personal address is committed. In allowlist mode, two more recipients are also accepted (`#1546`): any forward-to mailbox saved under Client Setup → Receiving addresses (allowed while that receiving address exists), and Client Setup's test email to the signed-in platform admin. Every other recipient needs this list. |
-| `EMAIL_VERIFIED_DOMAINS` | Worker secret (per env) | Comma list of domains onboarded in Email Sending. A store whose `senderEmail` domain is listed sends as itself; otherwise it sends from `EMAIL_FROM` with Reply-To set to the store. A secret rather than `[vars]`, so adding a domain needs no commit (secrets survive `wrangler deploy`). |
+| `EMAIL_VERIFIED_DOMAINS` | Worker secret (per env) | Comma list of domains onboarded in Email Sending **in the same Cloudflare account as this Worker**. A store whose `senderEmail` domain is listed sends as itself; otherwise it sends from `EMAIL_FROM` with Reply-To set to the store. A secret rather than `[vars]`, so adding a domain needs no commit (secrets survive `wrangler deploy`). Listing a domain onboarded in a *different* account makes every send fail ("domain is not owned by the same account", `#1627`); use the relay below instead. |
+| `EMAIL_RELAY_URL` | `wrangler.toml` `[vars]` (AFC envs only) | `#1627`. Base URL of `workers/mail-relay`, the relay Worker in the account where the store's domain is onboarded. |
+| `EMAIL_RELAY_DOMAINS` | `wrangler.toml` `[vars]` (AFC envs only) | `#1627`. Comma list of store domains sent **as themselves through the relay**. `EMAIL_VERIFIED_DOMAINS` wins if a domain is in both. |
+| `EMAIL_RELAY_TOKEN` | Worker secret (AFC envs) | `#1627`. Must equal the relay Worker's `RELAY_TOKEN`. The relay is used only when this and `EMAIL_RELAY_URL` are both set; otherwise relay domains fall back to `EMAIL_FROM` with Reply-To the store. |
 | `EMAIL_PROVIDER` | Worker secret or unset | `cloudflare`, `resend` or `log`. Unset means Cloudflare when the binding exists. |
 | `RESEND_API_KEY` | Worker secret, optional | Read only when `EMAIL_PROVIDER=resend`. |
 | `INBOUND_EMAIL_TOKEN` | Worker secret on **both** the app and `aheed-inbound-email[-staging]` | Proves to the resolve route that a call came from the inbound Worker. `configure-env` pushes it to both. |
@@ -1074,6 +1077,42 @@ sender** is pressed.
 
 Set a secret by hand with `wrangler secret put <KEY> --env <env>`. For the inbound Worker, add
 `--config workers/inbound-email/wrangler.toml`.
+
+### AFC mail relay (`#1627`)
+
+**Why it exists.** A Worker's `send_email` binding can only send from a domain onboarded for Email
+Sending in the **same** Cloudflare account.
+- The AFC application Workers run in the **Merqify** account.
+- `aheedfoodcentre.co.uk` is onboarded in the **Aheed Food Centre** account, where its zone lives.
+
+So `workers/mail-relay` (`afc-mail-relay`) runs in the Aheed account. The app sends store mail to
+it, and it sends as `info@aheedfoodcentre.co.uk`.
+
+**How it is guarded.** A bearer token is required, and the relay accepts only `from` addresses in
+its `ALLOWED_FROM_DOMAINS` (`aheedfoodcentre.co.uk`).
+
+**When it fails.** If the relay fails or is unreachable, the app re-sends from `EMAIL_FROM`, with
+Reply-To set to the store. A confirmation is never lost.
+
+- **Prerequisites (owner):**
+  - **Workers Paid** on the Aheed Food Centre account. Email Sending needs it.
+  - An Aheed-scoped API token (**Workers Scripts: Edit**, **Account Settings: Read**) in
+    `secrets/afc-mail-relay.vars` as `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN`.
+- **Deploy.** It is manual, because CI holds no Aheed credentials. With those two values in the
+  environment, run `npx wrangler deploy --config workers/mail-relay/wrangler.toml`. The URL is
+  `https://afc-mail-relay.aheed-food-centre-f85.workers.dev` (the `EMAIL_RELAY_URL` var).
+- **Token.** Generate one random value. Then:
+  1. put it as `RELAY_TOKEN` on the relay (`wrangler secret put RELAY_TOKEN --config workers/mail-relay/wrangler.toml`);
+  2. put it as `EMAIL_RELAY_TOKEN` on `afc-staging` and `afc-production`, each with its own
+     account credentials from `secrets/afc-*.vars`.
+
+  To **rotate** it, repeat with a new value. Mail falls back to the platform sender during the
+  seconds the two disagree.
+- **Check.** Client Setup shows "Store domain … (verified, via relay)" and "Mail goes out as
+  `Aheed Food Centre <info@aheedfoodcentre.co.uk>`". **Send test email** then arrives from that
+  address with SPF, DKIM and DMARC passing.
+- **Do not** list `aheedfoodcentre.co.uk` in `EMAIL_VERIFIED_DOMAINS` on the AFC Workers. That
+  takes precedence, and every send then fails.
 
 ### Setting up a store, in order
 
