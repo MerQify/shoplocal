@@ -71,13 +71,13 @@ export function ViewSwitcher({ canSeeAdmin, currentTier, isPortal }: ViewSwitche
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPending}
-        className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
+        className="flex h-10 min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 rounded-xl border border-black/10 bg-surface-muted px-2 sm:px-3 text-xs font-bold text-black/80 transition-colors hover:bg-black/5 hover:text-primary"
       >
-        <IconMedallion icon3d={activeOption.icon3d} size={18} className="-my-0.5" decorative />
+        <IconMedallion icon3d={activeOption.icon3d} size={24} className="-my-0.5" decorative />
         <span className="hidden sm:inline">{activeOption.label}</span>
         <Icon
           name="chevron-down"
-          className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 text-black/60 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 

@@ -22,7 +22,7 @@ export function ShoppingListLink({ className = "" }: { className?: string }) {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
       }}
-      className={`flex min-h-tap min-w-tap shrink-0 justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-2 sm:px-3 py-2 rounded-xl text-xs font-bold transition border border-black/10 ${className}`}
+      className={`flex h-10 min-h-tap min-w-tap shrink-0 justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-2 sm:px-3 rounded-xl text-xs font-bold transition border border-black/10 ${className}`}
       title="Quick Shop — Favourites, regulars, lists and bundles"
     >
       <IconMedallion

@@ -6,6 +6,18 @@ every branch merges.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Header Navigation Controls Consistency, Sizing & Alignment (#1610, 2026-11-15)**
+  - Unified all interactive storefront header navigation controls (`LocationControl`, `DepartmentSearchBar`, `Shop`, `Quick Shop`, `Account` / `Sign In`, `ViewSwitcher`) to the standard `h-10` (40px) desktop control height and `min-h-tap` (44px) mobile touch target.
+  - Standardised icon medallion sizing to 24px (`size={24}`) across all header navigation actions, eliminating optical baseline shifts between `LocationControl` (was 18px), `Shop` (24px), `Quick Shop` (24px), `Account` (24px), and `ViewSwitcher` (was 18px).
+  - Aligned container geometry, borders, and surfaces across controls: `rounded-xl`, `border border-black/10`, and `bg-surface-muted` with `hover:bg-black/5`.
+  - Harmonised `ViewSwitcher` with the storefront navigation design system: eliminated discordant borderless `bg-primary/10` treatment in favour of standard `rounded-xl border border-black/10 bg-surface-muted` container and aligned 24px medallion.
+  - Fixed `LocationControl` stretching to flex container height by removing unbounded `h-full` cascade and enforcing explicit `h-10 min-h-tap lg:min-h-0`.
+  - Enforced `h-10 min-h-tap lg:min-h-0` on `DepartmentSearchBar` with `h-full` on select, input, and submit button.
+  - Authored automated regression suite in `tests/header-controls-consistency.test.tsx` (5 tests) guarding header control heights, border/background classes, and medallion sizing.
+
+
 ### Performance & Accessibility
 
 - **Storefront Landing Hero LCP & Accessibility Optimizations (#1597, 2026-11-15)**
