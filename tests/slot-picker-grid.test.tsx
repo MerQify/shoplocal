@@ -309,3 +309,85 @@ describe("#1305 slot grid: the vendor's zone decides the first day (R22)", () =>
     expect(firstDay.textContent?.trim()).toBe(expectedFirst);
   });
 });
+
+describe("#1605 closure days and Express", () => {
+  const CLOSED_DAY = "2026-10-29"; // Thu 29, the third column
+
+  /** Column index (0-based, excluding the time column) of a day's cells in every body row. */
+  function radiosInColumn(column: number) {
+    return [...document.querySelectorAll("tbody tr")].flatMap((tr) => {
+      const cell = tr.querySelectorAll("td")[column];
+      return cell ? [...cell.querySelectorAll('input[type="radio"]')] : [];
+    });
+  }
+
+  it("labels a closed day's column Closed with its name, and offers no slot in it (R14)", async () => {
+    getAvailableSlotsForWeek.mockImplementation(async (_v: string, _m: string, days: string[]) =>
+      days.map((day) =>
+        day === CLOSED_DAY
+          ? { day, slots: [], closedLabel: "Christmas Day" }
+          : { day, slots: [slot(`a-${day}`, "13:00", "15:00", 9)], closedLabel: null },
+      ),
+    );
+    renderPicker();
+    await screen.findByRole("table");
+
+    const head = document.querySelectorAll('thead th[scope="col"]')[3];
+    expect(head.textContent).toContain("Thu 29");
+    expect(head.textContent).toContain("Closed");
+    expect(head.textContent).toContain("Christmas Day");
+    expect(radiosInColumn(2)).toHaveLength(0);
+    expect(radiosInColumn(1)).toHaveLength(1);
+  });
+
+  it("shows a fully closed week as closed columns, not the no-slots message (R14)", async () => {
+    getAvailableSlotsForWeek.mockImplementation(async (_v: string, _m: string, days: string[]) =>
+      days.map((day) => ({ day, slots: [], closedLabel: "Stocktake" })),
+    );
+    renderPicker();
+    await screen.findByRole("table");
+    expect(screen.queryByText("No slots available for these dates.")).toBeNull();
+    expect(document.querySelectorAll('thead th[scope="col"]')[1].textContent).toContain(
+      "Stocktake",
+    );
+    expect(document.querySelectorAll('input[name="fulfilmentSlotId"]')).toHaveLength(0);
+  });
+
+  const express = {
+    method: "COLLECTION" as const,
+    expressCollectionEnabled: true,
+    expressSchedules: [{ dayOfWeek: 2, openTime: "00:00", closeTime: "23:59" }],
+  };
+  const TODAY = "2026-10-27"; // 10:00 UTC = 10:00 GMT in Europe/London
+
+  it("hides Express when today is closed (R17)", async () => {
+    renderPicker({
+      ...express,
+      hoursOverrides: [
+        { date: TODAY, label: "Closed", closed: true, openTime: null, closeTime: null },
+      ],
+    });
+    await screen.findByRole("table");
+    expect(screen.queryByRole("switch")).toBeNull();
+  });
+
+  it("hides Express outside today's changed hours, and shows it inside them (R17)", async () => {
+    renderPicker({
+      ...express,
+      hoursOverrides: [
+        { date: TODAY, label: "Half day", closed: false, openTime: "06:00", closeTime: "09:00" },
+      ],
+    });
+    await screen.findByRole("table");
+    expect(screen.queryByRole("switch")).toBeNull();
+    cleanup();
+
+    renderPicker({
+      ...express,
+      hoursOverrides: [
+        { date: TODAY, label: "Half day", closed: false, openTime: "09:00", closeTime: "13:00" },
+      ],
+    });
+    expect(await screen.findByRole("switch")).toBeTruthy();
+  });
+});

@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-15T11:59:20.698Z` · commit `f6801dcb` · `356` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-15T12:16:28.186Z` · commit `d68b61ad` · `357` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -337,6 +337,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Staff products: brand filter/sort, low stock, store-wide threshold (plan)](specs/2026-11-14-staff-products-brand-low-stock/plan.md) | spec | 1.0.0 | 2026-11-14 | approved | internal | Brand filter and sort, a Low stock filter/quick view/label and per-kg price on /staff/products, plus VendorConfig.lowStockThreshold as the store-wide default used by every stock-record create path. |
 | [Staff stock import: upload, review and apply price lists (plan)](specs/2026-11-14-staff-stock-import/plan.md) | spec | 1.0.0 | 2026-11-14 | approved | internal | Moves the stock import (#1570, #1573) into the staff panel: per-store settings in relational tables, first-time column setup, stored runs with a review screen, chunked apply with one transaction per line, undo, and a shared apply library for the CLI. |
 | [Stock Data Import & Update Manager (plan)](specs/2026-11-14-stock-data-import/plan.md) | spec | 1.0.0 | 2026-11-14 | approved | internal | Pure library lib/stock-import (profile, normalise, match, merge, plan), one Node script scripts/stock-import.ts (plan → review xlsx → apply → report), store profiles under scripts/stock-import/profiles, and the stock-import skill. |
+| [Go-live fixes: refuse out-of-area delivery postcodes, stop slot booking on closure days (plan)](specs/2026-11-15-delivery-area-closure-fixes/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1605. Checkout refuses delivery postcodes outside the store's areas even without reference data, and counts every such refusal; holiday closures block slot booking, and changed hours trim collection slots. |
 | [Storefront Landing Hero LCP and Accessibility Optimization (plan)](specs/2026-11-15-perf-lcp-and-a11y-landing/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Optimize storefront landing hero Largest Contentful Paint (LCP) and resolve accessibility deductions identified in Google PageSpeed Insights (zb8uu21j1p). |
 | [Website-Wide UI Component Standards and Visual Consistency Optimisation (plan)](specs/2026-11-15-ui-component-consistency/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish comprehensive design and implementation standards for UI components across Aheed Food Centre, including component sizing tokens, unified 4px spacing scale, standardized Button/Badge primitives, Card variant consolidation, and accessibility guarantees. |
 | [Visual Identity Standards, Icon System, and AI Visual Art Direction (plan)](specs/2026-11-15-visual-identity-standards/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish a cohesive, professional and conversion-conscious visual identity across Aheed Food Centre by standardising icon specifications into 3 families, creating reusable icon design tokens, codifying strict AI art direction guardrails, and applying CRO principles. |

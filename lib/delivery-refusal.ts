@@ -5,9 +5,11 @@ import { addCalendarDays, calendarDayInZone, calendarDayToUtcMidnight } from "@/
  * What, if anything, a delivery-eligibility verdict should count as an out-of-area refusal (#889) —
  * pure, so the rule is testable without a database or a request.
  *
- * Only `OUTSIDE_DELIVERY_AREA` counts: a postcode the reference database confirmed is real, which
- * this vendor does not serve. `INVALID_POSTCODE` (a typo) and `UNVERIFIED` (a reference coverage or
- * connectivity gap) are never evidence of demand, and `DELIVERABLE` is not a refusal.
+ * Only `OUTSIDE_DELIVERY_AREA` counts: a well-formed postcode this vendor does not serve, whether
+ * or not the reference database covers its area (#1605 — before it, a postcode outside the
+ * reference coverage came back `UNVERIFIED` and went uncounted, which hid exactly the districts a
+ * store most wants to see). `INVALID_POSTCODE` (a typo) is never evidence of demand, `UNVERIFIED` is
+ * now only an in-area postcode the reference could not confirm, and `DELIVERABLE` is not a refusal.
  *
  * `district` is the outward code of the canonical spaced postcode (`MK17 8NL` → `MK17`) — never the
  * full postcode, which is what keeps the counts free of personal data. `day` is the vendor-local

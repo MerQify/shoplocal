@@ -253,6 +253,15 @@ which is how you change it. Each upcoming date has a **Delete** button, past dat
 automatically, and you can hold up to 50 upcoming dates. Each footer form has its own Save button and
 leaves every other form alone.
 
+**Holiday & closure dates also control checkout slots.** On a date marked **Closed all day**,
+customers cannot book any delivery or Click & Collect slot, and Express collection is not offered;
+checkout shows that day as **Closed** with the name you gave it, so customers pick the next open day.
+On a date with **different hours**, Click & Collect slots that start before the new opening time or
+end after the new closing time are not offered, and Express collection runs only inside those hours.
+Delivery slots on that date stay as scheduled, because deliveries can go out after the shop closes.
+Orders already booked before you add a closure are not moved or cancelled, so review any orders
+already booked for that date and contact those customers yourself.
+
 **Common mistakes and limitations:** Colour choices affect the readability of text sitting on them.
 After changing a brand colour, look at a real page rather than only the colour swatch. Because your
 branding is applied on top of the site's defaults, a very light or very dark choice can reduce
@@ -463,9 +472,11 @@ removing `MK` last. If a customer's checkout address is in an area with differen
 postcode they entered earlier, checkout stops and asks them to review the updated total before
 placing the order.
 
-**Districts you turned away:** Counts, per district, of real postcodes outside your list that
-customers entered — in the header postcode box or at checkout — over the last 30 days. Mistyped or
-unrecognised postcodes are not counted. It holds **no personal data**: only the district (such as
+**Districts you turned away:** Counts, per district, of postcodes outside your list that customers
+entered — in the header postcode box or at checkout — over the last 30 days. Every correctly
+written postcode outside your list counts, including ones in parts of the country the platform's
+postcode data does not cover yet (such as `SW1A` for central London); checkout refuses delivery to
+all of them. Mistyped postcodes are not counted. It holds **no personal data**: only the district (such as
 `MK17`) and the day, never a full postcode, a name, an account or an IP address, so it does not
 appear in customer data exports or erasure requests.
 
@@ -490,7 +501,9 @@ your booking window.
 
 **Important fields and filters:** **Capacity is the number of orders you can fulfil in that window**,
 and once it is full the slot stops being offered — it is the only thing preventing a day taking more
-orders than you can physically deliver. Slots repeat every week; there is no one-off or holiday slot.
+orders than you can physically deliver. Slots repeat every week; there is no one-off slot. To close
+a day, or shorten collection hours on it, add it under **Holiday & closure dates** on the Storefront
+page: a closed day takes no bookings, and shortened hours hide the collection slots outside them.
 Times are 24-hour, so afternoon slots start at 13:00 rather than 1:00. **The booking window** is how
 many days ahead a customer may book. **The slot hold** is how long an unpaid order keeps its space
 before it is released for someone else. **The booking cut-off** is how close to a slot's start

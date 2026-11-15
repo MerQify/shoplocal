@@ -59,10 +59,16 @@ describe("evaluateDeliveryEligibility", () => {
 
   describe("UNVERIFIED", () => {
     it("is returned when the postcode's area is not materialised", () => {
-      // A real Edinburgh postcode in an environment that only imported MK and RG. Not having
-      // imported an area is not evidence that a postcode in it does not exist.
+      // A real Edinburgh postcode in an environment that only imported MK and RG, for a vendor that
+      // delivers there. Not having imported an area is not evidence that a postcode in it does not
+      // exist. (#1605 — the vendor must serve it; an unserved one is OUTSIDE_DELIVERY_AREA below.)
       const result = evaluateDeliveryEligibility(
-        input({ postcode: "EH1 1YZ", referenceStatus: "UNVERIFIED", areaCovered: false }),
+        input({
+          postcode: "EH1 1YZ",
+          referenceStatus: "UNVERIFIED",
+          areaCovered: false,
+          deliveryPrefixes: ["EH"],
+        }),
       );
 
       expect(result.status).toBe("UNVERIFIED");
@@ -90,6 +96,40 @@ describe("evaluateDeliveryEligibility", () => {
 
       expect(covered.deliverable).toBe(true);
       expect(notCovered.deliverable).toBe(false);
+    });
+  });
+
+  describe("#1605 — the vendor's areas refuse whatever the reference coverage", () => {
+    it("is OUTSIDE_DELIVERY_AREA, unverified, for an uncovered postcode the vendor does not serve", () => {
+      // SW1A 1AA reached Stripe on AFC staging: the reference data holds only MK and RG.
+      const result = evaluateDeliveryEligibility({
+        postcode: "SW1A 1AA",
+        deliveryPrefixes: ["MK"],
+        referenceStatus: "UNVERIFIED",
+        areaCovered: false,
+      });
+
+      expect(result.status).toBe("OUTSIDE_DELIVERY_AREA");
+      expect(result.deliverable).toBe(false);
+      expect(result.verified).toBe(false);
+    });
+
+    it("stays UNVERIFIED and deliverable for an uncovered postcode the vendor does serve", () => {
+      const result = evaluateDeliveryEligibility(
+        input({ referenceStatus: "UNVERIFIED", areaCovered: false, deliveryPrefixes: ["MK"] }),
+      );
+
+      expect(result.status).toBe("UNVERIFIED");
+      expect(result.deliverable).toBe(true);
+    });
+
+    it("is INVALID_POSTCODE for an INVALID reference verdict whatever the prefixes", () => {
+      for (const deliveryPrefixes of [["MK"], ["SW"], []]) {
+        expect(
+          evaluateDeliveryEligibility(input({ referenceStatus: "INVALID", deliveryPrefixes }))
+            .status,
+        ).toBe("INVALID_POSTCODE");
+      }
     });
   });
 
@@ -146,6 +186,18 @@ describe("blocksCheckout", () => {
 
     expect(blocksCheckout(result)).toBe(false);
     expect(result.deliverable).toBe(true);
+  });
+
+  it("#1605 — blocks an uncovered postcode the vendor does not serve, with the refusal message", () => {
+    const result = evaluateDeliveryEligibility({
+      postcode: "SW1A 1AA",
+      deliveryPrefixes: ["MK"],
+      referenceStatus: "UNVERIFIED",
+      areaCovered: false,
+    });
+
+    expect(blocksCheckout(result)).toBe(true);
+    expect(eligibilityMessage(result)).toBe("Sorry — we don't deliver to SW1A 1AA yet.");
   });
 });
 

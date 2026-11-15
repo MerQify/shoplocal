@@ -52,6 +52,7 @@ import { listActiveTiersForProducts } from "@/lib/repositories/product-tiers";
 import { NOTE_ACCEPTANCE_SELECT, productAcceptsNote } from "@/lib/custom-note";
 import { slotLabel } from "@/lib/order-notifications/slot";
 import { isSlotBookable } from "@/lib/slot-cutoff";
+import { CLOSED_DAY_MESSAGE, slotFitsOverride } from "@/lib/slot-closure";
 
 /**
  * Order read/write path (P3b, #96) — the ONLY DB access for orders. Pages,
@@ -77,7 +78,8 @@ export class CheckoutError extends Error {
       | "PAYMENT_PROVIDER_FAILED"
       | "DISCOUNT_CODE"
       | "SLOT_FULL"
-      | "SLOT_CLOSED",
+      | "SLOT_CLOSED"
+      | "STORE_CLOSED",
     message: string,
     /**
      * #988 — why a `DISCOUNT_CODE` refusal happened, so the caller can tell an unknown code (which
@@ -187,11 +189,29 @@ export async function placeOrder(
 
   const created = await prisma.$transaction(
     async (tx) => {
+      // #1605 — a dated closure / changed-hours override (#1060), read for the order's day. The slot
+      // list applies the same rules (`lib/slot-closure.ts`), so a grid loaded before staff saved the
+      // closure, or a direct server-action call, cannot book the day either.
+      const override = input.fulfilmentDate
+        ? await tx.vendorHoursOverride.findUnique({
+            where: { vendorId_date: { vendorId, date: input.fulfilmentDate } },
+          })
+        : null;
+      if (override?.closed) {
+        throw new CheckoutError("STORE_CLOSED", CLOSED_DAY_MESSAGE);
+      }
+
       if (input.fulfilmentSlotId && input.fulfilmentDate) {
         const slot = await tx.vendorFulfilmentSlot.findUnique({
           where: { id: input.fulfilmentSlotId },
         });
         const config = await tx.vendorConfig.findUnique({ where: { vendorId } });
+        if (slot && !slotFitsOverride(input.fulfilmentMethod, slot, override)) {
+          throw new CheckoutError(
+            "SLOT_CLOSED",
+            "That time slot can no longer be booked. Please choose another.",
+          );
+        }
         if (slot && config) {
           // #1441 — the same rule the slot list applies, checked again here: a grid loaded before
           // the cut-off passed, or a direct server-action call, must not book a closed slot.

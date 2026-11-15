@@ -2,11 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * #1305 — `getAvailableSlotsForWeek` is a public server action, so its input is bounded, and it
- * must stay a thin fan-out over the existing per-day lookup (the repository is not changed).
+ * must stay a thin fan-out over the existing per-day lookup. #1605 — each day now also carries the
+ * closure label, from the per-day lookup that also returns its slots.
  */
 
 const getAvailableSlotsForVendor = vi.fn();
-vi.mock("@/lib/fulfilment-slots-service", () => ({ getAvailableSlotsForVendor }));
+const getSlotDayForVendor = vi.fn();
+vi.mock("@/lib/fulfilment-slots-service", () => ({
+  getAvailableSlotsForVendor,
+  getSlotDayForVendor,
+}));
 
 const actions = await import("@/features/checkout/slots");
 const { getAvailableSlotsForWeek, getAvailableSlotsForDate } = actions;
@@ -18,6 +23,10 @@ beforeEach(() => {
   getAvailableSlotsForVendor.mockImplementation(async (_v: string, _m: string, d: string) => [
     { id: `slot-${d}` },
   ]);
+  getSlotDayForVendor.mockImplementation(async (_v: string, _m: string, d: string) => ({
+    slots: [{ id: `slot-${d}` }],
+    closedLabel: null,
+  }));
 });
 
 describe("getAvailableSlotsForWeek (#1305 R13)", () => {
@@ -26,15 +35,15 @@ describe("getAvailableSlotsForWeek (#1305 R13)", () => {
     const result = await getAvailableSlotsForWeek("vendor-1", "DELIVERY", days);
     expect(result.map((r) => r.day)).toEqual(days);
     expect(result[1].slots).toEqual([{ id: "slot-2026-10-20" }]);
-    expect(getAvailableSlotsForVendor).toHaveBeenCalledTimes(3);
-    expect(getAvailableSlotsForVendor).toHaveBeenCalledWith("vendor-1", "DELIVERY", day(21));
+    expect(getSlotDayForVendor).toHaveBeenCalledTimes(3);
+    expect(getSlotDayForVendor).toHaveBeenCalledWith("vendor-1", "DELIVERY", day(21));
   });
 
   it("ignores days after the seventh", async () => {
     const days = Array.from({ length: 9 }, (_, i) => day(10 + i));
     const result = await getAvailableSlotsForWeek("vendor-1", "COLLECTION", days);
     expect(result).toHaveLength(7);
-    expect(getAvailableSlotsForVendor).toHaveBeenCalledTimes(7);
+    expect(getSlotDayForVendor).toHaveBeenCalledTimes(7);
   });
 
   it("drops anything that is not a real calendar day without querying for it", async () => {
@@ -45,7 +54,22 @@ describe("getAvailableSlotsForWeek (#1305 R13)", () => {
       day(21),
     ]);
     expect(result.map((r) => r.day)).toEqual([day(20), day(21)]);
-    expect(getAvailableSlotsForVendor).toHaveBeenCalledTimes(2);
+    expect(getSlotDayForVendor).toHaveBeenCalledTimes(2);
+  });
+
+  it("#1605 R13 — carries the closure label on a closed day and none on the others", async () => {
+    getSlotDayForVendor.mockImplementation(async (_v: string, _m: string, d: string) =>
+      d === day(25)
+        ? { slots: [], closedLabel: "Christmas Day" }
+        : { slots: [{ id: `slot-${d}` }], closedLabel: null },
+    );
+    const result = await getAvailableSlotsForWeek("vendor-1", "COLLECTION", [
+      day(24),
+      day(25),
+      day(26),
+    ]);
+    expect(result.map((r) => r.closedLabel)).toEqual([null, "Christmas Day", null]);
+    expect(result[1].slots).toEqual([]);
   });
 
   it("keeps the single-day action", async () => {

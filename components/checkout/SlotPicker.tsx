@@ -17,6 +17,8 @@ import {
   calendarDayToUtcMidnight,
   zoneWallClock,
 } from "@/lib/local-datetime";
+import { expressOverrideVerdict } from "@/lib/slot-closure";
+import type { HoursOverrideRow } from "@/lib/footer-hours";
 
 /**
  * The checkout slot picker as a week grid (#1305): days across, time ranges down, one radio per
@@ -29,6 +31,7 @@ export function SlotPicker({
   required,
   expressCollectionEnabled,
   expressSchedules,
+  hoursOverrides,
   timezone,
 }: {
   vendorId: string;
@@ -37,6 +40,8 @@ export function SlotPicker({
   required?: boolean;
   expressCollectionEnabled?: boolean;
   expressSchedules?: { dayOfWeek: number; openTime: string; closeTime: string }[];
+  /** #1605 — dated closures / changed hours; only TODAY's matters here, for Express. */
+  hoursOverrides?: HoursOverrideRow[];
   /**
    * #363/#811 — the VENDOR's IANA zone, not the shopper's. Everything below is a calendar day in
    * this zone; the browser's own zone is never consulted.
@@ -76,17 +81,23 @@ export function SlotPicker({
      * `now.getHours()`, which are the SHOPPER's. A shopper in another zone was offered, or
      * refused, Express against a window that had nothing to do with whether the shop was open.
      */
-    const { dayOfWeek: day, hhmm: time } = zoneWallClock(new Date(), timezone);
-    const available = expressSchedules.some(
-      (s) => s.dayOfWeek === day && time >= s.openTime && time < s.closeTime,
-    );
+    const now = new Date();
+    const { dayOfWeek: day, hhmm: time } = zoneWallClock(now, timezone);
+    // #1605 — today's closure or changed hours also gate Express; `placeOrderAction` re-checks.
+    const today = calendarDayInZone(now, timezone);
+    const override = hoursOverrides?.find((o) => o.date === today) ?? null;
+    const available =
+      expressOverrideVerdict(override, time) === "OK" &&
+      expressSchedules.some((s) => s.dayOfWeek === day && time >= s.openTime && time < s.closeTime);
     setShowExpress(available);
     if (!available) setIsExpress(false);
-  }, [method, expressCollectionEnabled, expressSchedules, timezone]);
+  }, [method, expressCollectionEnabled, expressSchedules, hoursOverrides, timezone]);
 
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(0);
   const [slotsByDay, setSlotsByDay] = useState<Record<string, GridSlot[]>>({});
+  // #1605 — the closure label for each shown day the store is closed all day.
+  const [closedByDay, setClosedByDay] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<{ day: string; slotId: string } | null>(null);
 
   // Selectable days, counted forward from today IN THE VENDOR'S ZONE. String arithmetic through
@@ -107,6 +118,11 @@ export function SlotPicker({
       const week = await getAvailableSlotsForWeek(vendorId, method, shownKey.split(","));
       if (cancelled) return;
       setSlotsByDay(Object.fromEntries(week.map(({ day, slots }) => [day, slots])));
+      setClosedByDay(
+        Object.fromEntries(
+          week.flatMap(({ day, closedLabel }) => (closedLabel ? [[day, closedLabel]] : [])),
+        ),
+      );
     });
     return () => {
       cancelled = true;
@@ -114,6 +130,8 @@ export function SlotPicker({
   }, [vendorId, method, shownKey]);
 
   const bands = buildSlotGrid(shownDays, slotsByDay);
+  // #1605 — a closed day is shown as closed, so a week of closures still renders its columns.
+  const anyClosed = shownDays.some((day) => closedByDay[day] !== undefined);
 
   // Paging clears the selection: the form's `required` check is satisfied by a rendered radio, and
   // a chosen slot on a page that is no longer on screen would otherwise leave none checked.
@@ -214,7 +232,7 @@ export function SlotPicker({
 
       {isPending ? (
         <div className="py-4 text-center text-sm text-black/60">Loading slots…</div>
-      ) : bands.length === 0 ? (
+      ) : bands.length === 0 && !anyClosed ? (
         <div className="py-4 text-center text-sm text-black/60">
           No slots available for these dates.
         </div>
@@ -238,9 +256,16 @@ export function SlotPicker({
                 </th>
                 {shownDays.map((day) => {
                   const { weekday, dayNumber } = dayParts(day);
+                  const closedLabel = closedByDay[day];
                   return (
                     <th key={day} scope="col" className="py-2 font-bold text-primary">
                       {`${weekday} ${dayNumber}`}
+                      {closedLabel !== undefined && (
+                        <span className="mt-1 block text-xs font-semibold text-black/60">
+                          Closed
+                          <span className="block font-normal">{closedLabel}</span>
+                        </span>
+                      )}
                     </th>
                   );
                 })}
