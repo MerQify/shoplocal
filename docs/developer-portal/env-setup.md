@@ -68,7 +68,7 @@ vendor.
 
 **Hosting moves from the Nocaped Cloudflare account to the Merqify account, and the databases move
 to a new Neon account.** The Nocaped account dropped to the Workers Free plan, which refuses this
-app's `cpu_ms = 300` limit (`code 100328`), so nothing can deploy there.
+app's raised `cpu_ms` limit (`code 100328`; 300 then, 30000 since `#1621`), so nothing can deploy there.
 
 Spec: `specs/2026-10-29-merqify-platform-move/`. The old Workers, old Neon projects and old
 `secrets/staging.vars` / `secrets/production.vars` are **not touched**; they are the rollback.
