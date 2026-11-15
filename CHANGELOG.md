@@ -19,6 +19,15 @@ every branch merges.
 
 ### Added
 
+- **Website-Wide UI Component Standards & Visual Consistency Optimisation (#1608, 2026-11-15)**
+  - Codified global component sizing and spacing design tokens in `design-system/tokens/components.json`: standard control heights (`sm` 32px, `md` 40px default, `tap` 44px mobile touch target, `lg` 48px), 4px geometric spacing scale (4px–64px), card padding scale (`compact` 14px, `standard` 16px, `panel` 20px, `spacious` 24px), badge dimensions (`sm` 18px, `md` 22px), and non-aliased radius scale.
+  - Authored canonical zero-JS `Badge` primitive in `components/ui/Badge.tsx`: supports 6 semantic variants (`action`, `primary`, `accent`, `danger`, `muted`, `outline`), dual-tone architecture (`fill` and `tint`), and compact (`sm`) / standard (`md`) sizing steps with WCAG AA contrast compliance.
+  - Enhanced `Button` primitive in `components/ui/Button.tsx`: preserved 100% backward compatibility for existing `action` and `primary` variants while adding `secondary`, `outline`, `danger`, and `ghost` variants, standard sizing scale (`sm`, `md`, `lg`, `tap`), and keyboard `focus-visible` indicators.
+  - Consolidated card primitives: refactored `components/bundle/BundleCard.tsx` to compose `Card variant="product"` directly, eliminating duplicated CSS strings and standardising repeated card grid layouts.
+  - Adopted `Badge` component in `components/product/ProductCard.tsx` for dietary and certification flags (Halal, Fresh, Vegetarian, Gluten Free, HMC Certified, Offer).
+  - Updated `specs/design-system.md` with UI Component Standards section, control heights, 4px spacing grid, and CRO principles.
+  - Authored automated test suite `tests/ui-component-standards.test.tsx` (15 tests) verifying token schemas, badge rendering, button variants, focus rings, card integration, and 4px grid invariants.
+
 - **Visual Identity Standards, Icon System & AI Visual Art Direction (#1602, 2026-11-15)**
   - Organised visual icons into three distinct families: **Functional** (navigation, search, basket, account, checkout on Lucide 24x24 SVG), **Category** (food departments, produce, meat, dairy in circular medallions), and **Promotional** (offers, bundles, savings, delivery, rewards in tinted medallions and badges).
   - Standardised icon design specifications in `components/icons/types.ts`: 24 × 24px base grid (`ICON_BASE_GRID`), 1.5px baseline stroke weight (`ICON_STROKE_WEIGHT`), 2px internal safe area padding (`ICON_SAFE_AREA_PX`), 2px corner radius, `round` line caps and joins, and strict scaling steps (`[16, 20, 24, 32]`).
