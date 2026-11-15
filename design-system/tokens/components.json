@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aheed Food Centre UI Component Standards & Sizing Tokens",
+  "description": "Canonical design tokens for component heights, spacing system, card paddings, badge dimensions, and shape scales.",
+  "version": "1.0.0",
+  "controlHeights": {
+    "sm": {
+      "valuePx": 32,
+      "rem": "2rem",
+      "tailwindClass": "h-8",
+      "purpose": "Compact controls, search inputs in tight headers, inline actions"
+    },
+    "md": {
+      "valuePx": 40,
+      "rem": "2.5rem",
+      "tailwindClass": "h-10",
+      "purpose": "Standard interactive controls, form inputs, primary CTA buttons"
+    },
+    "tap": {
+      "valuePx": 44,
+      "rem": "2.75rem",
+      "tailwindClass": "h-tap",
+      "purpose": "Mobile accessible touch target (WCAG 2.5.5 AAA / iOS standard)"
+    },
+    "lg": {
+      "valuePx": 48,
+      "rem": "3rem",
+      "tailwindClass": "h-12",
+      "purpose": "Prominent hero actions, checkout submit buttons, drawer footers"
+    }
+  },
+  "spacingScale": {
+    "baseGridPx": 4,
+    "steps": {
+      "1": { "px": 4, "rem": "0.25rem", "tailwindClass": "gap-1 / p-1" },
+      "2": { "px": 8, "rem": "0.5rem", "tailwindClass": "gap-2 / p-2" },
+      "3": { "px": 12, "rem": "0.75rem", "tailwindClass": "gap-3 / p-3" },
+      "4": { "px": 16, "rem": "1rem", "tailwindClass": "gap-4 / p-4" },
+      "5": { "px": 20, "rem": "1.25rem", "tailwindClass": "gap-5 / p-5" },
+      "6": { "px": 24, "rem": "1.5rem", "tailwindClass": "gap-6 / p-6" },
+      "8": { "px": 32, "rem": "2rem", "tailwindClass": "gap-8 / p-8" },
+      "10": { "px": 40, "rem": "2.5rem", "tailwindClass": "gap-10 / p-10" },
+      "12": { "px": 48, "rem": "3rem", "tailwindClass": "gap-12 / p-12" },
+      "16": { "px": 64, "rem": "4rem", "tailwindClass": "gap-16 / p-16" }
+    }
+  },
+  "cardPadding": {
+    "compact": {
+      "valuePx": 14,
+      "rem": "0.875rem",
+      "tailwindClass": "p-3.5",
+      "purpose": "Product and bundle discovery cards in multi-column grids"
+    },
+    "standard": {
+      "valuePx": 16,
+      "rem": "1rem",
+      "tailwindClass": "p-4",
+      "purpose": "Content cards, order history items, feedback items"
+    },
+    "panel": {
+      "valuePx": 20,
+      "rem": "1.25rem",
+      "tailwindClass": "p-5",
+      "purpose": "Admin hub panels, settings cards, customer account sections"
+    },
+    "spacious": {
+      "valuePx": 24,
+      "rem": "1.5rem",
+      "tailwindClass": "p-6",
+      "purpose": "Modal dialogs, cart drawer headers, promotional feature cards"
+    }
+  },
+  "badgeDimensions": {
+    "sm": {
+      "heightPx": 18,
+      "padding": "px-2 py-0.5",
+      "typography": "text-[10px] font-semibold",
+      "purpose": "Overlay tags on product cards and bundle images"
+    },
+    "md": {
+      "heightPx": 22,
+      "padding": "px-2.5 py-0.5",
+      "typography": "text-xs font-semibold",
+      "purpose": "Standard status badges, order status indicators, filter pills"
+    }
+  },
+  "shapeRadii": {
+    "controls": {
+      "token": "--radius-xl",
+      "value": "0.75rem (12px)",
+      "tailwindClass": "rounded-xl",
+      "appliesTo": "Buttons, text inputs, dropdowns, steppers, search bar"
+    },
+    "surfaces": {
+      "token": "--radius-2xl",
+      "value": "1rem (16px)",
+      "tailwindClass": "rounded-2xl",
+      "appliesTo": "Product cards, bundle cards, panels, modals, drawers"
+    },
+    "pills": {
+      "token": "--radius-full",
+      "value": "9999px",
+      "tailwindClass": "rounded-full",
+      "appliesTo": "Badges, category medallions, circular icon buttons, status dots"
+    }
+  },
+  "typographyHierarchy": {
+    "h1": {
+      "size": "text-3xl md:text-4xl",
+      "weight": "font-bold",
+      "lineHeight": "leading-tight",
+      "purpose": "Page titles and hero headlines"
+    },
+    "h2": {
+      "size": "text-2xl",
+      "weight": "font-semibold",
+      "lineHeight": "leading-snug",
+      "purpose": "Major section titles (Departments, Featured Offers)"
+    },
+    "h3": {
+      "size": "text-lg",
+      "weight": "font-semibold",
+      "lineHeight": "leading-snug",
+      "purpose": "Card titles, subsection headings"
+    },
+    "body": {
+      "size": "text-sm",
+      "weight": "font-normal",
+      "lineHeight": "leading-normal",
+      "purpose": "Product descriptions, body paragraphs, form labels"
+    },
+    "caption": {
+      "size": "text-xs",
+      "weight": "font-normal",
+      "lineHeight": "leading-normal",
+      "purpose": "Supporting metadata, unit prices, timestamps"
+    },
+    "badge": {
+      "size": "text-[10px] / text-xs",
+      "weight": "font-semibold",
+      "lineHeight": "leading-none",
+      "purpose": "Dietary tags, savings callouts, stock alerts"
+    }
+  }
+}

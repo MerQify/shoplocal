@@ -352,7 +352,60 @@ family registers `themeKeys: ["--radius"]`, so leaving it undeclared would make 
 in use still depending on a Tailwind default.
 
 Spacing scale and breakpoints are **not brand-derived** — Tailwind v4's defaults are used as-is.
-The one named spacing step is `tap` (below).
+The named spacing step is `tap` (below).
+
+## UI Component Standards & Sizing System (#1608)
+
+To establish website-wide visual quality, consistent proportions, and conversion rate optimisation (CRO), all UI components follow canonical sizing, spacing, and styling standards codified in `design-system/tokens/components.json`:
+
+### 1. Control Heights & Interactive Dimensions
+
+Interactive controls (buttons, inputs, dropdowns, steppers) are organised into four standardised height steps:
+
+| Step | Height (px) | Tailwind Height | Typical Application |
+|---|---|---|---|
+| `sm` | **32px** (2rem) | `h-8` | Compact inline table actions, filter toggles, small search inputs |
+| `md` | **40px** (2.5rem) | `h-10` | **Default control baseline**: standard form inputs, modal actions, primary buttons |
+| `tap` | **44px** (2.75rem) | `h-tap` / `size-tap` | Mobile-accessible touch targets (WCAG 2.5.5 AAA / iOS guidelines) |
+| `lg` | **48px** (3rem) | `h-12` | High-salience hero CTA buttons, checkout order submission, drawer action footers |
+
+Controls belonging to the same row or form group must share identical height steps to eliminate jagged baselines and visual clutter.
+
+### 2. 4px Layout & Spacing System
+
+All internal component padding, gaps, and section margins adhere strictly to a **4px geometric base grid**:
+
+- **Micro Spacing (`gap-1` / 4px, `gap-2` / 8px)**: Text-to-icon spacing, badge internal padding, tight metadata chips.
+- **Component Spacing (`gap-3` / 12px, `gap-4` / 16px)**: Form field stacks, card internal gaps, button row spacing.
+- **Card Padding**:
+  - `compact` (**14px** / `p-3.5`): Discovery cards in multi-column grids (`ProductCard`, `BundleCard`).
+  - `standard` (**16px** / `p-4`): Content cards, order history items, service cards.
+  - `panel` (**20px** / `p-5`): Admin hub panels, settings forms, customer account sections (`Card variant="default"`).
+  - `spacious` (**24px** / `p-6`): Modal dialogs, cart drawer headers, promotional feature cards.
+- **Macro Layout Spacing (`py-6` / 24px tight, `py-8` / 32px standard, `py-12` / 48px section breaks)**: Vertical section rhythm between storefront rails.
+
+### 3. Component Sizing & Proportions
+
+- **Grid Alignment**: Repeated cards in discovery grids (`ProductCard`, `BundleCard`) enforce `flex flex-col justify-between h-full` so that product titles, unit labels, price lines, and Add to Basket controls align optically across rows regardless of title length.
+- **Flexible Layouts over Fixed Heights**: Cards and containers allow content to breathe without artificial overflow or awkward white gaps.
+- **Card Images**: Strictly aspect-4/3 in discovery grids with `overflow-hidden` container and `object-cover` imagery.
+
+### 4. Canonical UI Primitives
+
+1. **`Button` (`components/ui/Button.tsx`)**:
+   - Zero-JS server component with standard variants: `action` (green CTA), `primary` (forest green), `secondary` (neutral surface), `outline` (action border), `danger` (destructive red), `ghost` (clean text).
+   - Standard size scale: `sm` (32px), `md` (40px, default), `lg` (48px), `tap` (44px).
+   - Enforced visible focus indicator: `focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2`.
+2. **`Badge` (`components/ui/Badge.tsx`)**:
+   - Pill-shaped (`rounded-full`) metadata tags for dietary flags (Halal, Fresh, Vegetarian), discount badges, and stock notices.
+   - Dual-tone architecture: `fill` (solid vibrant fill with white text) and `tint` (semantic light tint with high-contrast text).
+   - Standard sizes: `sm` (18px, `text-[10px] px-2 py-0.5` for card overlays) and `md` (22px, `text-xs px-2.5 py-0.5` for status and filters).
+3. **`Card` (`components/ui/Card.tsx`)**:
+   - `variant="default"`: `rounded-2xl border border-black/10 bg-white p-5` for admin and account panels.
+   - `variant="product"`: `rounded-2xl border border-black/10 bg-white skew-card group relative flex h-full cursor-pointer flex-col overflow-hidden hover:border-action/50` shared across `ProductCard` and `BundleCard`.
+4. **`FormField` (`components/ui/FormField.tsx`)**:
+   - Label, input/select/textarea, and error alert mapping.
+   - Inputs styled with `inputClass` (`h-10` equivalent, `rounded-xl`, `border-black/15 bg-surface-muted px-3 py-2 text-sm`).
 
 ## Touch targets (#961, 2026-10-02; #964 and #979, 2026-10-04; #981, 2026-10-06)
 
