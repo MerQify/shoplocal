@@ -12,6 +12,8 @@ const {
   createStripePaymentService,
   createStubPaymentService,
   getPaymentService,
+  isPastCheckoutSessionTtl,
+  CHECKOUT_SESSION_TTL_MS,
   PaymentProviderError,
   STRIPE_PAYMENT_PROVIDER,
   STUB_PAYMENT_PROVIDER,
@@ -348,7 +350,22 @@ describe("Stripe adapter — retrieveSession (#454)", () => {
       status: "complete",
       amountTotal: 2346,
       currency: "gbp",
+      url: null,
     });
+  });
+
+  it("#1589 R1: maps Stripe's url, and nulls an absent one", async () => {
+    mockRetrieveOk({
+      id: "cs_test_1",
+      status: "open",
+      url: "https://checkout.stripe.com/c/pay/cs_test_1",
+    });
+    const open = await createStripePaymentService("sk_test_x").retrieveSession("cs_test_1");
+    expect(open.url).toBe("https://checkout.stripe.com/c/pay/cs_test_1");
+
+    mockRetrieveOk({ id: "cs_test_1", status: "expired" });
+    const expired = await createStripePaymentService("sk_test_x").retrieveSession("cs_test_1");
+    expect(expired.url).toBeNull();
   });
 
   it("distinguishes a zero amount_total from an absent one", async () => {
@@ -397,5 +414,27 @@ describe("stub adapter — retrieveSession (#454)", () => {
   it("never reports a session as paid", async () => {
     const session = await createStubPaymentService().retrieveSession("anything");
     expect(session.paymentStatus).not.toBe("paid");
+  });
+
+  it("#1589 R1: has no payment page to reopen", async () => {
+    const session = await createStubPaymentService().retrieveSession("anything");
+    expect(session.url).toBeNull();
+  });
+});
+
+describe("isPastCheckoutSessionTtl (#1589 R2)", () => {
+  const createdAt = new Date("2026-11-14T12:00:00.000Z");
+  const at = (offsetMs: number) => new Date(createdAt.getTime() + offsetMs);
+
+  it("is false one millisecond before the TTL", () => {
+    expect(isPastCheckoutSessionTtl(createdAt, at(CHECKOUT_SESSION_TTL_MS - 1))).toBe(false);
+  });
+
+  it("is true at the TTL exactly", () => {
+    expect(isPastCheckoutSessionTtl(createdAt, at(CHECKOUT_SESSION_TTL_MS))).toBe(true);
+  });
+
+  it("is true one millisecond after the TTL", () => {
+    expect(isPastCheckoutSessionTtl(createdAt, at(CHECKOUT_SESSION_TTL_MS + 1))).toBe(true);
   });
 });
