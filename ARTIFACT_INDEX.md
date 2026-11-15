@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-15T16:44:38.666Z` · commit `9def2a1d` · `361` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-15T17:39:28.707Z` · commit `aab4c16d` · `362` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -341,6 +341,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Go-live fixes: refuse out-of-area delivery postcodes, stop slot booking on closure days (plan)](specs/2026-11-15-delivery-area-closure-fixes/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1605. Checkout refuses delivery postcodes outside the store's areas even without reference data, and counts every such refusal; holiday closures block slot booking, and changed hours trim collection slots. |
 | [Staff & Store Email Setup Guide on /help (plan)](specs/2026-11-15-help-staff-email-guide/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1619. Add clear, self-service email instructions to the storefront Help Centre (/help) for store staff and administrators to reply as the store via personal Gmail or Google Groups. |
 | [Storefront Landing Hero LCP and Accessibility Optimization (plan)](specs/2026-11-15-perf-lcp-and-a11y-landing/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Optimize storefront landing hero Largest Contentful Paint (LCP) and resolve accessibility deductions identified in Google PageSpeed Insights (zb8uu21j1p). |
+| [Cache hashed static assets for a year (plan)](specs/2026-11-15-static-asset-cache/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1624. /_next/static files were served with a 4-hour must-revalidate header. A public/_headers rule makes these content-hashed files cacheable for a year; pages stay no-store. |
 | [Website-Wide UI Component Standards and Visual Consistency Optimisation (plan)](specs/2026-11-15-ui-component-consistency/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish comprehensive design and implementation standards for UI components across Aheed Food Centre, including component sizing tokens, unified 4px spacing scale, standardized Button/Badge primitives, Card variant consolidation, and accessibility guarantees. |
 | [Visual Identity Standards, Icon System, and AI Visual Art Direction (plan)](specs/2026-11-15-visual-identity-standards/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish a cohesive, professional and conversion-conscious visual identity across Aheed Food Centre by standardising icon specifications into 3 families, creating reusable icon design tokens, codifying strict AI art direction guardrails, and applying CRO principles. |
 | [Weekly opening hours control checkout slots (plan)](specs/2026-11-15-weekly-hours-slots/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1615. The weekly Opening hours now gate slots with the #1605 rules: a weekly closed day offers no slot, opening hours trim collection, and a dated holiday entry still wins for its date. |
