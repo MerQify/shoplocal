@@ -728,6 +728,10 @@ storefront **Contact us** form (`/contact`), and emails sent to the store's own 
   the duplicate.
 - **Resolve without replying** only when the message was handled another way (phone, the shared
   mailbox) or is spam or an automatic message.
+- **Replying from personal Gmail:** If staff prefer replying directly from their personal Gmail inbox rather
+  than the Staff Panel, they must configure Gmail's "Send mail as" once (see the *Replying and sending as your
+  store from personal Gmail* guide in the Store Admin Guide). Each staff member needs their own Google App
+  Password, as Google Groups does not provide shared SMTP sending.
 
 **What happens after changes are saved:**
 

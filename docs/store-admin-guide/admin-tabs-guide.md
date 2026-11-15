@@ -63,6 +63,43 @@ updating them updates the emails too.
 **Telegram** goes to the chats in **Order alerts**. Both are set by your platform admin in Client
 Setup. Without them you get nothing, even though the customer still gets their emails.
 
+### Replying and sending as your store from personal Gmail
+
+Staff can reply to customer messages directly from the Staff Panel at **Enquiries & Inbox** (`/staff/enquiries`), which sends from the store's verified address automatically. If staff or store users also need to send or reply to emails as `info@...` directly from their personal Gmail account or a shared Google Group, they can configure Gmail's built-in **Send mail as**:
+
+#### Step 1: Create a Google App Password (1 minute)
+1. Go to your [Google Account Security Settings](https://myaccount.google.com/security).
+2. Ensure **2-Step Verification** is turned ON.
+3. Search for **App Passwords** (under 2-Step Verification).
+4. Create a new App Password:
+   - **App name:** `Store Email`
+   - Click **Create**.
+5. Copy the 16-character password displayed (e.g. `abcd efgh ijkl mnop`).
+
+#### Step 2: Add your store address to Gmail ("Send mail as")
+1. Open [Gmail](https://mail.google.com/) on desktop.
+2. Click the **Gear icon** (top right) → **See all settings** → **Accounts and Import**.
+3. Under the **Send mail as** section, click **Add another email address**.
+4. In the pop-up window:
+   - **Name:** Your store name (e.g. `Aheed Food Centre`) or staff member name
+   - **Email address:** Your store address (e.g. `info@aheedfoodcentre.co.uk`)
+   - **Treat as an alias:** **Uncheck** this box.
+   - Click **Next Step**.
+5. Enter the SMTP settings:
+   - **SMTP Server:** `smtp.gmail.com`
+   - **Port:** `587`
+   - **Username:** Your personal Gmail address (e.g. `sgedela04@gmail.com`)
+   - **Password:** The 16-character App Password from Step 1.
+   - **Secured connection using TLS:** Checked.
+   - Click **Add Account**.
+6. Gmail sends a verification code to the store address. Because Cloudflare Email Routing forwards it to your inbox or Google Group, retrieve the code and enter it to verify.
+
+> [!NOTE]
+> **Can this be configured once for a Google Group?**
+> - **Inbound (receiving):** **Yes.** Forwarding your store address (e.g. `info@aheedfoodcentre.co.uk`) to a Google Group (e.g. `info-afc@googlegroups.com`) automatically delivers incoming emails to **everyone** invited to that group.
+> - **Outbound (sending from Gmail):** **No.** Google Groups is a distribution list, not a mailbox with SMTP credentials. When staff reply from their personal Gmail inbox, Google's SMTP server requires authentication for that specific sender. Each staff member who wants to send as the store from their personal Gmail must complete Step 1 & Step 2 in their own Google account. (Alternatively, staff can reply directly inside the Staff Panel at `/staff/enquiries`, which requires zero local email configuration).
+
+
 ## Discount codes — `/staff/discounts`
 
 **Purpose:** Money-off codes customers type at checkout.
