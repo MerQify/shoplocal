@@ -16,6 +16,9 @@ import { saveOrderAsList } from "@/features/lists/save-order-as-list";
 import { MAX_SAVED_LISTS } from "@/lib/saved-list";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Icon } from "@/components/icons/Icon";
+import { UnfinishedPaymentChoices } from "@/components/checkout/UnfinishedPaymentChoices";
+import { PaymentStatusCheck } from "@/components/checkout/PaymentStatusCheck";
+import { isPastCheckoutSessionTtl } from "@/lib/payments";
 
 // Reads the session and one owned order — must render per-request.
 export const dynamic = "force-dynamic";
@@ -103,6 +106,22 @@ export default async function AccountOrderPage({
         </div>
         <OrderStatusBadge status={order.status} />
       </div>
+
+      {/* #1589 — "Awaiting payment" always has a next step: reopen the order's own Stripe session,
+          or cancel and put the items back. PaymentStatusCheck confirms an order paid in another
+          tab whose webhook is late. Action failures land on the cancel page, which explains
+          every state. */}
+      {order.status === "PENDING_PAYMENT" && (
+        <div className="mb-6">
+          <PaymentStatusCheck orderNumber={order.orderNumber} token={null} />
+          <UnfinishedPaymentChoices
+            orderNumber={order.orderNumber}
+            token={null}
+            state={isPastCheckoutSessionTtl(order.createdAt, new Date()) ? "past-ttl" : "open"}
+            notice={null}
+          />
+        </div>
+      )}
 
       {/* #1435 R21/R22 — every step of the order's path, kept current while the tab is open. */}
       <OrderProgressTracker

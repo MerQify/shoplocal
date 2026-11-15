@@ -190,9 +190,9 @@ export default async function HomePage() {
             </span>
           </div>
           <div>
-            <h4 className="font-bold text-xs text-black/90 uppercase tracking-wide">
+            <h3 className="font-bold text-xs text-black/90 uppercase tracking-wide">
               {profile?.offerCollection ? "Delivery & Collection" : "Local Delivery"}
-            </h4>
+            </h3>
             <p className="text-[11px] text-black/60 leading-tight">
               {profile?.offerCollection
                 ? `Delivered across ${localityName} or pick up in-store`
@@ -209,9 +209,9 @@ export default async function HomePage() {
             </span>
           </div>
           <div>
-            <h4 className="font-bold text-xs text-black/90 uppercase tracking-wide">
+            <h3 className="font-bold text-xs text-black/90 uppercase tracking-wide">
               Secure Checkout
-            </h4>
+            </h3>
             <p className="text-[11px] text-black/60 leading-tight">Card payments by Stripe</p>
           </div>
         </div>
@@ -224,9 +224,9 @@ export default async function HomePage() {
             </span>
           </div>
           <div>
-            <h4 className="font-bold text-xs text-black/90 uppercase tracking-wide">
+            <h3 className="font-bold text-xs text-black/90 uppercase tracking-wide">
               Order Updates
-            </h4>
+            </h3>
             <p className="text-[11px] text-black/60 leading-tight">Status changes by email</p>
           </div>
         </div>

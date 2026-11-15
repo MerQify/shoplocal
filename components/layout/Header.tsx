@@ -196,7 +196,7 @@ export async function Header({
             {bannerPhoneHref && (
               <a
                 href={bannerPhoneHref}
-                aria-label={`Call ${name}`}
+                aria-label={`Call ${name} at ${bannerPhone}`}
                 className="flex items-center gap-1 text-white/80 hover:text-white px-2 py-0.5 rounded font-medium text-[11px]"
               >
                 <Icon name="phone" className="w-3 h-3 text-action-tint" />
