@@ -5,6 +5,7 @@ import {
   createFulfilmentSlotForVendor,
   getAvailableSlotsForDate,
   getFulfilmentSettingsForVendor,
+  getSlotDayForDate,
   listExpressWindowsForVendor,
   listFulfilmentSlotsForVendor,
   removeExpressWindowForVendor,
@@ -13,6 +14,7 @@ import {
   type AvailableSlot,
   type FulfilmentAdminRepository,
   type FulfilmentMethod,
+  type SlotDay,
 } from "@/lib/repositories/fulfilment-slots";
 import type { ExpressWindowInput, FulfilmentSettingsInput, SlotInput } from "@/lib/fulfilment-form";
 
@@ -33,6 +35,15 @@ export async function getAvailableSlotsForVendor(
   day: string,
 ): Promise<AvailableSlot[]> {
   return getAvailableSlotsForDate(getPrisma(), vendorId, method, day);
+}
+
+/** #1605 — one grid day: its slots plus the closure label when the store is closed all day. */
+export async function getSlotDayForVendor(
+  vendorId: string,
+  method: FulfilmentMethod,
+  day: string,
+): Promise<SlotDay> {
+  return getSlotDayForDate(getPrisma(), vendorId, method, day);
 }
 
 /* -------------------------------------------------------------------------------------------- *

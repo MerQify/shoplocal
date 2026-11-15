@@ -72,6 +72,40 @@ describe("the service swallows its own failures (R32)", () => {
   });
 });
 
+describe("#1605 — unverified out-of-area postcodes are counted", () => {
+  const SW1A = {
+    status: "OUTSIDE_DELIVERY_AREA" as const,
+    postcode: "SW1A 1AA",
+    deliverable: false,
+    verified: false,
+    areaCovered: false,
+  };
+
+  it.each(["CHECKOUT", "HEADER"] as const)(
+    "records %s once against district SW1A",
+    async (source) => {
+      m.record.mockResolvedValue(undefined);
+      await recordRefusalIfOutside(SW1A, source);
+      expect(m.record).toHaveBeenCalledTimes(1);
+      expect(m.record).toHaveBeenCalledWith(
+        expect.anything(),
+        "vendor-1",
+        "SW1A",
+        expect.any(Date),
+        source,
+      );
+    },
+  );
+
+  it("records nothing for a malformed postcode", async () => {
+    await recordRefusalIfOutside(
+      { ...SW1A, status: "INVALID_POSTCODE", postcode: "NOT A POSTCODE" },
+      "CHECKOUT",
+    );
+    expect(m.record).not.toHaveBeenCalled();
+  });
+});
+
 describe("setDeliveryPostcode counts HEADER refusals (R31/R32)", () => {
   it("records HEADER for an out-of-area postcode", async () => {
     m.record.mockResolvedValue(undefined);

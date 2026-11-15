@@ -10,7 +10,12 @@ import { getCurrentVendorProfile } from "@/lib/vendor-service";
 import { getDeliveryEligibility } from "@/lib/delivery-eligibility-service";
 import { blocksCheckout, eligibilityMessage } from "@/lib/delivery-eligibility";
 import { getCustomerAddressService } from "@/lib/customer-addresses-service";
-import { calendarDayToUtcMidnight } from "@/lib/local-datetime";
+import { calendarDayInZone, calendarDayToUtcMidnight, zoneWallClock } from "@/lib/local-datetime";
+import {
+  CLOSED_DAY_MESSAGE,
+  EXPRESS_OUTSIDE_HOURS_MESSAGE,
+  expressOverrideVerdict,
+} from "@/lib/slot-closure";
 import { quoteMatches, resolveDeliveryRules } from "@/lib/delivery-pricing";
 import { recordRefusalIfOutside } from "@/lib/delivery-refusals-service";
 import { setDeliveryPostcode } from "@/features/storefront/delivery";
@@ -188,6 +193,17 @@ export async function placeOrderAction(
     const rawFulfilmentSlotId = optional(form, "fulfilmentSlotId");
     const rawFulfilmentDate = optional(form, "fulfilmentDate");
     const isExpress = form.get("isExpress") === "on";
+
+    // #1605 — express collection is "pick up within the hour", so it obeys TODAY's closure or
+    // changed hours. The toggle is hidden in those cases; this refuses a stale page or a direct call.
+    if (isExpress) {
+      const now = new Date();
+      const today = calendarDayInZone(now, vendor.timezone);
+      const override = vendor.hoursOverrides.find((o) => o.date === today) ?? null;
+      const verdict = expressOverrideVerdict(override, zoneWallClock(now, vendor.timezone).hhmm);
+      if (verdict === "CLOSED_DAY") return { error: CLOSED_DAY_MESSAGE };
+      if (verdict === "OUTSIDE_HOURS") return { error: EXPRESS_OUTSIDE_HOURS_MESSAGE };
+    }
 
     /*
      * #811 — `fulfilmentDate` arrives as a bare `YYYY-MM-DD` calendar day and is stored as that

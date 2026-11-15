@@ -2,6 +2,7 @@ import Link from "next/link";
 import { addBundleToCart } from "@/features/cart/add-bundle-to-cart";
 import { formatPrice } from "@/components/product/format-price";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
+import { Card } from "@/components/ui/Card";
 import {
   availableBundleItems,
   bundleRegularPence,
@@ -84,7 +85,7 @@ export function BundleCard({
 
   return (
     <li className="skew-card-wrap h-full">
-      <div className="skew-card group relative flex h-full flex-col overflow-hidden rounded-2xl border border-black/10 bg-white hover:border-action/50">
+      <Card variant="product">
         {/* Image container — matches ProductCard's aspect-4/3 + skew-card-inner
             counter-skew, so an imageless bundle's placeholder block sits at
             exactly the same size and position a product photo would. */}
@@ -150,14 +151,14 @@ export function BundleCard({
               <input type="hidden" name="bundleId" value={id} />
               <button
                 type="submit"
-                className="rounded-xl bg-action px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-action-hover"
+                className="rounded-xl bg-action px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2"
               >
                 {savingPence > 0 ? "Buy this offer" : `Add all ${available.length} to basket`}
               </button>
             </form>
           </div>
         </div>
-      </div>
+      </Card>
     </li>
   );
 }

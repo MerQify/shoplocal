@@ -96,6 +96,8 @@ describe("placeOrder — booking cut-off (R8, R9)", () => {
     const count = vi.fn(async () => used);
     const create = vi.fn();
     const tx = {
+      // #1605 — no closure / changed-hours override on the order's day.
+      vendorHoursOverride: { findUnique: async () => null },
       vendorFulfilmentSlot: { findUnique: async () => ({ ...slot, method: "DELIVERY" }) },
       vendorConfig: {
         findUnique: async () => ({

@@ -190,6 +190,7 @@ export default async function CheckoutPage() {
               offerDeliverySlots={vendor?.offerDeliverySlots ?? false}
               expressCollectionEnabled={vendor?.expressCollectionEnabled ?? false}
               expressSchedules={vendor?.expressSchedules ?? []}
+              hoursOverrides={vendor?.hoursOverrides ?? []}
               timezone={vendor?.timezone ?? STORE_TIMEZONE}
               signedInEmail={signedInEmail}
               redeemable={redeemable}

@@ -27,8 +27,8 @@ import type { PostcodeStatus } from "@/lib/reference/postcode-reference-service"
  * | Postcode status | Verdict |
  * |---|---|
  * | `INVALID` (covered area, authoritative absence, or malformed) | `INVALID_POSTCODE` |
- * | `UNVERIFIED` (area not materialised, or reference unavailable) | `UNVERIFIED` |
- * | `VALID`, outside this vendor's areas | `OUTSIDE_DELIVERY_AREA` |
+ * | `UNVERIFIED` or `VALID`, outside this vendor's areas | `OUTSIDE_DELIVERY_AREA` |
+ * | `UNVERIFIED` (area not materialised, or reference unavailable), inside this vendor's areas | `UNVERIFIED` |
  * | `VALID`, inside this vendor's areas | `DELIVERABLE` |
  *
  * `UNVERIFIED` must never be presented to a shopper as an invalid postcode, and must never block
@@ -39,6 +39,12 @@ import type { PostcodeStatus } from "@/lib/reference/postcode-reference-service"
  * Note what that means concretely: a customer in Edinburgh, whose area this environment has never
  * imported, can still complete checkout. They are refused only if their vendor does not deliver
  * there — a decision made entirely from Aheed's own configuration.
+ *
+ * #1605 — that last sentence was documented here from #764 but never implemented: an `UNVERIFIED`
+ * postcode outside the vendor's areas came back `UNVERIFIED`, which `blocksCheckout` never blocks,
+ * so with reference data holding only MK and RG a London delivery reached Stripe on AFC staging.
+ * The vendor's own areas now decide refusal for every well-formed postcode, whatever the reference
+ * coverage; `verified` stays false because the reference database did not confirm the postcode.
  */
 
 export type DeliveryEligibilityStatus =
@@ -91,22 +97,24 @@ export function evaluateDeliveryEligibility(input: EligibilityInput): DeliveryEl
   }
 
   const deliverable = isDeliverable(input.postcode, input.deliveryPrefixes);
+  const verified = input.referenceStatus === "VALID";
 
-  if (input.referenceStatus === "UNVERIFIED") {
+  // #1605 — the vendor's areas decide first: an unconfirmed postcode outside them is still refused.
+  if (!deliverable) {
     return {
-      status: "UNVERIFIED",
+      status: "OUTSIDE_DELIVERY_AREA",
       postcode,
       deliverable,
-      verified: false,
+      verified,
       areaCovered: input.areaCovered,
     };
   }
 
   return {
-    status: deliverable ? "DELIVERABLE" : "OUTSIDE_DELIVERY_AREA",
+    status: verified ? "DELIVERABLE" : "UNVERIFIED",
     postcode,
     deliverable,
-    verified: true,
+    verified,
     areaCovered: input.areaCovered,
   };
 }

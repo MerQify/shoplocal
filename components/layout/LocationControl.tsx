@@ -106,7 +106,7 @@ export function LocationControl({
   const summaryLabel = method === "COLLECTION" ? "Click & Collect" : deliveryLabel;
 
   return (
-    <div data-tap-surface="location" className="flex h-full items-center">
+    <div data-tap-surface="location" className="flex items-center">
       {offerCollection ? (
         // #1142 — one native disclosure instead of the toggle pair and pencil, to give the search
         // bar room. NATIVE so it opens with client JavaScript disabled (#748's posture), and its
@@ -114,30 +114,26 @@ export function LocationControl({
         // always visible; its text is its accessible name, with no aria-label and no responsive
         // span pair, so #1091's doubled name cannot recur. `open` is never passed as a prop: the
         // browser owns it, and the effect above only ever closes it.
-        <details
-          ref={menuRef}
-          data-location-menu=""
-          className="group relative h-full w-full sm:w-auto"
-        >
+        <details ref={menuRef} data-location-menu="" className="group relative w-full sm:w-auto">
           <summary
             data-tap-surface="location"
-            className="flex h-full min-h-tap w-full cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-xl border border-black/10 bg-surface-muted px-3 py-2 text-xs font-bold text-black/80 transition hover:bg-black/5 sm:w-auto lg:min-h-0 [&::-webkit-details-marker]:hidden"
+            className="flex h-10 min-h-tap w-full cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-xl border border-black/10 bg-surface-muted px-3 text-xs font-bold text-black/80 transition hover:bg-black/5 sm:w-auto lg:min-h-0 [&::-webkit-details-marker]:hidden"
           >
             {method === "COLLECTION" ? (
               <IconMedallion
                 icon="store"
                 slot="storefront"
-                size={18}
+                size={24}
                 decorative
-                className="shrink-0"
+                className="-my-0.5 shrink-0"
               />
             ) : (
               <IconMedallion
                 icon="truck"
                 slot="delivery-van"
-                size={18}
+                size={24}
                 decorative
-                className="shrink-0"
+                className="-my-0.5 shrink-0"
               />
             )}
             <span className="min-w-0 truncate">{summaryLabel}</span>
@@ -259,7 +255,7 @@ export function LocationControl({
         <button
           type="button"
           onClick={() => openModal("delivery")}
-          className="flex min-h-tap items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-3 py-2 rounded-xl text-xs font-bold transition border border-black/10 w-full sm:w-auto h-full lg:min-h-0"
+          className="flex h-10 min-h-tap items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-3 rounded-xl text-xs font-bold transition border border-black/10 w-full sm:w-auto lg:min-h-0"
           title={hasDeliverablePostcode ? "Change postcode" : "Check availability"}
           aria-label={hasDeliverablePostcode ? deliveryLabel : "Check delivery availability"}
         >
@@ -269,9 +265,9 @@ export function LocationControl({
             <IconMedallion
               icon="truck"
               slot="delivery-van"
-              size={18}
+              size={24}
               decorative
-              className="shrink-0"
+              className="-my-0.5 shrink-0"
             />
           )}
           <span aria-hidden className="hidden sm:inline">

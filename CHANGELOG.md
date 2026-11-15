@@ -6,6 +6,20 @@ every branch merges.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Checkout keeps what the shopper typed when an order is refused (#1613, 2026-11-15).** A refusal such as "Sorry — we don't deliver to SW1A 1AA yet." used to clear the name, email, phone and address. Cause: React 19 resets a form's uncontrolled fields after a form `action` completes, errors included. `CheckoutForm` now submits through `onSubmit` → `startTransition(() => formAction(formData))`, which is not followed by that reset. `action={formAction}` stays as the no-JavaScript fallback.
+
+- **Header Navigation Controls Consistency, Sizing & Alignment (#1610, 2026-11-15)**
+  - Unified all interactive storefront header navigation controls (`LocationControl`, `DepartmentSearchBar`, `Shop`, `Quick Shop`, `Account` / `Sign In`, `ViewSwitcher`) to the standard `h-10` (40px) desktop control height and `min-h-tap` (44px) mobile touch target.
+  - Standardised icon medallion sizing to 24px (`size={24}`) across all header navigation actions, eliminating optical baseline shifts between `LocationControl` (was 18px), `Shop` (24px), `Quick Shop` (24px), `Account` (24px), and `ViewSwitcher` (was 18px).
+  - Aligned container geometry, borders, and surfaces across controls: `rounded-xl`, `border border-black/10`, and `bg-surface-muted` with `hover:bg-black/5`.
+  - Harmonised `ViewSwitcher` with the storefront navigation design system: eliminated discordant borderless `bg-primary/10` treatment in favour of standard `rounded-xl border border-black/10 bg-surface-muted` container and aligned 24px medallion.
+  - Fixed `LocationControl` stretching to flex container height by removing unbounded `h-full` cascade and enforcing explicit `h-10 min-h-tap lg:min-h-0`.
+  - Enforced `h-10 min-h-tap lg:min-h-0` on `DepartmentSearchBar` with `h-full` on select, input, and submit button.
+  - Authored automated regression suite in `tests/header-controls-consistency.test.tsx` (5 tests) guarding header control heights, border/background classes, and medallion sizing.
+
+
 ### Performance & Accessibility
 
 - **Storefront Landing Hero LCP & Accessibility Optimizations (#1597, 2026-11-15)**
@@ -18,6 +32,15 @@ every branch merges.
 
 
 ### Added
+
+- **Website-Wide UI Component Standards & Visual Consistency Optimisation (#1608, 2026-11-15)**
+  - Codified global component sizing and spacing design tokens in `design-system/tokens/components.json`: standard control heights (`sm` 32px, `md` 40px default, `tap` 44px mobile touch target, `lg` 48px), 4px geometric spacing scale (4px–64px), card padding scale (`compact` 14px, `standard` 16px, `panel` 20px, `spacious` 24px), badge dimensions (`sm` 18px, `md` 22px), and non-aliased radius scale.
+  - Authored canonical zero-JS `Badge` primitive in `components/ui/Badge.tsx`: supports 6 semantic variants (`action`, `primary`, `accent`, `danger`, `muted`, `outline`), dual-tone architecture (`fill` and `tint`), and compact (`sm`) / standard (`md`) sizing steps with WCAG AA contrast compliance.
+  - Enhanced `Button` primitive in `components/ui/Button.tsx`: preserved 100% backward compatibility for existing `action` and `primary` variants while adding `secondary`, `outline`, `danger`, and `ghost` variants, standard sizing scale (`sm`, `md`, `lg`, `tap`), and keyboard `focus-visible` indicators.
+  - Consolidated card primitives: refactored `components/bundle/BundleCard.tsx` to compose `Card variant="product"` directly, eliminating duplicated CSS strings and standardising repeated card grid layouts.
+  - Adopted `Badge` component in `components/product/ProductCard.tsx` for dietary and certification flags (Halal, Fresh, Vegetarian, Gluten Free, HMC Certified, Offer).
+  - Updated `specs/design-system.md` with UI Component Standards section, control heights, 4px spacing grid, and CRO principles.
+  - Authored automated test suite `tests/ui-component-standards.test.tsx` (15 tests) verifying token schemas, badge rendering, button variants, focus rings, card integration, and 4px grid invariants.
 
 - **Visual Identity Standards, Icon System & AI Visual Art Direction (#1602, 2026-11-15)**
   - Organised visual icons into three distinct families: **Functional** (navigation, search, basket, account, checkout on Lucide 24x24 SVG), **Category** (food departments, produce, meat, dairy in circular medallions), and **Promotional** (offers, bundles, savings, delivery, rewards in tinted medallions and badges).
@@ -41,6 +64,14 @@ every branch merges.
   - Injected Schema.org `Product` and `Offer` JSON-LD structured data with GBP pricing, stock status, and product URLs on `/products/[slug]`.
 
 ### Fixed
+
+- **Out-of-area delivery refused, and closure days close slots (#1605, 2026-11-15).** Go-live fixes found on AFC staging.
+  - A delivery to `SW1A 1AA` reached Stripe: `evaluateDeliveryEligibility` answered `UNVERIFIED` for any postcode outside the reference coverage (MK/RG only), even when it was outside the vendor's own areas, and `blocksCheckout` never blocks `UNVERIFIED`. A well-formed postcode outside the vendor's areas is now `OUTSIDE_DELIVERY_AREA` (with `verified: false`) whatever the coverage. It is refused at checkout and counted by district in "Districts you turned away", which previously missed every postcode outside MK/RG.
+  - Holiday & closure dates (`VendorHoursOverride`, #1060) now gate slots, through the new `lib/slot-closure.ts`, in the slot list, `placeOrder` (new `STORE_CLOSED` code) and `placeOrderAction` (Express).
+    - A closed day offers and books no slot, and the checkout grid shows it as **Closed** with its name.
+    - Changed hours hide only collection slots outside them, while delivery stays as scheduled.
+    - Express collection obeys today's closure and changed hours.
+  - No migration.
 
 - **Internal docs site build restored (#1558, 2026-11-13).** Bare `<you>` (#1557) and `<store>` (#1559) placeholders in `docs/developer-portal/notification-matrix.md` were parsed by MDX as unclosed HTML tags, so `deploy-docs-internal` failed on every staging push since `44f88ec5` while the app deploys stayed green. Wrapped in code spans; verified by compiling the assembled MDX (the unfixed file reproduces CI's `Expected a closing tag for <store>` error).
 

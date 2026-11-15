@@ -1,6 +1,6 @@
 "use server";
 
-import { getAvailableSlotsForVendor } from "@/lib/fulfilment-slots-service";
+import { getAvailableSlotsForVendor, getSlotDayForVendor } from "@/lib/fulfilment-slots-service";
 import { calendarDayToUtcMidnight } from "@/lib/local-datetime";
 import { DAYS_PER_PAGE } from "@/lib/slot-grid";
 import type { FulfilmentMethod } from "@/lib/repositories/fulfilment-slots";
@@ -32,10 +32,11 @@ export async function getAvailableSlotsForWeek(
   const valid = days
     .slice(0, DAYS_PER_PAGE)
     .filter((day) => typeof day === "string" && calendarDayToUtcMidnight(day) !== null);
+  // #1605 — each day also carries its closure label, so the grid can say "Closed — Christmas Day".
   return Promise.all(
-    valid.map(async (day) => ({
-      day,
-      slots: await getAvailableSlotsForVendor(vendorId, method, day),
-    })),
+    valid.map(async (day) => {
+      const { slots, closedLabel } = await getSlotDayForVendor(vendorId, method, day);
+      return { day, slots, closedLabel };
+    }),
   );
 }

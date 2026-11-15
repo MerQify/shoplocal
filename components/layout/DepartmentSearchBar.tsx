@@ -42,7 +42,7 @@ function DepartmentSelect({
       defaultValue={selected}
       data-tap-surface="search"
       // #1173 — `department-select` (app/globals.css) sizes it compactly and styles its list.
-      className="department-select min-h-tap lg:min-h-0 shrink-0 truncate rounded-l-xl border border-r-0 border-black/10 bg-surface-muted px-2 text-xs font-semibold text-primary hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-action"
+      className="department-select h-full min-h-tap lg:min-h-0 shrink-0 truncate rounded-l-xl border border-r-0 border-black/10 bg-surface-muted px-2 text-xs font-semibold text-primary hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-action"
     >
       <option value="">{ALL_DEPARTMENTS_LABEL}</option>
       {departments.map((department) => (
@@ -98,17 +98,17 @@ export function DepartmentSearchBar({
       action="/search"
       role="search"
       data-header-search=""
-      className={`flex w-full items-stretch ${className}`}
+      className={`flex h-10 min-h-tap lg:min-h-0 w-full items-stretch ${className}`}
     >
       <Suspense fallback={<DepartmentSelect departments={departments} selected="" />}>
         <DepartmentSelectFromUrl departments={departments} />
       </Suspense>
-      <SearchSuggest placeholder={placeholder} className="min-w-0 flex-1" />
+      <SearchSuggest placeholder={placeholder} className="min-w-0 flex-1 h-full" />
       <button
         type="submit"
         aria-label="Search"
         data-tap-surface="search"
-        className="flex min-h-tap min-w-tap lg:min-h-0 lg:min-w-0 shrink-0 items-center justify-center rounded-r-xl bg-accent px-3 text-white hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2"
+        className="flex h-full min-h-tap min-w-tap lg:min-h-0 lg:min-w-0 shrink-0 items-center justify-center rounded-r-xl bg-accent px-3.5 text-white hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2"
       >
         <Icon name="search" className="h-4 w-4" />
       </button>

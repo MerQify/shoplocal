@@ -7,6 +7,7 @@ import { FavouriteButton } from "./FavouriteButton";
 import type { FavouriteState } from "@/lib/favourites";
 import { RestockNotice } from "@/components/product/RestockNotice";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { ProductImage } from "./ProductImage";
 import { ProductRating } from "./ProductRating";
 import { useQuickView } from "./quick-view-context";
@@ -112,15 +113,15 @@ export function ProductCard({
         {/* Top badges */}
         <div className="absolute top-2.5 left-2.5 z-10 flex flex-wrap gap-1">
           {product.isHalal && (
-            <span className="skew-card-badge flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-action-tint"></span>
+            <Badge variant="primary" size="sm" className="skew-card-badge shadow-xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-action-tint" />
               Halal
-            </span>
+            </Badge>
           )}
           {product.isFresh && (
-            <span className="skew-card-badge rounded-full bg-action px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
+            <Badge variant="action" size="sm" className="skew-card-badge shadow-xs">
               Fresh
-            </span>
+            </Badge>
           )}
           {/*
             #608 — filterable since #569, invisible until now: a shopper could narrow a listing to
@@ -135,24 +136,24 @@ export function ProductCard({
             the detail page rather than crammed onto a card.
           */}
           {product.isVegetarian && (
-            <span className="skew-card-badge rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-primary shadow-sm">
+            <Badge variant="primary" tone="tint" size="sm" className="skew-card-badge shadow-xs">
               Vegetarian
-            </span>
+            </Badge>
           )}
           {product.isGlutenFree && (
-            <span className="skew-card-badge rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-primary shadow-sm">
+            <Badge variant="primary" tone="tint" size="sm" className="skew-card-badge shadow-xs">
               Gluten free
-            </span>
+            </Badge>
           )}
           {product.isHmcCertified && (
-            <span className="skew-card-badge rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-primary shadow-sm">
+            <Badge variant="primary" tone="tint" size="sm" className="skew-card-badge shadow-xs">
               HMC certified
-            </span>
+            </Badge>
           )}
           {hasDiscount && (
-            <span className="skew-card-badge rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
+            <Badge variant="accent" size="sm" className="skew-card-badge shadow-xs">
               Offer
-            </span>
+            </Badge>
           )}
         </div>
 

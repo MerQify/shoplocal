@@ -16,6 +16,7 @@ import {
   type CheckoutSectionKey,
 } from "@/lib/checkout-sections";
 import { SlotPicker } from "./SlotPicker";
+import type { HoursOverrideRow } from "@/lib/footer-hours";
 import { readCheckoutDetails, writeCheckoutDetails } from "@/lib/checkout-details-storage";
 import { Icon } from "@/components/icons/Icon";
 
@@ -44,6 +45,7 @@ export function CheckoutForm({
   offerDeliverySlots,
   expressCollectionEnabled,
   expressSchedules,
+  hoursOverrides,
   timezone,
   method,
   savedAddresses = [],
@@ -69,6 +71,8 @@ export function CheckoutForm({
   offerDeliverySlots: boolean;
   expressCollectionEnabled?: boolean;
   expressSchedules?: { dayOfWeek: number; openTime: string; closeTime: string }[];
+  /** #1605 — dated closures / changed hours, passed straight through to `SlotPicker` for Express. */
+  hoursOverrides?: HoursOverrideRow[];
   /** #363/#811 — the vendor's IANA zone, passed straight through to `SlotPicker`. */
   timezone: string;
   /**
@@ -96,6 +100,18 @@ export function CheckoutForm({
   quotedDeliveryRules: string;
 }) {
   const [state, formAction, pending] = useActionState(placeOrderAction, initialState);
+  /*
+   * #1613 — submit through a transition, not the form's own `action`. React 19 resets a form's
+   * uncontrolled fields after a form `action` completes, refusals included, so "we don't deliver to
+   * …" used to arrive with the name, email, phone and address all wiped. A manual dispatch is not
+   * followed by that reset. `action={formAction}` stays below as the no-JavaScript fallback.
+   */
+  const [, startSubmitTransition] = useTransition();
+  const submitKeepingFields = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startSubmitTransition(() => formAction(formData));
+  };
   // #973 — the code, the points and every figure derived from them live in `CheckoutPricing`, which
   // the order summary reads too, so the two totals on this page can never disagree.
   const pricing = useCheckoutPricing();
@@ -338,6 +354,7 @@ export function CheckoutForm({
     <form
       ref={formRef}
       action={formAction}
+      onSubmit={submitKeepingFields}
       onChange={handleFormChange}
       className="space-y-6"
       data-checkout-form
@@ -624,6 +641,7 @@ export function CheckoutForm({
             required={true}
             expressCollectionEnabled={expressCollectionEnabled}
             expressSchedules={expressSchedules}
+            hoursOverrides={hoursOverrides}
             timezone={timezone}
           />
         </section>
