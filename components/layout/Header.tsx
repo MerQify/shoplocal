@@ -245,7 +245,7 @@ export async function Header({
 
           {/* Location Control (Desktop) */}
           {!isPortal && (
-            <div className="hidden sm:block h-full">
+            <div className="hidden sm:flex items-center">
               <LocationControl
                 postcode={storedPostcode}
                 deliverable={deliverable}
@@ -262,7 +262,7 @@ export async function Header({
             outside its form, in one flex container with it. `lg` was measured again once the
             method menu replaced the toggle pair: the input was 163px at 1024, still too narrow. */}
           {!isPortal && (
-            <div className="flex-1 min-w-0 max-w-3xl hidden xl:flex items-stretch gap-2">
+            <div className="flex-1 min-w-0 max-w-3xl hidden xl:flex items-center gap-2">
               <DepartmentSearchBar
                 departments={searchDepartments}
                 placeholder={searchPlaceholder}
@@ -278,7 +278,7 @@ export async function Header({
                 <Link
                   href="/categories"
                   prefetch={false}
-                  className="flex min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-2 sm:px-3 py-2 rounded-xl text-xs font-bold transition border border-black/10"
+                  className="flex h-10 min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-2 sm:px-3 rounded-xl text-xs font-bold transition border border-black/10"
                   title="Shop — Browse all departments and categories"
                 >
                   <IconMedallion icon3d="storefront" size={24} className="-my-0.5" decorative />
@@ -294,7 +294,7 @@ export async function Header({
                 href="/account"
                 prefetch={false}
                 title={`My Account (${firstName || "Profile"})`}
-                className="flex min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 p-1 pr-3 rounded-xl border border-black/10 transition-colors text-xs font-bold text-black/80 hover:text-primary"
+                className="flex h-10 min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 px-2 sm:px-3 rounded-xl border border-black/10 transition-colors text-xs font-bold text-black/80 hover:text-primary"
               >
                 <IconMedallion
                   icon3d="user-profile"
@@ -310,7 +310,7 @@ export async function Header({
                 href="/login"
                 prefetch={false}
                 title="Sign in to your account"
-                className="flex min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-3 py-2 rounded-xl text-xs font-bold transition border border-black/10"
+                className="flex h-10 min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-2 sm:px-3 rounded-xl text-xs font-bold transition border border-black/10"
               >
                 {/* #1173, #1251 — 3D user-profile symbol replacing Lucide/letter avatar */}
                 <IconMedallion
