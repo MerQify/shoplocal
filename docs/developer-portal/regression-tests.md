@@ -4,7 +4,7 @@ title: Manual Regression Test Register
 audience: [dev]
 type: doc
 status: approved
-version: "1.2.0"
+version: "1.2.1"
 updated: 2026-11-15
 visibility: internal
 summary: Manual regression test cases for known critical issues — the hybrid Prisma client contract under Cloudflare Worker connection limits, and cart persistence across a cancelled Stripe checkout.
@@ -85,6 +85,11 @@ offered. Spec: `specs/2026-11-14-checkout-continue-payment/`.
 - **Failure Condition:** The user is brought back to an empty shopping cart, or the basket holds
   doubled quantities.
 
+> **Last run:** 2026-11-15 on AFC staging (`ea6f488`). Order `AHE-20261115-7EHJHY` (£14.97, two
+> lines, one at quantity 2 with a note). **Change my order** was sent twice concurrently: the order
+> went `CANCELLED` with one cancellation event, and the basket held quantity 2 (note restored) and
+> quantity 1, not doubled.
+
 ### Test Case: Continue to Payment
 
 - **Action:** Steps 1–4 above, then press **Continue to payment**.
@@ -93,6 +98,11 @@ offered. Spec: `specs/2026-11-14-checkout-continue-payment/`.
   usual.
 - **Failure Condition:** A new session id, a second `Payment` row, or an empty basket with no way
   back to payment.
+
+> **Last run:** 2026-11-15 on AFC staging (`ea6f488`). Same order: **Continue to payment** reopened
+> `cs_test_a04SLOIO…`, the stored `providerReference`, with one `Payment` row and `PENDING_PAYMENT`.
+> Expired path: order `AHE-20261115-2JZ4KG`, left past 35 minutes, showed "may have expired"; **Continue
+> to payment** then showed Stripe's expired state, and **Put my items back in the basket** restored it.
 
 > **Last verified (pre-#1589 flow, superseded):** 2026-08-17 on staging (P6.7 closeout smoke pass). Order
 > `AHE-20260817-3V492G` (£19.94) reached Stripe Checkout (`cs_test_…`, Sandbox); the back arrow

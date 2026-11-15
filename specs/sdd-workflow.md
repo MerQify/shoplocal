@@ -813,6 +813,15 @@ Gate 3, run from a **fresh context**. Load `requirements.md` + `validation.md` +
     expects. This is what let P5b's Validate exercise `/staff/discounts`'s admin actions — including
     the no-`Cookie` and wrong-role refusal cases — **without a valid session to render the form
     first**, which matters exactly when the row under test is about authorization itself.
+- **Write live payment rows so the assistant can run them on a hosted environment, or name the owner
+  as the one who runs them.** On a hosted staging site the assistant may place test orders, but it
+  may not type a card number or sign in to an account, and auto mode refuses Stripe API calls made
+  with a key read from `secrets/*.vars`. `#1589` (2026-11-15) shows what to do instead. Expire a
+  session by waiting past `CHECKOUT_SESSION_TTL_MS` rather than calling the API. Prove a double
+  submit by POSTing the form's own `FormData` (it carries `$ACTION_ID_…`) twice with `fetch`. Hand
+  the owner the test-card payment and the sign-in steps when the spec is written, not when
+  validation stalls. Also, a git worktree starts with no `.env`. Copying one in makes the DB
+  integration tests run instead of skip, so stale dev credentials then look like four new failures.
 - **Check which database the Worker is actually on before trusting a live result.** `npm run preview`
   reads `.dev.vars`; `prisma migrate`/`db:seed` and any local inspection script read `.env`. When
   those point at different Neon projects, a live check silently validates against a database the app
