@@ -131,7 +131,7 @@ export function buildPromotionPrompt(input: PromotionAiInput): string {
     '  "badgeText": "Short urgency, social proof, or truthful discount tag under 20 characters (must match verified discount if one exists, otherwise quality/social proof)",',
     '  "callToActionText": "Direct action button label under 20 characters (e.g. Shop Deal, Claim Offer, Order Now)",',
     '  "altText": "Promotion-focused accessibility text conveying the specific offer and product/department (under 100 characters), not a physical visual photo description",',
-    '  "imagePrompt": "Detailed commercial photography visual prompt for Flux text-to-image. Appetizing, vibrant, clean studio lighting, shallow depth of field, high contrast, professional e-commerce hero banner."',
+    '  "imagePrompt": "Detailed commercial photography visual prompt for Flux text-to-image. Appetizing, natural realistic halal food photography, soft studio lighting, shallow depth of field, 3/4 perspective, clean neutral surface. Subject arranged on the right with generous negative space on the left for text overlay. Strictly NO text, NO labels, NO people, NO live animals."',
     "}",
   );
 
@@ -236,8 +236,11 @@ export async function generatePromotionAiContent(
     return { ok: false, error: "Could not parse promotional copy from AI response." };
   }
 
-  // Next, generate the banner image using Flux
-  const imageBytes = await getImageGenerationService().generateImage(copy.imagePrompt);
+  // Next, generate the banner image using Flux with strict art direction guardrails
+  const guardedPrompt = copy.imagePrompt.includes("No live animals")
+    ? copy.imagePrompt
+    : `${copy.imagePrompt}. Generous empty space on the left for overlaid text, subject on the right, soft studio lighting, shallow depth of field, appetising, realistic. Show only the goods as a shop sells them: food raw or prepared and ready to cook. No live animals, no people, no hands. No text, no lettering, no labels, no logos, no price tags.`;
+  const imageBytes = await getImageGenerationService().generateImage(guardedPrompt);
 
   let imageKey: string | null = null;
   let imageUrl: string | null = null;

@@ -262,6 +262,66 @@ tile.
 - **`Icon` is decorative unless it has a `label`.** An icon-only control carries its own `aria-label`
   and the icon inside stays `aria-hidden`.
 
+### The Three Icon Families & Design Specifications
+
+To ensure consistent visual hierarchy and eliminate fragmented aesthetic treatments across the storefront:
+
+#### 1. Three Distinct Families
+- **Functional**: Interface controls, search, basket, navigation, account, chevrons, pagination, toggles, plus/minus, check, close.
+  - **Source & Format**: Lucide vector SVG on standard 24 × 24 grid.
+  - **Treatment**: Monochrome vector strokes, inheriting `currentColor` or semantic text tokens (`text-primary`, `text-action`). No decorative gradients or drop shadows.
+- **Category**: Department and grocery classifications (meat, poultry, seafood, groceries, vegetables, produce, dairy, bakery).
+  - **Source & Format**: Department SVGs, high-resolution photography, or Noto Emoji silhouettes.
+  - **Treatment**: Centered inside circular `IconMedallion` with standard 2px safe padding, maintaining optical weight across categories.
+- **Promotional**: Special offers, bundles, savings badges, delivery promises, loyalty rewards, trust signals.
+  - **Source & Format**: Studio 3D cutouts, Noto Emoji, or semantic SVGs.
+  - **Treatment**: Tinted medallions (`action` or `accent` tint), high visual salience, clear conversion and trust reinforcement.
+
+#### 2. Design Specifications
+| Property | Standard Specification | Rationale |
+|---|---|---|
+| **Base Grid** | 24 × 24px | Universal layout standard aligning with 8pt/4pt UI grid |
+| **Stroke Weight** | 1.5px baseline (2.0px bold) | Refined, modern weight with high legibility on retina displays |
+| **Safe Area** | 2px internal padding (20 × 20px live area) | Prevents visual clipping and stroke bleeding at bounding box edges |
+| **Corner Treatment** | 2px corner radius | Approximates friendly, approachable geometry matching UI radius tokens |
+| **Line Caps & Joins** | `round` caps and `round` joins | Avoids harsh industrial corners, maintaining retail food warmth |
+| **Scaling Steps** | 16px (`sm`), 20px (`md`), 24px (`lg`), 32px (`xl`), 48px (`2xl`) | Strict step scale preventing arbitrary one-off pixel dimensions |
+| **Colour System** | Semantic design tokens | Controlled contrast clamped against surfaces (WCAG AA) |
+| **Format** | Scalable Vector Graphics (SVG) | Infinite scaling without pixelation or artefacting |
+
+### AI-Generated Image & Visual Art Direction Standards
+
+All generated or curated visual assets across Aheed Food Centre must adhere to strict art direction guardrails:
+
+#### 1. Visual Simplicity & Cognitive Fluency
+- Every asset must have **one clear purpose and focal point**.
+- Eliminate visual clutter, busy patterned backgrounds, and extraneous decorative elements.
+- Immediate recognition: Shoppers must identify the product or category within 50 milliseconds.
+
+#### 2. Image Quality & Commercial Realism
+- **Natural, realistic, commercial food photography**: Halal meats must be shown as sold in-store—fresh raw cuts or prepared ready-to-cook with natural marbling. Fresh produce must look crisp and naturally harvested.
+- **Strict negative constraints**:
+  - NO live animals (lambs, chickens, cows).
+  - NO people, human faces, or distorted hands.
+  - NO AI-generated text, lettering, logos, watermarks, stickers, or price tags inside the image.
+  - NO artificial glowing food, unrealistic saturation, or hyper-stylised surrealism.
+- **Lighting & Perspective**: Warm, soft, diffused studio daylight with gentle ambient contact shadows; 3/4 camera perspective; shallow depth of field.
+- **Surfaces**: Clean, authentic surfaces such as light stone, slate, natural wood, or subtle ceramic.
+
+#### 3. Promotional Banner Composition (16:9)
+- **Asymmetric Composition**: Subject anchored on the right 50% of the canvas.
+- **Negative Space**: Generous empty background on the left 50% specifically reserved for high-contrast HTML/CSS headline, price, and CTA text overlays.
+
+### Consumer Psychology & Conversion Rate Optimisation (CRO)
+
+Visual assets directly influence customer purchasing decisions through validated behavioural economics and cognitive psychology principles:
+
+1. **Cognitive Fluency**: Familiar, standardised iconography (e.g. magnifying glass for search, supermarket basket for cart) reduces cognitive load, allowing shoppers to navigate effortlessly without thinking.
+2. **Visual Hierarchy & Salience**: Use contrast strategically. High-contrast action tokens (`#2E7D32`) and accent badges (`#A85400`) immediately draw eye tracking to primary conversion points (Add to Basket, Checkout, Free Delivery).
+3. **Halo Effect**: Premium, realistic, appetizing food photography elevates the perceived quality, freshness, and halal integrity of the entire store.
+4. **Value Framing**: Savings and promotional bundles must feature transparent pricing (`Save £X.XX` or `X for £Y`). Badges must never inflate or hallucinate savings.
+5. **Conversion Cues & Friction Reduction**: Conversion triggers (Add to Basket, Proceed to Checkout) are paired with clear micro-copy and familiar functional icons, eliminating hesitation.
+
 ## Shape
 
 Originally inferred from the brand kit's UI-elements panel (pill buttons/search, ~12–16px rounded

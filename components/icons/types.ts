@@ -9,6 +9,25 @@
 export type IconProvider = "lucide" | "ph" | "noto";
 
 /**
+ * Three distinct icon families for cohesive visual hierarchy:
+ * - `functional`: Search, basket, account, navigation, checkout, and controls (standard 24x24 Lucide 1.5px SVG).
+ * - `category`: Meat, poultry, seafood, groceries, vegetables, bakery, and dairy.
+ * - `promotional`: Offers, bundles, savings, delivery, rewards, trust badges, and value framing.
+ */
+export type IconFamily = "functional" | "category" | "promotional";
+
+/**
+ * Standardised icon design specifications.
+ */
+export const ICON_BASE_GRID = 24;
+export const ICON_STROKE_WEIGHT = 1.5;
+export const ICON_SAFE_AREA_PX = 2;
+export const ICON_CORNER_RADIUS_PX = 2;
+export const ICON_LINE_CAP = "round" as const;
+export const ICON_LINE_JOIN = "round" as const;
+export const ICON_SCALE_STEPS = [16, 20, 24, 32] as const;
+
+/**
  * `functional` — controls and navigation; Lucide only (enforced below by the type and by a test).
  * `status` — alerts and success; never colour-only.
  * `decorative` — meaning is carried by adjacent text; the tier that may carry a second hue.

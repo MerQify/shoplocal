@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "aheed-icon-system-tokens",
+  "version": "1.0.0",
+  "description": "Design tokens and design specifications for Aheed Food Centre icon families",
+  "specifications": {
+    "baseGrid": {
+      "value": 24,
+      "unit": "px",
+      "description": "Base bounding box grid for interface and functional icons"
+    },
+    "strokeWeight": {
+      "default": {
+        "value": 1.5,
+        "unit": "px",
+        "description": "Starting stroke weight for vector icons, creating an elegant and legible line"
+      },
+      "bold": {
+        "value": 2.0,
+        "unit": "px",
+        "description": "Emphasis stroke weight for active states"
+      }
+    },
+    "safeArea": {
+      "padding": {
+        "value": 2,
+        "unit": "px",
+        "description": "Consistent internal optical padding preventing stroke clipping"
+      },
+      "activeArea": {
+        "value": 20,
+        "unit": "px",
+        "description": "Live drawing area within the 24x24px base bounding box"
+      }
+    },
+    "lineCaps": {
+      "value": "round",
+      "description": "Rounded line caps for warm, approachable, friendly aesthetics"
+    },
+    "lineJoins": {
+      "value": "round",
+      "description": "Rounded corners and joins for optical softness"
+    },
+    "scaling": {
+      "xs": { "value": 12, "unit": "px", "description": "Micro badges, compact table meta" },
+      "sm": {
+        "value": 16,
+        "unit": "px",
+        "description": "Inline text accents, button icons, table actions"
+      },
+      "md": {
+        "value": 20,
+        "unit": "px",
+        "description": "Inputs, list items, secondary navigation"
+      },
+      "lg": {
+        "value": 24,
+        "unit": "px",
+        "description": "Default interface controls, header actions, primary nav"
+      },
+      "xl": {
+        "value": 32,
+        "unit": "px",
+        "description": "Featured cards, category medallions (framed)"
+      },
+      "2xl": {
+        "value": 48,
+        "unit": "px",
+        "description": "Hero features, empty state banners (framed)"
+      }
+    }
+  },
+  "families": {
+    "functional": {
+      "description": "Search, basket, account, navigation, checkout, and controls",
+      "provider": "lucide",
+      "format": "svg",
+      "styling": {
+        "monochrome": true,
+        "colorInheritance": "currentColor",
+        "stroke": 1.5,
+        "frame": "none"
+      }
+    },
+    "category": {
+      "description": "Meat, poultry, seafood, groceries, vegetables, produce, bakery, and dairy",
+      "provider": "noto",
+      "format": "svg-or-raster",
+      "styling": {
+        "monochrome": false,
+        "frame": "circular-medallion",
+        "defaultSize": 64,
+        "backgroundColor": "var(--color-surface-muted)"
+      }
+    },
+    "promotional": {
+      "description": "Offers, bundles, savings, delivery, rewards, trust badges, and value framing",
+      "provider": "noto",
+      "format": "svg-or-3d",
+      "styling": {
+        "monochrome": false,
+        "frame": "tinted-medallion",
+        "accentTone": "var(--color-accent)",
+        "actionTone": "var(--color-action)"
+      }
+    }
+  },
+  "colorTokens": {
+    "primary": {
+      "token": "--color-primary",
+      "hex": "#1B5E20",
+      "role": "Brand anchor, wordmark, headers"
+    },
+    "action": {
+      "token": "--color-action",
+      "hex": "#2E7D32",
+      "role": "Primary conversion CTA, add to basket"
+    },
+    "accent": {
+      "token": "--color-accent",
+      "hex": "#A85400",
+      "role": "Urgency, discounts, offers, rewards"
+    },
+    "danger": {
+      "token": "--color-danger",
+      "hex": "#C82D2D",
+      "role": "Destructive actions, critical alerts"
+    },
+    "surfaceMuted": {
+      "token": "--color-surface-muted",
+      "hex": "#F5F5F0",
+      "role": "Page backgrounds, card surfaces"
+    },
+    "primaryMuted": {
+      "token": "--color-primary-muted",
+      "hex": "#49784E",
+      "role": "Secondary text, clamped 4.5:1"
+    },
+    "primarySubtle": {
+      "token": "--color-primary-subtle",
+      "hex": "#77917A",
+      "role": "Decorative icons, clamped 3:1"
+    }
+  }
+}
