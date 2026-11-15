@@ -8,6 +8,12 @@ every branch merges.
 
 ### Fixed
 
+- **Weekly opening hours control checkout slots (#1615, 2026-11-15).** A weekday ticked Closed all day in Opening hours still offered slots. `#1605` had wired only the dated Holiday & closure entries.
+  - The new `effectiveDayHours` (`lib/slot-closure.ts`) applies the dated entry when one exists, otherwise that weekday's `VendorWeeklyHours`, by the same rules. A closed weekday offers no slot and shows "Closed every Wednesday". Collection slots must fit the opening hours, while delivery is unchanged.
+  - Enforced in the slot list, `placeOrder` and both Express gates.
+  - AFC's Sunday 18:00–20:00 collection slot now disappears, because the shop closes at 19:00.
+  - No migration.
+
 - **Checkout keeps what the shopper typed when an order is refused (#1613, 2026-11-15).** A refusal such as "Sorry — we don't deliver to SW1A 1AA yet." used to clear the name, email, phone and address. Cause: React 19 resets a form's uncontrolled fields after a form `action` completes, errors included. `CheckoutForm` now submits through `onSubmit` → `startTransition(() => formAction(formData))`, which is not followed by that reset. `action={formAction}` stays as the no-JavaScript fallback.
 
 - **Header Navigation Controls Consistency, Sizing & Alignment (#1610, 2026-11-15)**

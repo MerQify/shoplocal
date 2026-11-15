@@ -12,7 +12,8 @@ vi.mock("@/lib/payments", () => ({
 const { getAvailableSlotsForDate, getSlotDayForDate } =
   await import("@/lib/repositories/fulfilment-slots");
 const { placeOrder } = await import("@/lib/repositories/orders");
-const { expressOverrideVerdict, slotFitsOverride } = await import("@/lib/slot-closure");
+const { effectiveDayHours, expressOverrideVerdict, slotFitsOverride } =
+  await import("@/lib/slot-closure");
 
 /**
  * #1605 — dated closures and changed hours (#1060's `VendorHoursOverride`) in the slot list and in
@@ -32,7 +33,7 @@ const SLOTS = [
 const CLOSED = { label: "Christmas Day", closed: true, openTime: null, closeTime: null };
 const SHORT = { label: "Christmas Eve", closed: false, openTime: "09:00", closeTime: "14:00" };
 
-function listPrisma(override: object | null, slots = SLOTS) {
+function listPrisma(override: object | null, slots = SLOTS, weekly: object | null = null) {
   const prisma = {
     vendor: {
       findUnique: async () => ({
@@ -44,6 +45,7 @@ function listPrisma(override: object | null, slots = SLOTS) {
         },
         fulfilmentSlots: slots,
         hoursOverrides: override ? [override] : [],
+        weeklyHours: weekly ? [weekly] : [],
       }),
     },
     order: { groupBy: vi.fn(async () => []) },
@@ -107,12 +109,13 @@ describe("placeOrder — closed day and changed hours (R15, R16)", () => {
     vi.useRealTimers();
   });
 
-  function orderPrisma(override: object | null, slot = SLOTS[3]) {
+  function orderPrisma(override: object | null, slot = SLOTS[3], weekly: object | null = null) {
     const count = vi.fn(async () => 5);
     const create = vi.fn();
     const overrideLookup = vi.fn(async () => override);
     const tx = {
       vendorHoursOverride: { findUnique: overrideLookup },
+      vendorWeeklyHours: { findUnique: async () => weekly },
       vendorFulfilmentSlot: { findUnique: async () => slot },
       vendorConfig: {
         findUnique: async () => ({
@@ -169,6 +172,86 @@ describe("placeOrder — closed day and changed hours (R15, R16)", () => {
       code: "SLOT_FULL",
     });
     expect(count).toHaveBeenCalledTimes(1);
+  });
+
+  it("#1615 R5 — refuses a weekly-closed weekday with no dated entry", async () => {
+    const { prisma, create } = orderPrisma(null, SLOTS[3], WEEKLY_CLOSED);
+    await expect(placeOrder(prisma, VENDOR, input("DELIVERY"))).rejects.toMatchObject({
+      code: "STORE_CLOSED",
+      message: "We're closed on that day. Please choose another day.",
+    });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("#1615 R5 — refuses a collection slot outside the weekly hours", async () => {
+    const { prisma, create } = orderPrisma(null, SLOTS[3], WEEKLY_TO_19);
+    await expect(placeOrder(prisma, VENDOR, input("COLLECTION"))).rejects.toMatchObject({
+      code: "SLOT_CLOSED",
+    });
+    expect(create).not.toHaveBeenCalled();
+  });
+});
+
+// #1615 — Monday's usual hours (DAY is a Monday).
+const WEEKLY_CLOSED = { dayOfWeek: 1, closed: true, openTime: null, closeTime: null };
+const WEEKLY_TO_19 = { dayOfWeek: 1, closed: false, openTime: "09:00", closeTime: "19:00" };
+
+describe("#1615 — the weekly opening hours govern slots too", () => {
+  it("R1 — effectiveDayHours: dated wins, then weekly closed, then weekly hours, else null", () => {
+    expect(effectiveDayHours(SHORT, WEEKLY_CLOSED)).toEqual(SHORT);
+    expect(effectiveDayHours(null, { ...WEEKLY_CLOSED, dayOfWeek: 3 })).toEqual({
+      label: "Closed every Wednesday",
+      closed: true,
+      openTime: null,
+      closeTime: null,
+    });
+    expect(effectiveDayHours(null, WEEKLY_TO_19)).toMatchObject({
+      closed: false,
+      openTime: "09:00",
+      closeTime: "19:00",
+    });
+    expect(
+      effectiveDayHours(null, { dayOfWeek: 1, closed: false, openTime: null, closeTime: null }),
+    ).toBeNull();
+    expect(effectiveDayHours(null, null)).toBeNull();
+  });
+
+  it("R2 — a weekly-closed weekday offers no slot for either method, with its label", async () => {
+    for (const m of ["DELIVERY", "COLLECTION"] as const) {
+      expect(
+        await getSlotDayForDate(listPrisma(null, SLOTS, WEEKLY_CLOSED), VENDOR, m, DAY, NOW),
+      ).toEqual({ slots: [], closedLabel: "Closed every Monday" });
+    }
+  });
+
+  it("R3 — weekly 09:00–19:00 drops the 18:00–20:00 collection slot but not the delivery one", async () => {
+    const prisma = listPrisma(null, SLOTS, WEEKLY_TO_19);
+    expect(
+      ids(await getAvailableSlotsForDate(prisma, VENDOR, "COLLECTION", DAY, NOW)),
+    ).not.toContain("s-18");
+    expect(ids(await getAvailableSlotsForDate(prisma, VENDOR, "DELIVERY", DAY, NOW))).toContain(
+      "s-18",
+    );
+  });
+
+  it("R4 — a dated entry wins over the weekly row, both ways", async () => {
+    const reopened = await getAvailableSlotsForDate(
+      listPrisma(SHORT, SLOTS, WEEKLY_CLOSED),
+      VENDOR,
+      "COLLECTION",
+      DAY,
+      NOW,
+    );
+    expect(ids(reopened)).toEqual(["s-09", "s-10"]);
+    expect(
+      await getAvailableSlotsForDate(
+        listPrisma(CLOSED, SLOTS, WEEKLY_TO_19),
+        VENDOR,
+        "DELIVERY",
+        DAY,
+        NOW,
+      ),
+    ).toEqual([]);
   });
 });
 

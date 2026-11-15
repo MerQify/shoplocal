@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-15T12:50:05.467Z` · commit `24955d44` · `358` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-15T13:38:59.084Z` · commit `91f6ba75` · `359` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -342,6 +342,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Storefront Landing Hero LCP and Accessibility Optimization (plan)](specs/2026-11-15-perf-lcp-and-a11y-landing/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Optimize storefront landing hero Largest Contentful Paint (LCP) and resolve accessibility deductions identified in Google PageSpeed Insights (zb8uu21j1p). |
 | [Website-Wide UI Component Standards and Visual Consistency Optimisation (plan)](specs/2026-11-15-ui-component-consistency/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish comprehensive design and implementation standards for UI components across Aheed Food Centre, including component sizing tokens, unified 4px spacing scale, standardized Button/Badge primitives, Card variant consolidation, and accessibility guarantees. |
 | [Visual Identity Standards, Icon System, and AI Visual Art Direction (plan)](specs/2026-11-15-visual-identity-standards/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish a cohesive, professional and conversion-conscious visual identity across Aheed Food Centre by standardising icon specifications into 3 families, creating reusable icon design tokens, codifying strict AI art direction guardrails, and applying CRO principles. |
+| [Weekly opening hours control checkout slots (plan)](specs/2026-11-15-weekly-hours-slots/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1615. The weekly Opening hours now gate slots with the #1605 rules: a weekly closed day offers no slot, opening hours trim collection, and a dated holiday entry still wins for its date. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.49.0 | 2026-11-12 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
 | [ADR-002 — Authentication Library](specs/decisions/ADR-002-auth-library.md) | adr | 1.0.0 | 2026-08-06 | approved | internal | Decision to use Better Auth (self-hosted, bearer tokens, RBAC) for email/password and Google Sign-In, rejecting hosted IdPs like Clerk/Auth0 for the MVP. |
