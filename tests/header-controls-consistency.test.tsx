@@ -39,12 +39,7 @@ afterEach(cleanup);
 describe("Header navigation controls consistency (#1610)", () => {
   it("LocationControl summary trigger conforms to the standard h-10 control height and medallion sizing", () => {
     const { container } = render(
-      <LocationControl
-        postcode="MK9 1AA"
-        deliverable
-        offerCollection
-        method="COLLECTION"
-      />
+      <LocationControl postcode="MK9 1AA" deliverable offerCollection method="COLLECTION" />,
     );
 
     const summary = container.querySelector("summary")!;
@@ -70,7 +65,7 @@ describe("Header navigation controls consistency (#1610)", () => {
         deliverable={null}
         offerCollection={false}
         method="DELIVERY"
-      />
+      />,
     );
 
     const button = container.querySelector("button")!;
@@ -92,7 +87,7 @@ describe("Header navigation controls consistency (#1610)", () => {
       <DepartmentSearchBar
         departments={[{ slug: "meat", name: "Meat" }]}
         placeholder="Search products..."
-      />
+      />,
     );
 
     const form = container.querySelector("form")!;
@@ -128,13 +123,7 @@ describe("Header navigation controls consistency (#1610)", () => {
   });
 
   it("ViewSwitcher conforms to navigation control styling (h-10, border, bg-surface-muted, 24px medallion)", () => {
-    const { container } = render(
-      <ViewSwitcher
-        canSeeAdmin
-        currentTier="staff"
-        isPortal={false}
-      />
-    );
+    const { container } = render(<ViewSwitcher canSeeAdmin currentTier="staff" isPortal={false} />);
 
     const button = container.querySelector("button")!;
     expect(button).toBeDefined();

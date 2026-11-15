@@ -114,11 +114,7 @@ export function LocationControl({
         // always visible; its text is its accessible name, with no aria-label and no responsive
         // span pair, so #1091's doubled name cannot recur. `open` is never passed as a prop: the
         // browser owns it, and the effect above only ever closes it.
-        <details
-          ref={menuRef}
-          data-location-menu=""
-          className="group relative w-full sm:w-auto"
-        >
+        <details ref={menuRef} data-location-menu="" className="group relative w-full sm:w-auto">
           <summary
             data-tap-surface="location"
             className="flex h-10 min-h-tap w-full cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-xl border border-black/10 bg-surface-muted px-3 text-xs font-bold text-black/80 transition hover:bg-black/5 sm:w-auto lg:min-h-0 [&::-webkit-details-marker]:hidden"
