@@ -31,6 +31,18 @@ export type PaymentIntentStatus = "PENDING" | "SUCCEEDED" | "FAILED";
  */
 export const CHECKOUT_SESSION_TTL_MS = 35 * 60 * 1000;
 
+/**
+ * Has the order outlived its checkout window by OUR clock (#1589)?
+ *
+ * A prediction, not the truth: the session's `expires_at` is set from this same
+ * rule, but only Stripe's own session status says whether it can still be paid.
+ * Pages use this for wording only ("may have expired"); the "has expired" state
+ * is shown only after Stripe has said so.
+ */
+export function isPastCheckoutSessionTtl(createdAt: Date, now: Date): boolean {
+  return now.getTime() >= createdAt.getTime() + CHECKOUT_SESSION_TTL_MS;
+}
+
 export interface CreatePaymentInput {
   orderNumber: string;
   amountPence: number;
@@ -95,6 +107,15 @@ export interface RetrievedSession {
   status: string | null;
   amountTotal: number | null;
   currency: string | null;
+  /**
+   * The hosted page the shopper pays on (#1589) — Stripe sends it only while the
+   * session is `open`. Lets "Continue to payment" reopen the order's OWN session
+   * rather than create a second one.
+   *
+   * Optional only so hand-built doubles that predate it still type-check; both
+   * adapters always set it, and an absent URL is treated exactly like `null`.
+   */
+  url?: string | null;
 }
 
 export interface PaymentService {
@@ -159,6 +180,8 @@ export function createStubPaymentService(): PaymentService {
         status: "open",
         amountTotal: null,
         currency: null,
+        // Nowhere to pay with no Stripe key, so nothing to reopen (#1589).
+        url: null,
       };
     },
   };
@@ -275,6 +298,7 @@ export function createStripePaymentService(secretKey: string): PaymentService {
         status?: string;
         amount_total?: number;
         currency?: string;
+        url?: string | null;
       };
 
       return {
@@ -285,6 +309,7 @@ export function createStripePaymentService(secretKey: string): PaymentService {
         // not the same as an absent one, and only the absent case may be null.
         amountTotal: session.amount_total ?? null,
         currency: session.currency ?? null,
+        url: session.url ?? null,
       };
     },
   };

@@ -8,6 +8,8 @@ every branch merges.
 
 ### Added
 
+- **Checkout: Continue to payment after leaving Stripe (#1589, 2026-11-14).** Stripe's `cancel_url` page is now "Your payment wasn't finished": **Continue to payment** reopens the order's own Stripe session (never a second one), **Change my order** cancels and puts the items back in the basket, and only **Put my items back in the basket** is offered once Stripe reports the session expired. The old "No — keep it and go to my basket" link, which led to an empty basket and an unreachable unpaid order, is gone. `/account/orders/<order>` shows the same choices while awaiting payment. Stripe's verified status decides, never the order's age: a payment wins over expiry, an unreachable Stripe is a retryable notice, and `cancelOrder` now asks Stripe first, so a paid order is confirmed instead of cancelled and nothing is cancelled while Stripe is unreachable. It also restores the basket only after its own compare-and-set cancel, so a double submit no longer doubles it. No schema change. Follow-up: #1594 (expire the session on shopper cancel).
+
 - **SEO Canonicalisation, Legacy Domain Decommissioning & Schema.org Structured Data (#1591, 2026-11-14)**
   - Configured `https://www.aheedfoodcentre.co.uk` as the primary canonical indexed domain for Aheed Food Centre with root `metadataBase` in `app/layout.tsx` and default canonical alternate `"/"`.
   - Updated `lib/page-metadata.ts` (`buildProductMetadata`, `buildCategoryMetadata`) to anchor canonical links to the vendor's canonical domain (`www.aheedfoodcentre.co.uk`) and never emit legacy `nocaped.com` addresses.

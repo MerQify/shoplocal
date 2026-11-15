@@ -4,8 +4,8 @@ title: Manual Regression Test Register
 audience: [dev]
 type: doc
 status: approved
-version: "1.1.0"
-updated: 2026-08-17
+version: "1.2.0"
+updated: 2026-11-15
 visibility: internal
 summary: Manual regression test cases for known critical issues — the hybrid Prisma client contract under Cloudflare Worker connection limits, and cart persistence across a cancelled Stripe checkout.
 tags: [regression, testing, prisma, cart, checkout]
@@ -65,20 +65,36 @@ When a user clicks "Proceed to Checkout", the system converts the pending `Cart`
 `PENDING_PAYMENT` Order and clears the shopping cart to prepare for the Stripe session. If the user
 hits "Back" from the Stripe Checkout page, they used to lose their items.
 
+Since `#1589` (2026-11-14), Stripe's back link lands on **"Your payment wasn't finished"**
+(`/checkout/<order>/cancel?t=…`), not on `/cart`. The shopper chooses: **Continue to payment**
+reopens the order's own Stripe session, or **Change my order** cancels the order and restores the
+basket. Once Stripe reports the session expired, only **Put my items back in the basket** is
+offered. Spec: `specs/2026-11-14-checkout-continue-payment/`.
+
 ### Test Case: Cancel Checkout Flow
 
 - **Action:**
   1. Add several items to the cart.
   2. Click "Proceed to Checkout".
   3. Wait to be redirected to the Stripe Payment page.
-  4. Once on the Stripe page, click the "Back to Aheed Store" link (or use the browser's Back
-     button).
-- **Expected Result:** The user is redirected back to the `/cart` page (or homepage). The items
-  previously in the cart are successfully restored to the cart, and the `PENDING_PAYMENT` order is
-  marked as `CANCELLED`, freeing up reserved inventory.
-- **Failure Condition:** The user is brought back to an empty shopping cart.
+  4. Once on the Stripe page, use its back link (or the browser's Back button).
+  5. On "Your payment wasn't finished", press **Change my order**.
+- **Expected Result:** The user lands on `/cart` with every item restored at its ordered quantity
+  (item notes included), and the `PENDING_PAYMENT` order is marked `CANCELLED`, freeing up reserved
+  inventory. Pressing **Change my order** twice restores each item once, not twice.
+- **Failure Condition:** The user is brought back to an empty shopping cart, or the basket holds
+  doubled quantities.
 
-> **Last verified:** 2026-08-17 on staging (P6.7 closeout smoke pass). Order
+### Test Case: Continue to Payment
+
+- **Action:** Steps 1–4 above, then press **Continue to payment**.
+- **Expected Result:** The same Stripe Checkout session opens (the same `cs_…` id as before), the
+  order is still `PENDING_PAYMENT`, and it has one `Payment` row. Paying completes the order as
+  usual.
+- **Failure Condition:** A new session id, a second `Payment` row, or an empty basket with no way
+  back to payment.
+
+> **Last verified (pre-#1589 flow, superseded):** 2026-08-17 on staging (P6.7 closeout smoke pass). Order
 > `AHE-20260817-3V492G` (£19.94) reached Stripe Checkout (`cs_test_…`, Sandbox); the back arrow
 > returned to `/cart` with all 5 items and £16.45 intact. A direct DB read then confirmed the order
 > `status: "CANCELLED"` and the product's `Inventory.quantity` restored to its pre-checkout value
