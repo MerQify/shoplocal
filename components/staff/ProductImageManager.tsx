@@ -16,6 +16,7 @@ import {
   IMAGE_QUALITY,
   MAX_IMAGE_EDGE_PX,
   PRODUCT_IMAGE_SOURCE_LABELS,
+  STORAGE_CACHE_CONTROL_IMMUTABLE,
   fitWithinEdge,
   nextConfirmedPhotoSource,
   type ProductImageSource,
@@ -142,7 +143,10 @@ export function ProductImageManager({
       const put = await fetch(ticket.value.url, {
         method: "PUT",
         body: blob,
-        headers: { "content-type": IMAGE_CONTENT_TYPE },
+        headers: {
+          "content-type": IMAGE_CONTENT_TYPE,
+          "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+        },
       });
       if (!put.ok) {
         setError(`The upload was rejected by storage (${put.status}).`);
