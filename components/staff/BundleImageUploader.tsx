@@ -12,6 +12,7 @@ import {
   IMAGE_CONTENT_TYPE,
   IMAGE_QUALITY,
   MAX_IMAGE_EDGE_PX,
+  STORAGE_CACHE_CONTROL_IMMUTABLE,
   fitWithinEdge,
 } from "@/lib/product-image";
 import { Icon } from "@/components/icons/Icon";
@@ -109,7 +110,10 @@ export function BundleImageUploader({
 
       const put = await fetch(ticket.value.url, {
         method: "PUT",
-        headers: { "Content-Type": IMAGE_CONTENT_TYPE },
+        headers: {
+          "Content-Type": IMAGE_CONTENT_TYPE,
+          "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+        },
         body: blob,
       });
       if (!put.ok) {

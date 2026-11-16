@@ -1,5 +1,8 @@
 import { AwsClient } from "aws4fetch";
 import { getEnv } from "./config";
+import { STORAGE_CACHE_CONTROL_IMMUTABLE } from "./product-image";
+
+export { STORAGE_CACHE_CONTROL_IMMUTABLE };
 
 /**
  * StorageService port (ADR-003). Object storage via the S3-compatible API ONLY,
@@ -96,10 +99,14 @@ export function getStorage(): StorageService {
 
   return {
     async putObject(key, body, contentType) {
+      const headers: Record<string, string> = {
+        "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+      };
+      if (contentType) headers["content-type"] = contentType;
       const res = await client.fetch(objectUrl(key), {
         method: "PUT",
         body: body as BodyInit,
-        headers: contentType ? { "content-type": contentType } : undefined,
+        headers,
       });
       if (!res.ok) throw new Error(`storage putObject failed: ${res.status}`);
     },
@@ -113,7 +120,10 @@ export function getStorage(): StorageService {
 
       const signed = await client.sign(url.toString(), {
         method: "PUT",
-        headers: { "content-type": contentType },
+        headers: {
+          "content-type": contentType,
+          "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+        },
         aws: {
           signQuery: true,
           // aws4fetch lists `content-type` in UNSIGNABLE_HEADERS, so without

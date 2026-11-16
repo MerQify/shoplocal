@@ -24,10 +24,11 @@ import {
   IMAGE_CONTENT_TYPE,
   IMAGE_QUALITY,
   MAX_IMAGE_EDGE_PX,
+  STORAGE_CACHE_CONTROL_IMMUTABLE,
   fitWithinEdge,
 } from "@/lib/product-image";
 
-async function toWebp(file: File): Promise<Blob> {
+async function toWebp(file: File | Blob): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   try {
     const { width, height } = fitWithinEdge(bitmap.width, bitmap.height, MAX_IMAGE_EDGE_PX);
@@ -159,7 +160,10 @@ export function PromotionForm({
 
       const putRes = await fetch(ticketRes.value.url, {
         method: "PUT",
-        headers: { "content-type": IMAGE_CONTENT_TYPE },
+        headers: {
+          "content-type": IMAGE_CONTENT_TYPE,
+          "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+        },
         body: blob,
       });
 
@@ -213,9 +217,41 @@ export function PromotionForm({
       if (!res.ok || !data.imageKey) {
         throw new Error(data.error || `Banner generation failed (${res.status})`);
       }
-      setImageKey(data.imageKey);
+
+      let finalKey = data.imageKey;
+      let finalUrl = data.imageUrl ?? null;
+
+      // #1630 — Convert AI image to optimal WebP format if it was generated as PNG
+      if (data.imageUrl && data.imageKey && data.imageKey.endsWith(".png")) {
+        try {
+          const imgRes = await fetch(data.imageUrl);
+          if (imgRes.ok) {
+            const pngBlob = await imgRes.blob();
+            const webpBlob = await toWebp(pngBlob);
+            const ticketRes = await requestPromotionBannerUpload(webpBlob.size);
+            if (ticketRes.ok) {
+              const putRes = await fetch(ticketRes.value.url, {
+                method: "PUT",
+                headers: {
+                  "content-type": IMAGE_CONTENT_TYPE,
+                  "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+                },
+                body: webpBlob,
+              });
+              if (putRes.ok) {
+                finalKey = ticketRes.value.key;
+                finalUrl = URL.createObjectURL(webpBlob);
+              }
+            }
+          }
+        } catch {
+          // Gracefully fallback to the server-generated PNG if client conversion fails
+        }
+      }
+
+      setImageKey(finalKey);
       setImageNeedsReview(true);
-      setPreviewUrl(data.imageUrl ?? null);
+      setPreviewUrl(finalUrl);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : "Failed to generate a banner");
@@ -265,9 +301,40 @@ export function PromotionForm({
       setAltText(data.altText);
 
       if (data.imageKey && data.imageUrl) {
-        setImageKey(data.imageKey);
+        let finalKey = data.imageKey;
+        let finalUrl = data.imageUrl;
+
+        // #1630 — Convert AI image to optimal WebP format if it was generated as PNG
+        if (data.imageKey.endsWith(".png")) {
+          try {
+            const imgRes = await fetch(data.imageUrl);
+            if (imgRes.ok) {
+              const pngBlob = await imgRes.blob();
+              const webpBlob = await toWebp(pngBlob);
+              const ticketRes = await requestPromotionBannerUpload(webpBlob.size);
+              if (ticketRes.ok) {
+                const putRes = await fetch(ticketRes.value.url, {
+                  method: "PUT",
+                  headers: {
+                    "content-type": IMAGE_CONTENT_TYPE,
+                    "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+                  },
+                  body: webpBlob,
+                });
+                if (putRes.ok) {
+                  finalKey = ticketRes.value.key;
+                  finalUrl = URL.createObjectURL(webpBlob);
+                }
+              }
+            }
+          } catch {
+            // Gracefully fallback to the server-generated PNG if client conversion fails
+          }
+        }
+
+        setImageKey(finalKey);
         setImageNeedsReview(true);
-        setPreviewUrl(data.imageUrl);
+        setPreviewUrl(finalUrl);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to generate AI promotional content";
