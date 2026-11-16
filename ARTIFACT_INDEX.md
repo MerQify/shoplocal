@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-15T18:55:16.654Z` · commit `320cf5f6` · `363` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-16T04:04:21.237Z` · commit `1642dec2` · `364` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -343,6 +343,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Staff & Store Email Setup Guide on /help (plan)](specs/2026-11-15-help-staff-email-guide/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1619. Add clear, self-service email instructions to the storefront Help Centre (/help) for store staff and administrators to reply as the store via personal Gmail or Google Groups. |
 | [Storefront Landing Hero LCP and Accessibility Optimization (plan)](specs/2026-11-15-perf-lcp-and-a11y-landing/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Optimize storefront landing hero Largest Contentful Paint (LCP) and resolve accessibility deductions identified in Google PageSpeed Insights (zb8uu21j1p). |
 | [Cache hashed static assets for a year (plan)](specs/2026-11-15-static-asset-cache/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1624. /_next/static files were served with a 4-hour must-revalidate header. A public/_headers rule makes these content-hashed files cacheable for a year; pages stay no-store. |
+| [R2 storage immutable cache header and AI image WebP pipeline (plan)](specs/2026-11-15-storage-cache-and-ai-webp/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1630. Emits Cache-Control: public, max-age=31536000, immutable on R2 object uploads and converts AI-generated images to WebP format. |
 | [Website-Wide UI Component Standards and Visual Consistency Optimisation (plan)](specs/2026-11-15-ui-component-consistency/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish comprehensive design and implementation standards for UI components across Aheed Food Centre, including component sizing tokens, unified 4px spacing scale, standardized Button/Badge primitives, Card variant consolidation, and accessibility guarantees. |
 | [Visual Identity Standards, Icon System, and AI Visual Art Direction (plan)](specs/2026-11-15-visual-identity-standards/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish a cohesive, professional and conversion-conscious visual identity across Aheed Food Centre by standardising icon specifications into 3 families, creating reusable icon design tokens, codifying strict AI art direction guardrails, and applying CRO principles. |
 | [Weekly opening hours control checkout slots (plan)](specs/2026-11-15-weekly-hours-slots/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1615. The weekly Opening hours now gate slots with the #1605 rules: a weekly closed day offers no slot, opening hours trim collection, and a dated holiday entry still wins for its date. |

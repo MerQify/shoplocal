@@ -10,6 +10,7 @@ import {
   markEdgeFor,
   type MarkFileId,
 } from "@/lib/vendor-mark";
+import { STORAGE_CACHE_CONTROL_IMMUTABLE } from "@/lib/product-image";
 import { Icon } from "@/components/icons/Icon";
 
 const TOO_SMALL = `This image is too small — use one at least ${MARK_MIN_SOURCE_EDGE_PX} pixels wide or tall.`;
@@ -121,7 +122,10 @@ export function VendorMarkUploader({
         try {
           put = await fetch(ticket.value.uploads[spec.id], {
             method: "PUT",
-            headers: { "Content-Type": MARK_CONTENT_TYPE },
+            headers: {
+              "Content-Type": MARK_CONTENT_TYPE,
+              "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+            },
             body: blobs[spec.id],
           });
         } catch (cause) {

@@ -6,6 +6,7 @@ import {
   IMAGE_CONTENT_TYPE,
   IMAGE_QUALITY,
   MAX_IMAGE_EDGE_PX,
+  STORAGE_CACHE_CONTROL_IMMUTABLE,
   fitWithinEdge,
 } from "@/lib/product-image";
 import { Icon } from "@/components/icons/Icon";
@@ -112,8 +113,11 @@ export function ProductImageUploader({ productId, productName }: ProductImageUpl
       const put = await fetch(ticket.value.url, {
         method: "PUT",
         body: blob,
-        // Must match the content type the URL was signed for, exactly.
-        headers: { "content-type": IMAGE_CONTENT_TYPE },
+        // Must match the content type and cache control the URL was signed for, exactly.
+        headers: {
+          "content-type": IMAGE_CONTENT_TYPE,
+          "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+        },
       });
       if (!put.ok) {
         setError(`The upload was rejected by storage (${put.status}).`);

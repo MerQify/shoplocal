@@ -16,6 +16,9 @@
 /** The only content type this slice will sign for, store, or accept back. */
 export const IMAGE_CONTENT_TYPE = "image/webp";
 
+/** #1630 — Immutable browser/CDN caching directive for R2-stored image assets. */
+export const STORAGE_CACHE_CONTROL_IMMUTABLE = "public, max-age=31536000, immutable";
+
 /**
  * 2 MiB. A 1200px WebP at quality 0.82 lands around 150-300 KB, so this is
  * roughly ten times the expected size — generous enough that no legitimate

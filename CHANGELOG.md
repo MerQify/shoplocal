@@ -46,6 +46,13 @@ every branch merges.
 
 ### Performance & Accessibility
 
+- **R2 Storage Immutable Cache Header and AI Image WebP Pipeline (#1630, 2026-11-15)**
+  - **R2 storage immutable cache header (`lib/storage.ts`):** `putObject` and `presignPut` now enforce and sign `cache-control: public, max-age=31536000, immutable`. Ensures all uploaded images and assets served via custom storage domains (`images-staging.aheedfoodcentre.co.uk`, `images.merqify.com`) carry 1-year immutable caching directives, eliminating repeated multi-megabyte image downloads on every navigation.
+  - **Client uploaders synchronised:** Updated all 8 direct-to-storage staff uploader components (`ProductImageUploader`, `ProductImageManager`, `BundleImageUploader`, `CampaignBannerUploader`, `PromotionForm`, `VendorLogoUploader`, `VendorMarkUploader`, `WhatsappQrUploader`) to pass `cache-control: public, max-age=31536000, immutable` matching the SigV4 signature.
+  - **AI Image WebP conversion pipeline (`components/staff/PromotionForm.tsx`):** `handleGenerateBanner` and `handleGenerateAi` automatically convert AI-generated banner PNGs to optimized WebP format (`toWebp`) using client Canvas and upload them to storage via `requestPromotionBannerUpload`, reducing promotional banner sizes by ~90% (from ~300 KB to ~35 KB WebP) with zero quality loss.
+  - **Test coverage:** Added unit tests in `tests/storage-cache-control.test.ts` asserting immutable cache headers on `putObject` and signed headers in `presignPut`.
+  - No migration.
+
 - **Storefront Landing Hero LCP & Accessibility Optimizations (#1597, 2026-11-15)**
   - Optimized Largest Contentful Paint (LCP) in `components/layout/PromotionHero.tsx`: assigned `fetchPriority="high"` and `loading="eager"` to the initial visible slide (`index === 0`), and `loading="lazy"` to subsequent offscreen slides. Prevents React 19 from preloading offscreen banners into document `<head>`, eliminating multi-megabyte concurrent image contention on page load.
   - Resolved `[aria-hidden="true"]` focusable descendants defect and improved Agentic Browsing tree structure: moved rotation pause/play controls and pagination dots outside the slide track so inactive slides never contain focusable `<button>` elements.
