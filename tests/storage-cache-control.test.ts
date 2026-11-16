@@ -8,6 +8,17 @@ const signMock = vi.fn(async (url: string, opts?: any) => ({
   headers: opts?.headers,
 }));
 
+vi.mock("@/lib/config", () => ({
+  getEnv: () => ({
+    S3_ENDPOINT: "https://s3.example.com",
+    S3_BUCKET: "test-bucket",
+    S3_ACCESS_KEY: "test-access-key",
+    S3_SECRET_KEY: "test-secret-key",
+    S3_REGION: "auto",
+    CDN_BASE_URL: "https://cdn.example.com",
+  }),
+}));
+
 vi.mock("aws4fetch", () => {
   class MockAwsClient {
     fetch = fetchMock;
