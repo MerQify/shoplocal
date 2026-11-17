@@ -1,14 +1,18 @@
 ---
-id: specs-fix-master-excel-export-download-plan
-title: "Plan: Serve Master and Stock Excel Exports via Static Assets (#1642)"
+id: 2026-11-17-fix-master-excel-export-download-plan
+title: "Serve Master and Stock Excel Exports via Static Assets (plan)"
+audience: [dev]
 type: spec
 status: approved
-created: 2026-11-17
-updated: 2026-11-17
 version: "1.0.0"
+updated: 2026-11-17
+visibility: internal
+summary: "Fix master operational workbook and stock excel download failure by linking directly to Cloudflare static assets and replacing Worker filesystem readFileSync calls."
+tags: [catalogue, export, excel, static-assets, workers]
+related: [2026-11-17-move-export-hub-to-platform-stock-export-plan]
 ---
 
-# Plan: Serve Master and Stock Excel Exports via Static Assets
+# Serve Master and Stock Excel Exports via Static Assets (plan)
 
 Fixes #1642. Requirements: `requirements.md`.
 

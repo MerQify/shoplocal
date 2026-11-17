@@ -1,13 +1,3 @@
----
-id: specs-fix-master-excel-export-download-build-notes
-title: "Build Notes: Serve Master and Stock Excel Exports via Static Assets (#1642)"
-type: spec
-status: approved
-created: 2026-11-17
-updated: 2026-11-17
-version: "1.0.0"
----
-
 # Build Notes: Serve Master and Stock Excel Exports via Static Assets
 
 Fixes #1642.
