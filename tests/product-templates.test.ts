@@ -284,10 +284,88 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
 
     const fieldsWithErrors = line.validationErrors.map((e) => e.field);
     expect(fieldsWithErrors).toContain("Product Name*");
-    expect(fieldsWithErrors).toContain("Brand*");
     expect(fieldsWithErrors).toContain("Price (£)*");
     expect(fieldsWithErrors).toContain("Unit/Pack Size*");
     expect(fieldsWithErrors).toContain("Stock Mode*");
+    expect(fieldsWithErrors).not.toContain("Brand");
+  });
+
+  it("exports unbranded products with blank brand, never defaulting to store name", () => {
+    const unbrandedProduct: DatabaseProductForExport = {
+      id: "prod-unbranded-1",
+      name: "Fresh Halal Baby Chicken",
+      slug: "fresh-halal-baby-chicken",
+      basePrice: 499,
+      originalPrice: null,
+      unitLabel: "1kg",
+      netContentAmount: 1,
+      netContentUnit: "KILOGRAM",
+      vatRate: 0,
+      isHalal: true,
+      isVegetarian: false,
+      isFresh: true,
+      isOrganic: false,
+      isGlutenFree: true,
+      isHmcCertified: false,
+      hmcReference: null,
+      hmcVerifiedAt: null,
+      restriction: null,
+      plu: null,
+      barcode: null,
+      brand: null, // No brand!
+      category: { name: "Chicken & Poultry", slug: "chicken-poultry" },
+      inventory: null,
+      priceTier: null,
+      description: "",
+      isActive: true,
+      isFeatured: false,
+      origin: null,
+    };
+
+    const universalRow = productToUniversalRow(unbrandedProduct);
+    expect(universalRow["Brand"]).toBe("");
+    expect(universalRow["Product ID [DO NOT EDIT]"]).toBe("prod-unbranded-1");
+
+    const essentialRow = productToEssentialRow(unbrandedProduct);
+    expect(essentialRow["Brand"]).toBe("");
+    expect(essentialRow["Product ID [DO NOT EDIT]"]).toBe("prod-unbranded-1");
+  });
+
+  it("accepts unbranded products during import without error", () => {
+    const grid = [
+      [...ESSENTIAL_COLUMNS],
+      [
+        "", // Product ID [DO NOT EDIT]
+        "Fresh Halal Baby Chicken 1kg", // Product Name*
+        "", // Empty brand!
+        "Butchery", // Category*
+        "4.99", // Price (£)*
+        "1kg", // Unit/Pack Size*
+        "", // Barcode
+        "", // PLU
+        "UNKNOWN", // Stock Mode*
+        "", // Current Stock
+        "TRUE", // Is Active
+      ],
+    ];
+
+    const result = analyzeTemplateGrid(grid, existingProducts);
+    expect(result.validRowsCount).toBe(1);
+    expect(result.invalidRowsCount).toBe(0);
+    expect(result.plannedLines[0].action).toBe("CREATE");
+    expect(result.plannedLines[0].row.brand).toBe("");
+  });
+
+  it("recognizes legacy 'Product ID' as well as 'Product ID [DO NOT EDIT]'", () => {
+    const grid = [
+      ["Product ID", "Product Name*", "Brand", "Category*", "Price (£)*", "Unit/Pack Size*"],
+      ["prod-uuid-1", "Daawat Basmati Rice 5kg", "Daawat", "Rice", "14.99", "5kg"],
+    ];
+
+    const result = analyzeTemplateGrid(grid, existingProducts);
+    expect(result.validRowsCount).toBe(1);
+    expect(result.plannedLines[0].action).toBe("UPDATE");
+    expect(result.plannedLines[0].matchedProductId).toBe("prod-uuid-1");
   });
 });
 

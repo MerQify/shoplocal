@@ -10,9 +10,9 @@ import { z } from "zod";
  */
 
 export const UNIVERSAL_COLUMNS = [
-  "Product ID",
+  "Product ID [DO NOT EDIT]",
   "Product Name*",
-  "Brand*",
+  "Brand",
   "Category*",
   "Department",
   "Price (£)*",
@@ -55,9 +55,9 @@ export const UNIVERSAL_COLUMNS = [
 export type UniversalColumn = (typeof UNIVERSAL_COLUMNS)[number];
 
 export const ESSENTIAL_COLUMNS = [
-  "Product ID",
+  "Product ID [DO NOT EDIT]",
   "Product Name*",
-  "Brand*",
+  "Brand",
   "Category*",
   "Price (£)*",
   "Unit/Pack Size*",
@@ -84,7 +84,6 @@ export function detectTemplateType(headers: string[]): "universal" | "essential"
   const normalized = headers.map(normalizeHeader);
 
   const hasName = normalized.some((h) => h === "productname" || h === "name");
-  const hasBrand = normalized.some((h) => h === "brand");
   const hasCategory = normalized.some((h) => h === "category");
   const hasPrice = normalized.some((h) => h === "price" || h === "baseprice");
 
@@ -113,11 +112,7 @@ export function detectTemplateType(headers: string[]): "universal" | "essential"
     return "universal";
   }
 
-  if (hasBrand) {
-    return "essential";
-  }
-
-  return "unknown";
+  return "essential";
 }
 
 /** Helper to parse money string (£2.49 or 2.49) to integer pence. Returns null if invalid or blank. */

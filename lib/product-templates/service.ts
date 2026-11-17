@@ -92,9 +92,9 @@ export function generateBlankEssentialCsv(): string {
 export function getUniversalSampleRows(): Record<string, string>[] {
   return [
     {
-      "Product ID": "",
+      "Product ID [DO NOT EDIT]": "",
       "Product Name*": "Daawat Extra Long Basmati Rice 5kg",
-      "Brand*": "Daawat",
+      Brand: "Daawat",
       "Category*": "Rice & Grains",
       Department: "Groceries",
       "Price (£)*": "14.99",
@@ -135,9 +135,9 @@ export function getUniversalSampleRows(): Record<string, string>[] {
       "Is Featured": "TRUE",
     },
     {
-      "Product ID": "",
+      "Product ID [DO NOT EDIT]": "",
       "Product Name*": "Fresh Halal Baby Chicken Curry Cut 1kg",
-      "Brand*": "Aheed",
+      Brand: "",
       "Category*": "Chicken & Poultry",
       Department: "Butchery",
       "Price (£)*": "4.99",
@@ -182,9 +182,9 @@ export function getUniversalSampleRows(): Record<string, string>[] {
 export function getEssentialSampleRows(): Record<string, string>[] {
   return [
     {
-      "Product ID": "",
+      "Product ID [DO NOT EDIT]": "",
       "Product Name*": "Daawat Extra Long Basmati Rice 5kg",
-      "Brand*": "Daawat",
+      Brand: "Daawat",
       "Category*": "Rice & Grains",
       "Price (£)*": "14.99",
       "Unit/Pack Size*": "5kg",
@@ -195,9 +195,9 @@ export function getEssentialSampleRows(): Record<string, string>[] {
       "Is Active": "TRUE",
     },
     {
-      "Product ID": "",
+      "Product ID [DO NOT EDIT]": "",
       "Product Name*": "Fresh Halal Baby Chicken Curry Cut 1kg",
-      "Brand*": "Aheed",
+      Brand: "",
       "Category*": "Chicken & Poultry",
       "Price (£)*": "4.99",
       "Unit/Pack Size*": "1kg",

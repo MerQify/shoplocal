@@ -61,12 +61,22 @@ export default async function StaffPromotionsPage() {
             homepage hero.
           </p>
         </div>
-        <Link href="/staff/promotions/new">
-          <Button variant="primary">
-            <Icon name="plus" className="h-4 w-4" />
-            Create promotion
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/staff/promotions/export"
+            download
+            className="flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-primary hover:bg-black/5"
+          >
+            <Icon name="download" className="h-4 w-4" />
+            Export CSV
+          </a>
+          <Link href="/staff/promotions/new">
+            <Button variant="primary">
+              <Icon name="plus" className="h-4 w-4" />
+              Create promotion
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {promotions.length === 0 ? (
