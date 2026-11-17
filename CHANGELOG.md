@@ -6,6 +6,15 @@ every branch merges.
 
 ## [Unreleased]
 
+### Added
+
+- **Automate Cloudflare Cache Purge on Deployment (#1644, 2026-11-17).**
+  - **Post-Deploy Edge Purge:** Authored `scripts/purge-cloudflare-cache.ts` resolving active Cloudflare zones (`merqify.com`, `aheedfoodcentre.co.uk`) and triggering `POST /zones/{zone_id}/purge_cache` with `{"purge_everything": true}`.
+  - **CI Workflow Integration:** Integrated automated cache purge into `.github/workflows/deploy-staging.yml` and `.github/workflows/deploy-production.yml` across both platform `deploy` and dedicated `deploy-afc` jobs.
+  - **Graceful Failure Contract:** Script catches API/network errors and warns without non-zero exit codes to prevent blocking successful Worker deployments if token lacks Zone permissions.
+  - **Tests:** Added `tests/purge-cloudflare-cache.test.ts` (3 tests).
+  - No database migration.
+
 ### Fixed
 
 - **Serve Master and Stock Excel Exports via Static Assets (#1642, 2026-11-17).**
