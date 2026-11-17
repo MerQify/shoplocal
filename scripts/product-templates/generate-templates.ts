@@ -84,6 +84,12 @@ const UNIVERSAL_FIELD_GUIDE: [string, string, string, string][] = [
   ["Barcode", "No", "Text", "EAN-13, UPC, or till barcode."],
   ["PLU", "No", "Text", "Price Look-Up till code (e.g. '1001', '4011')."],
   [
+    "Image Available",
+    "No (Informational)",
+    "Boolean",
+    "TRUE if product has a real photo, FALSE if missing or seeded placeholder.",
+  ],
+  [
     "Stock Mode*",
     "Yes",
     "Text",

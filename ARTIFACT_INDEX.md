@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-17T13:01:47.750Z` · commit `62fa1b67` · `371` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-17T23:06:40.338Z` · commit `e8ea1e94` · `372` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -353,6 +353,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Essential Live Stock Export and Metadata Dropdowns in UI and Excel Workbooks (plan)](specs/2026-11-17-essential-live-export-and-metadata-dropdowns/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Fix Essential Stock Export to return live database catalogue products rather than a blank template, add metadata filter dropdowns to the Store Admin Export Hub, and inject Excel Data Validation dropdowns into generated workbooks. |
 | [Serve Master and Stock Excel Exports via Static Assets (plan)](specs/2026-11-17-fix-master-excel-export-download/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Fix master operational workbook and stock excel download failure by linking directly to Cloudflare static assets and replacing Worker filesystem readFileSync calls. |
 | [Move Templates & Operational Exports to /staff/platform/stock-export (plan)](specs/2026-11-17-move-export-hub-to-platform-stock-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Relocate the interactive Templates & Operational Exports section, Master Excel workbook download, and operational exports from /staff/products/import to /staff/platform/stock-export. |
+| [Product Export Image Availability Indicator (plan)](specs/2026-11-17-product-export-image-available/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Add Image Available column to Universal and Essential product exports, static templates, Master Operational workbook, and native Excel in-cell dropdown rules. |
 | [Standardised Product Import/Export Templates and Platform Admin Stock Export (plan)](specs/2026-11-17-product-templates-and-stock-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Defines Universal and Essential product import/export schemas, exports existing stock into the Universal template, implements zero-decision bulk import/export processing, and provides a Platform Admin-only stock export page and API. |
 | [Product Template Brand Cleanup, Bundle & Promotion Export, and Protected Columns (plan)](specs/2026-11-17-template-brand-cleanup-and-bundle-promo-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Leaves Brand blank for unbranded products, supports CSV and Excel exports for Bundles and Promotions with two-way sync support, and marks system ID columns with explicit non-editable notices in templates and instructions. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.49.0 | 2026-11-12 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |

@@ -6,6 +6,7 @@ import {
   type EssentialColumn,
 } from "./schema";
 import { formatCsvTable } from "./csv";
+import { isPlaceholderImageKey } from "../product-image";
 
 export interface DatabaseProductForExport {
   id: string;
@@ -43,6 +44,7 @@ export interface DatabaseProductForExport {
     lowStockThreshold: number;
     stockMode: string;
   } | null;
+  images?: Array<{ storageKey: string }> | null;
   priceTier?: {
     groupQuantity: number;
     groupPricePence: number;
@@ -53,6 +55,12 @@ export interface DatabaseProductForExport {
     option?: { name: string; slug: string } | null;
     numericValue?: any;
   }>;
+}
+
+/** Check whether product has at least one real (non-placeholder) image */
+export function hasProductImage(p: DatabaseProductForExport): boolean {
+  if (!p.images || p.images.length === 0) return false;
+  return p.images.some((img) => !isPlaceholderImageKey(img.storageKey));
 }
 
 /** Convert a database product into a row for the Universal Product Template */
@@ -109,6 +117,7 @@ export function productToUniversalRow(
     "Net Content Unit": p.netContentUnit || "",
     Barcode: p.barcode || "",
     PLU: p.plu || "",
+    "Image Available": hasProductImage(p) ? "TRUE" : "FALSE",
     "Stock Mode*": p.inventory?.stockMode || "UNKNOWN",
     "Current Stock": p.inventory?.quantity != null ? String(p.inventory.quantity) : "",
     "Low Stock Threshold":
@@ -153,6 +162,7 @@ export function productToEssentialRow(
     "Unit/Pack Size*": p.unitLabel,
     Barcode: p.barcode || "",
     PLU: p.plu || "",
+    "Image Available": hasProductImage(p) ? "TRUE" : "FALSE",
     "Stock Mode*": p.inventory?.stockMode || "UNKNOWN",
     "Current Stock": p.inventory?.quantity != null ? String(p.inventory.quantity) : "",
     "Is Active": p.isActive ? "TRUE" : "FALSE",

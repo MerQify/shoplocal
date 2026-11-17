@@ -150,6 +150,7 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
         "10kg", // Unit/Pack Size*
         "5012345678999", // Barcode
         "1002", // PLU
+        "TRUE", // Image Available
         "TRACKED", // Stock Mode*
         "30", // Current Stock
         "TRUE", // Is Active
@@ -184,6 +185,7 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
         "5kg",
         "5012345678901",
         "1001",
+        "TRUE",
         "TRACKED",
         "50",
         "TRUE",
@@ -213,6 +215,7 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
         "5kg",
         "5012345678901", // Barcode matches prod-uuid-1
         "",
+        "TRUE",
         "TRACKED",
         "40",
         "TRUE",
@@ -240,6 +243,7 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
         "1kg",
         "",
         "2045", // PLU matches prod-uuid-2
+        "TRUE",
         "UNTRACKED",
         "",
         "TRUE",
@@ -265,6 +269,7 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
         "Rice & Grains",
         "abc", // Invalid price!
         "", // Missing size!
+        "",
         "",
         "",
         "INVALID_MODE", // Invalid stock mode!
@@ -331,6 +336,93 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
     expect(essentialRow["Product ID [DO NOT EDIT]"]).toBe("prod-unbranded-1");
   });
 
+  it("derives Image Available as FALSE when product has no images or only placeholder images", () => {
+    const productNoImages: DatabaseProductForExport = {
+      id: "prod-no-img",
+      name: "Product Without Images",
+      slug: "product-without-images",
+      basePrice: 1000,
+      originalPrice: null,
+      unitLabel: "Each",
+      netContentAmount: null,
+      netContentUnit: null,
+      vatRate: 0,
+      isHalal: true,
+      isVegetarian: false,
+      isFresh: false,
+      isOrganic: false,
+      isGlutenFree: false,
+      isHmcCertified: false,
+      hmcReference: null,
+      hmcVerifiedAt: null,
+      restriction: null,
+      plu: null,
+      barcode: null,
+      brand: null,
+      category: { name: "Snacks", slug: "snacks" },
+      inventory: null,
+      priceTier: null,
+      description: "",
+      isActive: true,
+      isFeatured: false,
+      origin: null,
+      images: [],
+    };
+
+    const universalRow = productToUniversalRow(productNoImages);
+    expect(universalRow["Image Available"]).toBe("FALSE");
+
+    const essentialRow = productToEssentialRow(productNoImages);
+    expect(essentialRow["Image Available"]).toBe("FALSE");
+
+    const productPlaceholderImage: DatabaseProductForExport = {
+      ...productNoImages,
+      images: [{ storageKey: "products/snacks/main.svg" }],
+    };
+    expect(productToUniversalRow(productPlaceholderImage)["Image Available"]).toBe("FALSE");
+    expect(productToEssentialRow(productPlaceholderImage)["Image Available"]).toBe("FALSE");
+  });
+
+  it("derives Image Available as TRUE when product has a real non-placeholder image", () => {
+    const productRealImage: DatabaseProductForExport = {
+      id: "prod-real-img",
+      name: "Product With Real Image",
+      slug: "product-with-real-image",
+      basePrice: 1000,
+      originalPrice: null,
+      unitLabel: "Each",
+      netContentAmount: null,
+      netContentUnit: null,
+      vatRate: 0,
+      isHalal: true,
+      isVegetarian: false,
+      isFresh: false,
+      isOrganic: false,
+      isGlutenFree: false,
+      isHmcCertified: false,
+      hmcReference: null,
+      hmcVerifiedAt: null,
+      restriction: null,
+      plu: null,
+      barcode: null,
+      brand: null,
+      category: { name: "Snacks", slug: "snacks" },
+      inventory: null,
+      priceTier: null,
+      description: "",
+      isActive: true,
+      isFeatured: false,
+      origin: null,
+      images: [
+        { storageKey: "products/snacks/main.svg" },
+        { storageKey: "products/snacks/photo-1234.webp" },
+      ],
+    };
+
+    expect(productToUniversalRow(productRealImage)["Image Available"]).toBe("TRUE");
+    expect(productToEssentialRow(productRealImage)["Image Available"]).toBe("TRUE");
+  });
+
   it("accepts unbranded products during import without error", () => {
     const grid = [
       [...ESSENTIAL_COLUMNS],
@@ -343,6 +435,7 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
         "1kg", // Unit/Pack Size*
         "", // Barcode
         "", // PLU
+        "FALSE", // Image Available
         "UNKNOWN", // Stock Mode*
         "", // Current Stock
         "TRUE", // Is Active
