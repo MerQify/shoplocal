@@ -16,10 +16,7 @@ import {
   exportProductsToUniversalCsv,
   type DatabaseProductForExport,
 } from "@/lib/product-templates/export";
-import {
-  analyzeTemplateGrid,
-  type ExistingProductLookup,
-} from "@/lib/product-templates/import";
+import { analyzeTemplateGrid, type ExistingProductLookup } from "@/lib/product-templates/import";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -201,9 +198,7 @@ describe("Product Templates - Zero-Decision Import & Validation Engine", () => {
     expect(line.autoReady).toBe(true);
     expect(line.matchedProductId).toBe("prod-uuid-1");
     expect(line.reason).toBe("Matched by Product ID");
-    expect(line.changes).toEqual([
-      { field: "basePrice", oldValue: 1499, newValue: 1599 },
-    ]);
+    expect(line.changes).toEqual([{ field: "basePrice", oldValue: 1499, newValue: 1599 }]);
   });
 
   it("matches and updates existing product by Barcode when ID is empty", () => {

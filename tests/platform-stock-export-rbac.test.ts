@@ -21,7 +21,9 @@ describe("Platform Stock Export Route RBAC (#1634)", () => {
     requireVendorRole.mockResolvedValue({ ok: false, status: 401, reason: "unauthenticated" });
     const { GET } = await import("@/app/(admin)/staff/platform/stock-export/export/route");
 
-    const req = new Request("http://localhost/staff/platform/stock-export/export?type=stock&format=csv");
+    const req = new Request(
+      "http://localhost/staff/platform/stock-export/export?type=stock&format=csv",
+    );
     const res = await GET(req);
 
     expect(res.status).toBe(401);
@@ -36,7 +38,9 @@ describe("Platform Stock Export Route RBAC (#1634)", () => {
     });
     const { GET } = await import("@/app/(admin)/staff/platform/stock-export/export/route");
 
-    const req = new Request("http://localhost/staff/platform/stock-export/export?type=stock&format=csv");
+    const req = new Request(
+      "http://localhost/staff/platform/stock-export/export?type=stock&format=csv",
+    );
     const res = await GET(req);
 
     expect(res.status).toBe(403);
@@ -53,7 +57,9 @@ describe("Platform Stock Export Route RBAC (#1634)", () => {
     });
     const { GET } = await import("@/app/(admin)/staff/platform/stock-export/export/route");
 
-    const req = new Request("http://localhost/staff/platform/stock-export/export?type=stock&format=csv");
+    const req = new Request(
+      "http://localhost/staff/platform/stock-export/export?type=stock&format=csv",
+    );
     const res = await GET(req);
 
     expect(res.status).toBe(200);

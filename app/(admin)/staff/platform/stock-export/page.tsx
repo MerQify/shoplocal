@@ -47,8 +47,8 @@ export default async function PlatformStockExportPage() {
           <h1 className="text-2xl font-bold text-slate-900">Stock & Template Export</h1>
         </div>
         <p className="mt-1 text-sm text-slate-600">
-          Export existing stock records with full metadata, or download standardized bulk
-          creation templates for all grocery categories.
+          Export existing stock records with full metadata, or download standardized bulk creation
+          templates for all grocery categories.
         </p>
       </div>
 
@@ -117,14 +117,15 @@ export default async function PlatformStockExportPage() {
                   Universal Product Template
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  Complete schema containing all available product fields: mandatory, optional,
-                  and category-specific attributes (Cut, Variety, Grain, Form, Storage), dietary
+                  Complete schema containing all available product fields: mandatory, optional, and
+                  category-specific attributes (Cut, Variety, Grain, Form, Storage), dietary
                   certifications, HMC references, tax rates, and multi-buy promotions.
                 </p>
                 <ul className="mt-4 space-y-1 text-xs text-slate-500">
                   <li className="flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                    Mandatory fields clearly marked with asterisks (<code className="text-slate-700">*</code>)
+                    Mandatory fields clearly marked with asterisks (
+                    <code className="text-slate-700">*</code>)
                   </li>
                   <li className="flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
@@ -171,8 +172,8 @@ export default async function PlatformStockExportPage() {
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
                   Simplified schema containing only mandatory fields plus Brand and key identifiers.
-                  Engineered for rapid, zero-decision bulk imports without requiring manual field mapping
-                  or decisions.
+                  Engineered for rapid, zero-decision bulk imports without requiring manual field
+                  mapping or decisions.
                 </p>
                 <ul className="mt-4 space-y-1 text-xs text-slate-500">
                   <li className="flex items-center gap-1.5">
@@ -217,12 +218,18 @@ export default async function PlatformStockExportPage() {
           <h3 className="text-sm font-semibold text-slate-900">How Two-Way Import/Export Works</h3>
           <div className="mt-3 grid gap-4 sm:grid-cols-3 text-xs text-slate-600">
             <div className="rounded-lg bg-white p-3 border border-slate-200">
-              <span className="font-semibold text-slate-900 block mb-1">1. Export Existing Stock</span>
-              Download the current stock export. Rows have their unique <code className="bg-slate-100 px-1 py-0.5 rounded">Product ID</code> populated.
+              <span className="font-semibold text-slate-900 block mb-1">
+                1. Export Existing Stock
+              </span>
+              Download the current stock export. Rows have their unique{" "}
+              <code className="bg-slate-100 px-1 py-0.5 rounded">Product ID</code> populated.
             </div>
             <div className="rounded-lg bg-white p-3 border border-slate-200">
-              <span className="font-semibold text-slate-900 block mb-1">2. Edit Prices & Stock</span>
-              Update any prices, sizes, or attributes in Excel. To add new products, append rows with a blank Product ID.
+              <span className="font-semibold text-slate-900 block mb-1">
+                2. Edit Prices & Stock
+              </span>
+              Update any prices, sizes, or attributes in Excel. To add new products, append rows
+              with a blank Product ID.
             </div>
             <div className="rounded-lg bg-white p-3 border border-slate-200">
               <span className="font-semibold text-slate-900 block mb-1">3. Re-Upload to Apply</span>

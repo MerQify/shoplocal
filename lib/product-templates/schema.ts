@@ -156,21 +156,10 @@ export function parseInteger(val: unknown): number | null {
 }
 
 /** Supported Net Content Units */
-export const NET_CONTENT_UNITS = [
-  "GRAM",
-  "KILOGRAM",
-  "MILLILITRE",
-  "LITRE",
-  "EACH",
-] as const;
+export const NET_CONTENT_UNITS = ["GRAM", "KILOGRAM", "MILLILITRE", "LITRE", "EACH"] as const;
 
 /** Supported Stock Modes */
-export const STOCK_MODES = [
-  "UNKNOWN",
-  "TRACKED",
-  "UNTRACKED",
-  "INFINITE",
-] as const;
+export const STOCK_MODES = ["UNKNOWN", "TRACKED", "UNTRACKED", "INFINITE"] as const;
 
 /** Row data structure after parsing */
 export interface ParsedProductRow {

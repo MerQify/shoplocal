@@ -85,28 +85,13 @@ export async function GET(request: Request): Promise<Response> {
     let filename = "";
 
     if (type === "stock") {
-      filePath = join(
-        process.cwd(),
-        "public",
-        "templates",
-        "aheed-food-centre-stock-export.xlsx",
-      );
+      filePath = join(process.cwd(), "public", "templates", "aheed-food-centre-stock-export.xlsx");
       filename = `stock-export-${dateStr}.xlsx`;
     } else if (type === "universal") {
-      filePath = join(
-        process.cwd(),
-        "public",
-        "templates",
-        "universal-product-template.xlsx",
-      );
+      filePath = join(process.cwd(), "public", "templates", "universal-product-template.xlsx");
       filename = "universal-product-template.xlsx";
     } else if (type === "essential") {
-      filePath = join(
-        process.cwd(),
-        "public",
-        "templates",
-        "essential-product-template.xlsx",
-      );
+      filePath = join(process.cwd(), "public", "templates", "essential-product-template.xlsx");
       filename = "essential-product-template.xlsx";
     } else {
       return new Response("Invalid export type. Allowed: stock, universal, essential", {

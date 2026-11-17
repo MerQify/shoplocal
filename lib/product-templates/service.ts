@@ -126,7 +126,8 @@ export function getUniversalSampleRows(): Record<string, string>[] {
       "Offer Group Qty": "2",
       "Offer Group Price (£)": "28.00",
       "Short Description": "Premium aged extra long basmati rice",
-      "Description / Notes": "Fluffy, aromatic long grain basmati rice ideal for biryani and pilaf.",
+      "Description / Notes":
+        "Fluffy, aromatic long grain basmati rice ideal for biryani and pilaf.",
       Ingredients: "100% Basmati Rice",
       "Allergen Info": "Gluten Free",
       "URL Slug": "daawat-extra-long-basmati-rice-5kg",

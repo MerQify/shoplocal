@@ -3,10 +3,7 @@ import { join } from "node:path";
 import { writeWorkbook } from "../lib/read-spreadsheet";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import {
-  UNIVERSAL_COLUMNS,
-  ESSENTIAL_COLUMNS,
-} from "../../lib/product-templates/schema";
+import { UNIVERSAL_COLUMNS, ESSENTIAL_COLUMNS } from "../../lib/product-templates/schema";
 import {
   productToUniversalRow,
   productToEssentialRow,

@@ -49,7 +49,8 @@ export const PLATFORM_NAV_ITEMS: readonly PlatformNavItem[] = [
   {
     href: "/staff/platform/stock-export",
     label: "Stock & Template Export",
-    description: "Export full catalogue stock records and download standardised Universal/Essential templates.",
+    description:
+      "Export full catalogue stock records and download standardised Universal/Essential templates.",
     icon: "download",
   },
   {

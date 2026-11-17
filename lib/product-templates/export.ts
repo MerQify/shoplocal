@@ -127,8 +127,7 @@ export function productToUniversalRow(
     "Attr: Cut": findAttr("cut"),
     "Attr: Variety / Grain / Species": findAttr("variety", "grain", "species"),
     "Attr: Form": findAttr("form"),
-    "Offer Group Qty":
-      p.priceTier && p.priceTier.isActive ? String(p.priceTier.groupQuantity) : "",
+    "Offer Group Qty": p.priceTier && p.priceTier.isActive ? String(p.priceTier.groupQuantity) : "",
     "Offer Group Price (£)":
       p.priceTier && p.priceTier.isActive ? formatPenceToGbp(p.priceTier.groupPricePence) : "",
     "Short Description": "",
