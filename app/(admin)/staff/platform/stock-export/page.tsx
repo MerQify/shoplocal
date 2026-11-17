@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireVendorRole } from "@/lib/auth-rbac";
+import { getPrisma } from "@/lib/db";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { PlatformExportHub } from "@/components/staff/platform-stock-export/PlatformExportHub";
@@ -37,6 +38,13 @@ export default async function PlatformStockExportPage() {
     );
   }
 
+  const prisma = getPrisma();
+  const categories = await prisma.category.findMany({
+    where: { vendorId: auth.vendorId },
+    select: { id: true, name: true, slug: true },
+    orderBy: { name: "asc" },
+  });
+
   return (
     <PageContainer width="wide">
       <div className="mb-8">
@@ -55,7 +63,7 @@ export default async function PlatformStockExportPage() {
 
       <div className="space-y-8">
         {/* Templates & Operational Exports Section */}
-        <PlatformExportHub />
+        <PlatformExportHub categories={categories} />
 
         {/* Two-Way Sync & Zero-Decision Guide */}
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">

@@ -1,6 +1,11 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { writeWorkbook } from "../lib/read-spreadsheet";
+import {
+  writeWorkbook,
+  buildColumnValidations,
+  UNIVERSAL_DROPDOWN_RULES,
+  ESSENTIAL_DROPDOWN_RULES,
+} from "../lib/read-spreadsheet";
 import { UNIVERSAL_COLUMNS, ESSENTIAL_COLUMNS } from "../../lib/product-templates/schema";
 import {
   getUniversalSampleRows,
@@ -199,8 +204,14 @@ function main() {
   });
 
   const universalXlsxPath = join(OUTPUT_DIR, "universal-product-template.xlsx");
+  const universalValidations = buildColumnValidations(UNIVERSAL_COLUMNS, UNIVERSAL_DROPDOWN_RULES);
   writeWorkbook(universalXlsxPath, [
-    { name: "Products", rows: universalRows, widths: universalColWidths },
+    {
+      name: "Products",
+      rows: universalRows,
+      widths: universalColWidths,
+      validations: universalValidations,
+    },
     { name: "Field Instructions", rows: UNIVERSAL_FIELD_GUIDE, widths: [30, 12, 12, 65] },
   ]);
   console.log(`✓ Universal Template (.xlsx): ${universalXlsxPath}`);
@@ -224,8 +235,14 @@ function main() {
   });
 
   const essentialXlsxPath = join(OUTPUT_DIR, "essential-product-template.xlsx");
+  const essentialValidations = buildColumnValidations(ESSENTIAL_COLUMNS, ESSENTIAL_DROPDOWN_RULES);
   writeWorkbook(essentialXlsxPath, [
-    { name: "Products", rows: essentialRows, widths: essentialColWidths },
+    {
+      name: "Products",
+      rows: essentialRows,
+      widths: essentialColWidths,
+      validations: essentialValidations,
+    },
     { name: "Field Instructions", rows: ESSENTIAL_FIELD_GUIDE, widths: [25, 12, 12, 65] },
   ]);
   console.log(`✓ Essential Template (.xlsx): ${essentialXlsxPath}`);
