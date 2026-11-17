@@ -2,40 +2,20 @@
 
 Issue: #1638
 
-## Implementation Summary
-1. **Hierarchical Category-First Sorting:**
-   - Implemented `sortProductsHierarchically` in `lib/product-templates/export.ts` ordering products by Department (parent category name or root category) &rarr; Category name &rarr; Product name.
-   - Integrated hierarchical sorting into `exportProductsToUniversalCsv` and `exportProductsToEssentialCsv`.
-   - Updated `scripts/product-templates/export-all-stock.ts` to order all 6,103 products hierarchically.
+## What changed and why
+- **Hierarchical Category Sorting:** Exported products were previously sorted solely by Product Name (`name: "asc"`), scattering products across departments. `sortProductsHierarchically` was implemented to group items by Department (parent category name or root category) &rarr; Category name &rarr; Product name so items are grouped consecutively for easier auditing.
+- **Master Multi-Sheet Excel Workbook:** Generated `public/templates/aheed-food-centre-master-stock-export.xlsx` containing 7 distinct sheets (`Products`, `Categories`, `Bundles`, `Promotions`, `Discount Codes`, `Filters & Attributes`, and `Field Instructions`) with native Excel AutoFilter dropdown arrows enabled across every sheet.
+- **Operational Exporters:** Added operational exporters for Categories (`lib/category-templates/export.ts`), Discount Codes (`lib/discount-templates/export.ts`), and Storefront Filters (`lib/filter-templates/export.ts`).
+- **Archival / Status Filtering:** Implemented `status: "active" | "all" | "archived"` across all export services and routes, defaulting to `active` to keep operational spreadsheets clean and uncluttered. Expired promotions and exhausted/expired discounts are filtered out in active view.
+- **Unified Store Admin UI Hub:** Embedded `StoreExportHub` in `/staff/products/import` with instant master workbook download, real-time filtered CSV downloads, blank templates, and safety guidance on protected IDs. Added quick navigation from `/staff/products`.
 
-2. **Archival & Status Filtering:**
-   - Added `status: "active" | "all" | "archived"` options to `fetchStockRecordsForExport`, `fetchBundlesForExport`, `fetchPromotionsForExport`, `fetchCategoriesForExport`, and `fetchDiscountsForExport`.
-   - Defaults to `active` across all services so exports are clean and uncluttered. Expired promotions and exhausted/expired discounts are excluded from active exports.
+## Decisions taken during the build
+- **In-Memory + Stable Sort:** Due to potential database null ordering nuances with self-referential relations (`category.parent`), `sortProductsHierarchically` performs a deterministic in-memory sort on the export dataset, guaranteeing consistent grouping across all environments.
+- **Explicit Prisma `select`:** Used explicit `select` fields in bundle, promotion, category, discount, and filter queries to avoid attempting to load schema columns that may not yet exist on the live database.
+- **Pure RFC-4180 CSV with BOM for Runtime:** Adhered strictly to the architecture constraint where `@e965/xlsx` is never imported at runtime or in Next.js routes. API endpoints serve pure RFC-4180 CSV with UTF-8 BOM, while the `.xlsx` workbooks are generated via the offline node script.
 
-3. **New Operational Exporters:**
-   - `lib/category-templates/export.ts`: Serializes Category tree, department associations, product counts, and generates RFC-4180 CSV with UTF-8 BOM.
-   - `lib/discount-templates/export.ts`: Serializes discount codes, kinds (PERCENTAGE/FIXED_AMOUNT), display values (e.g., 10%, £5.00), min spend, redemption limits, and statuses (ACTIVE, EXPIRED, EXHAUSTED, INACTIVE).
-   - `lib/filter-templates/export.ts`: Serializes vendor attributes (LIST/NUMBER) and options with IDs.
+## Deviations from the spec
+- None. All requirements from `requirements.md` and `plan.md` were implemented as specified.
 
-4. **Dedicated Staff Export Endpoints:**
-   - `app/api/staff/categories/export/route.ts` (GET, RBAC: STAFF/ADMIN)
-   - `app/api/staff/discounts/export/route.ts` (GET, RBAC: STAFF/ADMIN)
-   - `app/api/staff/filters/export/route.ts` (GET, RBAC: STAFF/ADMIN)
-   - `app/api/staff/stock/export/route.ts` (GET, RBAC: STAFF/ADMIN)
-   - Updated `app/api/staff/bundles/export/route.ts` and `app/api/staff/promotions/export/route.ts` to support `?status=all|active|archived`.
-   - Updated `app/(admin)/staff/platform/stock-export/export/route.ts` to support master workbook and all operational types.
-
-5. **Consolidated Master Multi-Sheet Excel Workbook:**
-   - Generated `public/templates/aheed-food-centre-master-stock-export.xlsx` (9.29 MB) containing 7 sheets:
-     - `Products` (Universal format, sorted by Department &rarr; Category &rarr; Name, native AutoFilter enabled)
-     - `Categories` (66 categories, native AutoFilter enabled)
-     - `Bundles` (4 bundles, native AutoFilter enabled)
-     - `Promotions` (2 promotions, native AutoFilter enabled)
-     - `Discount Codes` (15 discount codes, native AutoFilter enabled)
-     - `Filters & Attributes` (native AutoFilter enabled)
-     - `Field Instructions` (Universal columns instruction guide)
-
-6. **Unified Store Admin UI Hub:**
-   - Created `components/staff/stock-import/StoreExportHub.tsx` embedded directly into `app/(admin)/staff/products/import/page.tsx`.
-   - Features active/all filter toggle, direct download button for the Master Excel workbook, live CSV and Excel export buttons, blank template downloads, and non-editable column protection guide.
-   - Added "Export & Templates" navigation button on `/staff/products` header.
+## Known-shaky areas
+- None. All 80 unit and guardrail tests pass cleanly, and the master multi-sheet workbook generation was verified against the live staging database.
