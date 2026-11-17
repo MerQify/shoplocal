@@ -2,44 +2,45 @@
 
 Issue #1634. Built 2026-11-17 on branch `feature/1634-product-templates-and-stock-export`.
 
-## What was built
+## What changed and why
 
-1. **Universal & Essential Product Schemas (`lib/product-templates/schema.ts`)**:
-   - `UNIVERSAL_COLUMNS` (40 columns): All mandatory, optional, tax, dietary, speciality grocery attributes (`Attr: Storage`, `Attr: Cut`, `Attr: Variety / Grain / Species`, `Attr: Form`), HMC certifications, age restrictions, and multi-buy promotions.
-   - `ESSENTIAL_COLUMNS` (11 columns): Streamlined minimal schema containing only essential fields (`Product ID`, `Product Name*`, `Brand*`, `Category*`, `Price (£)*`, `Unit/Pack Size*`, `Barcode`, `PLU`, `Stock Mode*`, `Current Stock`, `Is Active`). Includes `Brand*` as requested.
-   - Pure formatters and parsers for money (pence <-> GBP decimal), booleans, integers, and template header auto-detection (`detectTemplateType`).
+- **`lib/product-templates/schema.ts` (new):**
+  Defines the comprehensive Universal template (40 columns) and streamlined Essential template (11 columns).
+  Mandatory columns are marked with `*` (`Product Name*`, `Brand*`, `Category*`, `Price (£)*`, `Unit/Pack Size*`, `Stock Mode*`).
+  Provides header auto-detection (`detectTemplateType`) and pure formatters/parsers for money, booleans, and integers.
 
-2. **Pure RFC-4180 CSV Serialization & Parsing (`lib/product-templates/csv.ts`)**:
-   - Zero-dependency CSV table generator and parser with UTF-8 BOM (`\uFEFF`) support for seamless opening in Microsoft Excel.
+- **`lib/product-templates/csv.ts` (new):**
+  Pure RFC-4180 CSV serializer and parser with UTF-8 BOM (`\uFEFF`) support so that files open cleanly in Excel without mangling special characters or symbols. Completely dependency-free.
 
-3. **Two-Way Import Engine with Zero-Decision Automation (`lib/product-templates/import.ts`)**:
-   - `analyzeTemplateGrid`: Auto-detects template type (Universal vs Essential), maps aliases, validates mandatory and optional fields with row/column error attribution.
-   - Zero-decision matching: Auto-resolves `UPDATE` based on `Product ID` (highest priority), `Barcode`, `PLU`, or exact product name; auto-resolves `CREATE` for valid new rows; marks lines as `autoReady: true` for immediate single-click application without manual decision friction.
+- **`lib/product-templates/import.ts` (new):**
+  Validates uploaded spreadsheet grids against the standard template schemas with row-level error reporting. Implements zero-decision matching logic: lines are matched against existing products by `Product ID` (highest authority), `Barcode`, `PLU`, or exact product name to resolve `UPDATE`, while valid non-matched lines resolve `CREATE` (`autoReady: true`).
 
-4. **Product Serializer & Service Layer (`lib/product-templates/export.ts`, `lib/product-templates/service.ts`)**:
-   - Converts rich database product entities (with category hierarchies, inventory, brand relations, attribute values, and price tiers) into Universal and Essential rows without data loss.
+- **`lib/product-templates/export.ts` & `lib/product-templates/service.ts` (new):**
+  Serializes rich Prisma product entities (with category hierarchies, inventory, brand relations, attribute values, and price tiers) into Universal and Essential rows without loss.
 
-5. **Template & Stock Generation Scripts (`scripts/product-templates/`)**:
-   - `generate-templates.ts`: Generates standard `.xlsx` (with "Products" and "Field Instructions" sheets) and `.csv` blank/sample templates in `public/templates/`.
-   - `export-all-stock.ts`: Exports all 6,303 live catalogue records from production database into `public/templates/` and `.import-reports/exports/` in both `.xlsx` and `.csv` formats.
-   - Complies with `tests/catalogue-import-guards.test.ts` by routing spreadsheet workbook writes through `scripts/lib/read-spreadsheet.ts`.
+- **`app/(admin)/staff/platform/stock-export/page.tsx` & `export/route.ts` (new):**
+  Dedicated Platform Admin stock and template export page and secure download route. Gated strictly to `auth.via === "platform-admin"`; store admins and non-platform staff receive refusal/403.
 
-6. **Platform Admin-Only Stock Export Page & API Route**:
-   - `app/(admin)/staff/platform/stock-export/page.tsx`: Platform Admin page rendering download actions for live stock export, Universal template, and Essential template.
-   - `app/(admin)/staff/platform/stock-export/export/route.ts`: Secure download endpoint streaming CSV or serving XLSX workbooks.
-   - RBAC security: Strictly enforced at both frontend and backend layers with `auth.via === "platform-admin"`. Non-platform admins and store admins receive `PanelRefusal` / 403 Forbidden.
-   - Registered in `components/staff/platform-nav-items.ts` under Platform Admin navigation.
+- **`scripts/product-templates/` (new):**
+  - `generate-templates.ts`: Generates standard `.xlsx` (with Products and Field Instructions sheets) and `.csv` blank/sample templates in `public/templates/`.
+  - `export-all-stock.ts`: Exports all 6,303 live catalogue records from the database into `public/templates/` and `.import-reports/exports/` in both `.xlsx` and `.csv` formats.
 
-7. **Test Suites**:
-   - `tests/product-templates.test.ts` (15 tests): Schema parsing, template auto-detection, CSV round-trip, mandatory validation, zero-decision matching logic, and Worker bundle isolation.
-   - `tests/platform-stock-export-rbac.test.ts` (3 tests): RBAC verification (401 unauthenticated, 403 store admin, 200 platform admin).
-   - `tests/rbac-gate-matrix.test.ts` (121 tests passed): AST role-gate validation passed for new page and route.
-   - `tests/catalogue-import-guards.test.ts` (38 tests passed): Worker bundle isolation verified.
+## Decisions taken during the build
 
-## Verification
+- **Preserving Worker bundle isolation:**
+  Per `tests/catalogue-import-guards.test.ts`, `@e965/xlsx` must not be imported anywhere under `app/`, `features/`, `components/`, `lib/`, or `prisma/`. All runtime and route code remains pure or generates CSV, while script generation routes through `scripts/lib/read-spreadsheet.ts`.
+- **Including Brand in Essential Template:**
+  User explicitly directed: "in the minimum one include Brand and other essntial one plan is to be able to import everythign with outaskign for anydecision if the informaiton is the format we haev asked for". Essential template mandates Brand alongside Name, Category, Price, and Unit/Pack Size.
+- **Two-way update mechanics:**
+  When exported stock data is edited and re-uploaded, existing products are resolved by Product ID, Barcode, or PLU, preserving existing `manuallyEditedFields`.
 
-- `npx vitest run tests/product-templates.test.ts tests/platform-stock-export-rbac.test.ts tests/rbac-gate-matrix.test.ts tests/catalogue-import-guards.test.ts`: 177 tests passed.
-- `npm run typecheck`: 0 errors.
-- `npm run lint`: 0 errors.
-- `npm run kms:validate` and `npm run kms:coverage`: 100% green.
-- Live catalogue export verified: 6,303 records exported cleanly without data loss.
+## Deviations from the spec
+
+None. All deliverables (Universal Template, Essential Template, Live Data Population of 6,303 records, Import/Export Engine with Zero-Decision automation, and Platform Admin-only RBAC Export) were built to specification.
+
+## Known-shaky areas
+
+- **Browser-level Excel upload parsing:**
+  While CSV files parse instantly via pure code, browser-side Excel parsing on client devices requires SheetJS from CDN (as loaded by `read-stock-file.ts`). If a client network blocks the CDN script, users should use the standard CSV format.
+- **Category name matching:**
+  When new categories are imported via template, the category name is matched against existing vendor categories. If an unrecognised category name is supplied, the row is flagged with a validation error rather than creating an orphan category.
