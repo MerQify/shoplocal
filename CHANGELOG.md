@@ -8,6 +8,13 @@ every branch merges.
 
 ### Added
 
+- **Product Template Brand Cleanup, Bundle & Promotion Export, and Protected Columns (#1636, 2026-11-17).**
+  - **Brand Disassociation for Unbranded Products:** Unbranded products no longer default to "Aheed" in `lib/product-templates/export.ts` and are exported with empty Brand cells. On import, `Brand` is optional—blank brands are accepted without validation errors and assign `brandId: null`. Re-exported live catalogue data (6,103 products) in `public/templates/` with clean blank brand cells.
+  - **Bundles & Promotions Export:** Added full CSV export capabilities for Bundles (`lib/bundle-templates/export.ts`) and Promotions (`lib/promotion-templates/export.ts`). Added download endpoints (`/api/staff/bundles/export`, `/api/staff/promotions/export`), UI buttons on `/staff/bundles` and `/staff/promotions`, and platform admin export links on `/staff/platform/stock-export`.
+  - **Protected System ID Columns:** Column headers updated to `Product ID [DO NOT EDIT]`, `Bundle ID [DO NOT EDIT]`, and `Promotion ID [DO NOT EDIT]`. Documented clearly in Excel Field Instructions that modifying system IDs breaks two-way updates. Implemented backward-compatible alias resolution so legacy headers continue to import seamlessly.
+  - **Tests:** Added `tests/bundle-promotion-templates.test.ts` (7 tests) and updated `tests/product-templates.test.ts` (18 tests total, all passing).
+  - No database migration.
+
 - **Standardised Product Import/Export Templates and Platform Admin Stock Export (#1634, 2026-11-17).**
   - **Universal Product Template (`lib/product-templates/`):** Comprehensive 40-column schema (.xlsx / .csv) covering all mandatory, optional, tax, dietary, speciality grocery attributes (`Attr: Storage`, `Attr: Cut`, `Attr: Variety / Grain / Species`, `Attr: Form`), HMC certifications, age restrictions, and multi-buy promotions.
   - **Essential Product Template:** Streamlined 11-column schema (.xlsx / .csv) covering mandatory fields only plus Brand (`Product Name*`, `Brand*`, `Category*`, `Price (£)*`, `Unit/Pack Size*`, `Stock Mode*`, `Current Stock`, `Is Active`) for rapid bulk creation.

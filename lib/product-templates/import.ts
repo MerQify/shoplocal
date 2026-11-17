@@ -138,7 +138,13 @@ export function analyzeTemplateGrid(
 
     const rowErrors: RowValidationError[] = [];
 
-    const productId = getCell(row, "productid", "id");
+    const productId = getCell(
+      row,
+      "productiddonotedit",
+      "productiddonoteditsystemid",
+      "productid",
+      "id",
+    );
     const name = getCell(row, "productname", "name");
     const brand = getCell(row, "brand");
     const category = getCell(row, "category");
@@ -155,9 +161,7 @@ export function analyzeTemplateGrid(
       rowErrors.push({ rowNumber, field: "Product Name*", message: "Product Name is required." });
     }
 
-    if (!brand) {
-      rowErrors.push({ rowNumber, field: "Brand*", message: "Brand is required." });
-    }
+    // Brand is optional: leaving it blank creates/keeps the product unbranded (no association with store name)
 
     if (!category) {
       rowErrors.push({ rowNumber, field: "Category*", message: "Category is required." });

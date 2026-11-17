@@ -89,7 +89,7 @@ async function main() {
     const universalColWidths = UNIVERSAL_COLUMNS.map((col) => {
       if (col === "Product Name*") return 38;
       if (col === "Description / Notes") return 45;
-      if (col === "Product ID") return 38;
+      if (col.startsWith("Product ID")) return 38;
       return Math.max(col.length + 3, 14);
     });
 

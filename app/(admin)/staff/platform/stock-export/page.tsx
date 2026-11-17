@@ -98,6 +98,35 @@ export default async function PlatformStockExportPage() {
           </div>
         </div>
 
+        {/* Bundles & Promotions Export */}
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900 mb-1">
+            Bundles & Promotions Exports
+          </h2>
+          <p className="text-sm text-slate-600 mb-4">
+            Export all active and draft bundles and homepage hero promotions for bulk review and
+            offline records.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="/staff/platform/stock-export/export?type=bundles&format=csv"
+              download
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              <Icon name="download" className="h-4 w-4" />
+              Export Bundles (.csv)
+            </a>
+            <a
+              href="/staff/platform/stock-export/export?type=promotions&format=csv"
+              download
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              <Icon name="download" className="h-4 w-4" />
+              Export Promotions (.csv)
+            </a>
+          </div>
+        </div>
+
         {/* 2. Standardised Templates Section */}
         <div>
           <h2 className="text-base font-semibold text-slate-900 mb-4">

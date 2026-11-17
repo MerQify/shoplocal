@@ -4,11 +4,13 @@ import {
   generateBlankUniversalCsv,
   generateBlankEssentialCsv,
 } from "@/lib/product-templates/service";
+import { fetchBundlesForExport, exportBundlesToCsv } from "@/lib/bundle-templates/export";
+import { fetchPromotionsForExport, exportPromotionsToCsv } from "@/lib/promotion-templates/export";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Platform Admin-only stock and template export endpoint.
+ * Platform Admin-only stock, bundle, promotion and template export endpoint.
  *
  * Enforces role-based access control:
  * - 401 if unauthenticated
@@ -29,7 +31,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const url = new URL(request.url);
-  const type = url.searchParams.get("type") || "stock"; // "stock" | "universal" | "essential"
+  const type = url.searchParams.get("type") || "stock"; // "stock" | "universal" | "essential" | "bundles" | "promotions"
   const format = url.searchParams.get("format") || "csv"; // "csv" | "xlsx"
 
   const now = new Date();
@@ -42,6 +44,14 @@ export async function GET(request: Request): Promise<Response> {
     if (type === "stock") {
       csvData = await generateUniversalStockCsv(auth.vendorId);
       filename = `stock-export-${dateStr}.csv`;
+    } else if (type === "bundles") {
+      const bundles = await fetchBundlesForExport(auth.vendorId);
+      csvData = exportBundlesToCsv(bundles);
+      filename = `bundles-export-${dateStr}.csv`;
+    } else if (type === "promotions") {
+      const promos = await fetchPromotionsForExport(auth.vendorId);
+      csvData = exportPromotionsToCsv(promos);
+      filename = `promotions-export-${dateStr}.csv`;
     } else if (type === "universal") {
       const templatePath = join(
         process.cwd(),
@@ -65,9 +75,12 @@ export async function GET(request: Request): Promise<Response> {
         : generateBlankEssentialCsv();
       filename = "essential-product-template.csv";
     } else {
-      return new Response("Invalid export type. Allowed: stock, universal, essential", {
-        status: 400,
-      });
+      return new Response(
+        "Invalid export type. Allowed: stock, universal, essential, bundles, promotions",
+        {
+          status: 400,
+        },
+      );
     }
 
     return new Response(csvData, {

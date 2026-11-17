@@ -95,9 +95,9 @@ export function productToUniversalRow(
   else if (p.vatRate === 0) vatRateStr = "0%";
 
   return {
-    "Product ID": p.id,
+    "Product ID [DO NOT EDIT]": p.id,
     "Product Name*": p.name,
-    "Brand*": p.brand?.name || "Aheed",
+    Brand: p.brand?.name || "",
     "Category*": p.category.name,
     Department: p.category.parent?.name || "",
     "Price (£)*": formatPenceToGbp(p.basePrice),
@@ -145,9 +145,9 @@ export function productToEssentialRow(
   p: DatabaseProductForExport,
 ): Record<EssentialColumn, string> {
   return {
-    "Product ID": p.id,
+    "Product ID [DO NOT EDIT]": p.id,
     "Product Name*": p.name,
-    "Brand*": p.brand?.name || "Aheed",
+    Brand: p.brand?.name || "",
     "Category*": p.category.name,
     "Price (£)*": formatPenceToGbp(p.basePrice),
     "Unit/Pack Size*": p.unitLabel,

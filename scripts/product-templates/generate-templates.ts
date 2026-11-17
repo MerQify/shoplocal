@@ -15,10 +15,10 @@ mkdirSync(OUTPUT_DIR, { recursive: true });
 const UNIVERSAL_FIELD_GUIDE: [string, string, string, string][] = [
   ["Column", "Mandatory", "Type", "Description"],
   [
-    "Product ID",
-    "No",
-    "UUID",
-    "System ID. Leave blank when creating new products. Keep when updating existing products.",
+    "Product ID [DO NOT EDIT]",
+    "No (Blank for New)",
+    "System Identifier",
+    "DO NOT MODIFY! System database identifier used to match and update this exact product. If creating a new product, leave this cell completely blank.",
   ],
   [
     "Product Name*",
@@ -26,7 +26,12 @@ const UNIVERSAL_FIELD_GUIDE: [string, string, string, string][] = [
     "Text",
     "Full customer-facing product name (e.g. 'Daawat Extra Long Basmati Rice 5kg').",
   ],
-  ["Brand*", "Yes", "Text", "Brand name (e.g. 'Daawat', 'Heera', 'Laila', 'Aheed')."],
+  [
+    "Brand",
+    "No",
+    "Text",
+    "Brand name (e.g. 'Daawat', 'Heera', 'Laila'). Leave blank if unbranded.",
+  ],
   [
     "Category*",
     "Yes",
@@ -149,10 +154,10 @@ const UNIVERSAL_FIELD_GUIDE: [string, string, string, string][] = [
 const ESSENTIAL_FIELD_GUIDE: [string, string, string, string][] = [
   ["Column", "Mandatory", "Type", "Description"],
   [
-    "Product ID",
-    "No",
-    "UUID",
-    "Leave blank for new products. Keep when editing existing products.",
+    "Product ID [DO NOT EDIT]",
+    "No (Blank for New)",
+    "System Identifier",
+    "DO NOT MODIFY! System database identifier used to match and update this exact product. If creating a new product, leave this cell completely blank.",
   ],
   [
     "Product Name*",
@@ -160,7 +165,12 @@ const ESSENTIAL_FIELD_GUIDE: [string, string, string, string][] = [
     "Text",
     "Customer-facing product name (e.g. 'Daawat Basmati Rice 5kg').",
   ],
-  ["Brand*", "Yes", "Text", "Brand name (e.g. 'Daawat', 'Aheed')."],
+  [
+    "Brand",
+    "No",
+    "Text",
+    "Brand name (e.g. 'Daawat', 'Heera', 'Laila'). Leave blank if unbranded.",
+  ],
   ["Category*", "Yes", "Text", "Category name or slug (e.g. 'Rice & Grains')."],
   ["Price (£)*", "Yes", "Decimal", "Selling price in GBP (e.g. '14.99')."],
   ["Unit/Pack Size*", "Yes", "Text", "Pack size display label (e.g. '5kg', 'Each', '1kg')."],
@@ -184,7 +194,7 @@ function main() {
   const universalColWidths = UNIVERSAL_COLUMNS.map((col) => {
     if (col === "Product Name*") return 38;
     if (col === "Description / Notes") return 45;
-    if (col === "Product ID") return 38;
+    if (col.startsWith("Product ID")) return 38;
     return Math.max(col.length + 3, 14);
   });
 
@@ -209,7 +219,7 @@ function main() {
 
   const essentialColWidths = ESSENTIAL_COLUMNS.map((col) => {
     if (col === "Product Name*") return 38;
-    if (col === "Product ID") return 38;
+    if (col.startsWith("Product ID")) return 38;
     return Math.max(col.length + 3, 14);
   });
 

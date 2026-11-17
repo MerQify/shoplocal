@@ -44,13 +44,23 @@ export default async function StaffBundlesPage() {
     <PageContainer width="wide">
       <div className="mb-1 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-primary">Bundles</h1>
-        <Link
-          href="/staff/bundles/new"
-          className="flex items-center gap-1.5 rounded-xl bg-action px-3 py-2 text-xs font-bold text-white"
-        >
-          <Icon name="plus" className="h-4 w-4" />
-          New bundle
-        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/staff/bundles/export"
+            download
+            className="flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-primary hover:bg-black/5"
+          >
+            <Icon name="download" className="h-4 w-4" />
+            Export CSV
+          </a>
+          <Link
+            href="/staff/bundles/new"
+            className="flex items-center gap-1.5 rounded-xl bg-action px-3 py-2 text-xs font-bold text-white"
+          >
+            <Icon name="plus" className="h-4 w-4" />
+            New bundle
+          </Link>
+        </div>
       </div>
       <p className="mb-6 text-sm text-primary-muted">
         A named group of products shoppers can add in one tap. The price is added up from the
