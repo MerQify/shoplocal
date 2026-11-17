@@ -3,12 +3,42 @@ import { join } from "node:path";
 import { writeWorkbook } from "../lib/read-spreadsheet";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { UNIVERSAL_COLUMNS, ESSENTIAL_COLUMNS } from "../../lib/product-templates/schema";
+import {
+  UNIVERSAL_COLUMNS,
+  ESSENTIAL_COLUMNS,
+  UNIVERSAL_COLUMN_INSTRUCTIONS,
+} from "../../lib/product-templates/schema";
 import {
   productToUniversalRow,
   productToEssentialRow,
+  sortProductsHierarchically,
   type DatabaseProductForExport,
 } from "../../lib/product-templates/export";
+import {
+  BUNDLE_EXPORT_COLUMNS,
+  bundleToExportRow,
+  type BundleForExport,
+} from "../../lib/bundle-templates/export";
+import {
+  PROMOTION_EXPORT_COLUMNS,
+  promotionToExportRow,
+  type PromotionForExport,
+} from "../../lib/promotion-templates/export";
+import {
+  CATEGORY_EXPORT_COLUMNS,
+  categoryToExportRow,
+  type CategoryForExport,
+} from "../../lib/category-templates/export";
+import {
+  DISCOUNT_EXPORT_COLUMNS,
+  discountToExportRow,
+  type DiscountForExport,
+} from "../../lib/discount-templates/export";
+import {
+  FILTER_EXPORT_COLUMNS,
+  filterToExportRows,
+  type VendorAttributeForExport,
+} from "../../lib/filter-templates/export";
 import { formatCsvTable } from "../../lib/product-templates/csv";
 
 function getAfcDbUrl(targetEnv: "staging" | "production" = "production"): string {
@@ -37,9 +67,12 @@ async function main() {
       throw new Error("Vendor 'aheed-food-centre' not found in database.");
     }
 
-    console.log(`Querying catalogue records for vendor "${vendor.name}" (${vendor.id})...`);
+    console.log(
+      `Querying complete operational dataset for vendor "${vendor.name}" (${vendor.id})...`,
+    );
 
-    const products = await prisma.product.findMany({
+    // 1. Fetch Products
+    const rawProducts = await prisma.product.findMany({
       where: { vendorId: vendor.id },
       include: {
         brand: { select: { name: true } },
@@ -72,20 +105,136 @@ async function main() {
           },
         },
       },
-      orderBy: { name: "asc" },
     });
 
-    console.log(`Retrieved ${products.length} products.`);
-
-    const exportRows = products.map((p) =>
-      productToUniversalRow(p as unknown as DatabaseProductForExport),
+    // Hierarchical sort: Department -> Category -> Product Name
+    const products = sortProductsHierarchically(
+      rawProducts as unknown as DatabaseProductForExport[],
     );
+    console.log(`✓ Retrieved & hierarchically sorted ${products.length} products.`);
 
-    const sheetDataRows: (string | number)[][] = [
+    // 2. Fetch Categories
+    const categories = await prisma.category.findMany({
+      where: { vendorId: vendor.id },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        sortOrder: true,
+        isActive: true,
+        allowsCustomNote: true,
+        parent: { select: { id: true, name: true, slug: true } },
+        _count: { select: { products: true } },
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    });
+    console.log(`✓ Retrieved ${categories.length} categories.`);
+
+    // 3. Fetch Bundles
+    const bundles = await prisma.bundle.findMany({
+      where: { vendorId: vendor.id },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        tagline: true,
+        isActive: true,
+        sortOrder: true,
+        items: {
+          select: {
+            productId: true,
+            quantity: true,
+            sortOrder: true,
+            product: { select: { name: true, unitLabel: true } },
+          },
+          orderBy: { sortOrder: "asc" },
+        },
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    });
+    console.log(`✓ Retrieved ${bundles.length} bundles.`);
+
+    // 4. Fetch Promotions
+    const promotions = await prisma.promotion.findMany({
+      where: { vendorId: vendor.id },
+      select: {
+        id: true,
+        headline: true,
+        subtitle: true,
+        badgeText: true,
+        callToActionText: true,
+        linkUrl: true,
+        priority: true,
+        isActive: true,
+        startsAt: true,
+        endsAt: true,
+        channel: true,
+        categoryId: true,
+        bundleId: true,
+        discountCodeId: true,
+        productId: true,
+        category: { select: { name: true } },
+        bundle: { select: { name: true } },
+        product: { select: { name: true } },
+        discountCode: { select: { code: true } },
+      },
+      orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
+    });
+    console.log(`✓ Retrieved ${promotions.length} promotions.`);
+
+    // 5. Fetch Discounts
+    const discounts = await prisma.discountCode.findMany({
+      where: { vendorId: vendor.id },
+      select: {
+        id: true,
+        code: true,
+        description: true,
+        kind: true,
+        value: true,
+        minSubtotalPence: true,
+        startsAt: true,
+        endsAt: true,
+        remainingRedemptions: true,
+        maxPerCustomer: true,
+        isActive: true,
+      },
+      orderBy: [{ isActive: "desc" }, { code: "asc" }],
+    });
+    console.log(`✓ Retrieved ${discounts.length} discount codes.`);
+
+    // 6. Fetch Filters & Attributes
+    const filters = await prisma.vendorAttribute.findMany({
+      where: { vendorId: vendor.id },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        kind: true,
+        unit: true,
+        showOnCard: true,
+        sortOrder: true,
+        options: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            sortOrder: true,
+          },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        },
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    });
+    console.log(`✓ Retrieved ${filters.length} attributes/filters.`);
+
+    // --- Build Sheet Data ---
+
+    // Tab 1: Products
+    const productRows = products.map((p) => productToUniversalRow(p));
+    const productSheetData: (string | number)[][] = [
       [...UNIVERSAL_COLUMNS],
-      ...exportRows.map((row) => UNIVERSAL_COLUMNS.map((col) => row[col] || "")),
+      ...productRows.map((row) => UNIVERSAL_COLUMNS.map((col) => row[col] || "")),
     ];
-
     const universalColWidths = UNIVERSAL_COLUMNS.map((col) => {
       if (col === "Product Name*") return 38;
       if (col === "Description / Notes") return 45;
@@ -93,34 +242,129 @@ async function main() {
       return Math.max(col.length + 3, 14);
     });
 
+    // Tab 2: Categories
+    const categoryRows = (categories as unknown as CategoryForExport[]).map((c) =>
+      categoryToExportRow(c),
+    );
+    const categorySheetData: (string | number)[][] = [
+      [...CATEGORY_EXPORT_COLUMNS],
+      ...categoryRows.map((row) => CATEGORY_EXPORT_COLUMNS.map((col) => row[col] || "")),
+    ];
+    const categoryColWidths = CATEGORY_EXPORT_COLUMNS.map((col) => Math.max(col.length + 4, 16));
+
+    // Tab 3: Bundles
+    const bundleRows = (bundles as unknown as BundleForExport[]).map((b) => bundleToExportRow(b));
+    const bundleSheetData: (string | number)[][] = [
+      [...BUNDLE_EXPORT_COLUMNS],
+      ...bundleRows.map((row) => BUNDLE_EXPORT_COLUMNS.map((col) => row[col] || "")),
+    ];
+    const bundleColWidths = BUNDLE_EXPORT_COLUMNS.map((col) => {
+      if (col.includes("Summary") || col.includes("Specification")) return 45;
+      return Math.max(col.length + 4, 16);
+    });
+
+    // Tab 4: Promotions
+    const promoRows = (promotions as unknown as PromotionForExport[]).map((p) =>
+      promotionToExportRow(p),
+    );
+    const promoSheetData: (string | number)[][] = [
+      [...PROMOTION_EXPORT_COLUMNS],
+      ...promoRows.map((row) => PROMOTION_EXPORT_COLUMNS.map((col) => row[col] || "")),
+    ];
+    const promoColWidths = PROMOTION_EXPORT_COLUMNS.map((col) => Math.max(col.length + 4, 16));
+
+    // Tab 5: Discount Codes
+    const discountRows = (discounts as unknown as DiscountForExport[]).map((d) =>
+      discountToExportRow(d),
+    );
+    const discountSheetData: (string | number)[][] = [
+      [...DISCOUNT_EXPORT_COLUMNS],
+      ...discountRows.map((row) => DISCOUNT_EXPORT_COLUMNS.map((col) => row[col] || "")),
+    ];
+    const discountColWidths = DISCOUNT_EXPORT_COLUMNS.map((col) => Math.max(col.length + 4, 16));
+
+    // Tab 6: Filters & Attributes
+    const filterRowObjs: Record<string, string>[] = [];
+    for (const attr of filters as unknown as VendorAttributeForExport[]) {
+      const rows = filterToExportRows(attr);
+      filterRowObjs.push(...rows);
+    }
+    const filterSheetData: (string | number)[][] = [
+      [...FILTER_EXPORT_COLUMNS],
+      ...filterRowObjs.map((row) => FILTER_EXPORT_COLUMNS.map((col) => row[col] || "")),
+    ];
+    const filterColWidths = FILTER_EXPORT_COLUMNS.map((col) => Math.max(col.length + 4, 16));
+
+    // Tab 7: Field Instructions
+    const instructionsHeader = [
+      "Column Name",
+      "Required / Optional",
+      "Editable?",
+      "Description & Constraints",
+      "Example Values",
+    ];
+    const instructionsRows = UNIVERSAL_COLUMNS.map((col) => {
+      const info = UNIVERSAL_COLUMN_INSTRUCTIONS[col];
+      const isDoNotEdit = col.includes("[DO NOT EDIT]");
+      return [
+        col,
+        info?.required ? "REQUIRED" : "Optional",
+        isDoNotEdit ? "DO NOT EDIT (Leave unchanged for sync; leave blank for new)" : "Yes",
+        info?.description || "",
+        info?.example || "",
+      ];
+    });
+    const instructionsSheetData: (string | number)[][] = [instructionsHeader, ...instructionsRows];
+    const instructionsColWidths = [32, 20, 36, 60, 35];
+
+    // Directories
     const outDirPublic = join(process.cwd(), "public", "templates");
     mkdirSync(outDirPublic, { recursive: true });
 
     const outDirReports = join(process.cwd(), ".import-reports", "exports");
     mkdirSync(outDirReports, { recursive: true });
 
-    const xlsxFileName = `aheed-food-centre-stock-export.xlsx`;
-    const csvFileName = `aheed-food-centre-stock-export.csv`;
-
-    writeWorkbook(join(outDirPublic, xlsxFileName), [
-      { name: "Stock Export", rows: sheetDataRows, widths: universalColWidths },
+    // 1. Write Standalone Product Stock Export (.xlsx with AutoFilter)
+    const stockXlsx = "aheed-food-centre-stock-export.xlsx";
+    writeWorkbook(join(outDirPublic, stockXlsx), [
+      { name: "Products", rows: productSheetData, widths: universalColWidths },
     ]);
-    writeWorkbook(join(outDirReports, xlsxFileName), [
-      { name: "Stock Export", rows: sheetDataRows, widths: universalColWidths },
+    writeWorkbook(join(outDirReports, stockXlsx), [
+      { name: "Products", rows: productSheetData, widths: universalColWidths },
     ]);
-    console.log(`✓ Populated Universal Export (.xlsx): ${join(outDirPublic, xlsxFileName)}`);
+    console.log(`✓ Wrote Standalone Stock Export (.xlsx) with AutoFilter.`);
 
-    // 2. Write Universal CSV
-    const csvDataRows = exportRows.map((row) => UNIVERSAL_COLUMNS.map((col) => row[col] || ""));
+    // 2. Write Master Multi-Sheet Export (.xlsx with AutoFilter on all sheets)
+    const masterXlsx = "aheed-food-centre-master-stock-export.xlsx";
+    writeWorkbook(join(outDirPublic, masterXlsx), [
+      { name: "Products", rows: productSheetData, widths: universalColWidths },
+      { name: "Categories", rows: categorySheetData, widths: categoryColWidths },
+      { name: "Bundles", rows: bundleSheetData, widths: bundleColWidths },
+      { name: "Promotions", rows: promoSheetData, widths: promoColWidths },
+      { name: "Discount Codes", rows: discountSheetData, widths: discountColWidths },
+      { name: "Filters & Attributes", rows: filterSheetData, widths: filterColWidths },
+      { name: "Field Instructions", rows: instructionsSheetData, widths: instructionsColWidths },
+    ]);
+    writeWorkbook(join(outDirReports, masterXlsx), [
+      { name: "Products", rows: productSheetData, widths: universalColWidths },
+      { name: "Categories", rows: categorySheetData, widths: categoryColWidths },
+      { name: "Bundles", rows: bundleSheetData, widths: bundleColWidths },
+      { name: "Promotions", rows: promoSheetData, widths: promoColWidths },
+      { name: "Discount Codes", rows: discountSheetData, widths: discountColWidths },
+      { name: "Filters & Attributes", rows: filterSheetData, widths: filterColWidths },
+      { name: "Field Instructions", rows: instructionsSheetData, widths: instructionsColWidths },
+    ]);
+    console.log(`✓ Wrote Master Multi-Sheet Workbook (.xlsx) with 7 sheets and AutoFilters.`);
+
+    // 3. Write Universal CSV
+    const csvDataRows = productRows.map((row) => UNIVERSAL_COLUMNS.map((col) => row[col] || ""));
     const csvContent = formatCsvTable(UNIVERSAL_COLUMNS, csvDataRows);
-    writeFileSync(join(outDirPublic, csvFileName), csvContent, "utf8");
-    writeFileSync(join(outDirReports, csvFileName), csvContent, "utf8");
-    console.log(`✓ Populated Universal Export (.csv): ${join(outDirPublic, csvFileName)}`);
+    writeFileSync(join(outDirPublic, "aheed-food-centre-stock-export.csv"), csvContent, "utf8");
+    writeFileSync(join(outDirReports, "aheed-food-centre-stock-export.csv"), csvContent, "utf8");
+    console.log(`✓ Wrote Universal Stock Export (.csv).`);
 
-    // 3. Write Essential CSV
-    const essentialRows = products.map((p) =>
-      productToEssentialRow(p as unknown as DatabaseProductForExport),
-    );
+    // 4. Write Essential CSV
+    const essentialRows = products.map((p) => productToEssentialRow(p));
     const essentialDataRows = essentialRows.map((row) =>
       ESSENTIAL_COLUMNS.map((col) => row[col] || ""),
     );
@@ -130,10 +374,40 @@ async function main() {
       essentialCsv,
       "utf8",
     );
-    console.log(`✓ Populated Essential Export (.csv) written.`);
+    console.log(`✓ Wrote Essential Stock Export (.csv).`);
+
+    // 5. Write Blank Operational Templates
+    writeFileSync(
+      join(outDirPublic, "bundle-template.csv"),
+      formatCsvTable(BUNDLE_EXPORT_COLUMNS, []),
+      "utf8",
+    );
+    writeFileSync(
+      join(outDirPublic, "promotion-template.csv"),
+      formatCsvTable(PROMOTION_EXPORT_COLUMNS, []),
+      "utf8",
+    );
+    writeFileSync(
+      join(outDirPublic, "category-template.csv"),
+      formatCsvTable(CATEGORY_EXPORT_COLUMNS, []),
+      "utf8",
+    );
+    writeFileSync(
+      join(outDirPublic, "discount-code-template.csv"),
+      formatCsvTable(DISCOUNT_EXPORT_COLUMNS, []),
+      "utf8",
+    );
+    writeFileSync(
+      join(outDirPublic, "filter-template.csv"),
+      formatCsvTable(FILTER_EXPORT_COLUMNS, []),
+      "utf8",
+    );
+    console.log(
+      `✓ Wrote Blank Operational Templates (.csv) for Bundles, Promotions, Categories, Discounts, Filters.`,
+    );
 
     console.log(
-      `Stock export complete! Total products exported: ${products.length}. No data loss.`,
+      `Master stock export complete! Products: ${products.length}, Categories: ${categories.length}, Bundles: ${bundles.length}, Promotions: ${promotions.length}, Discounts: ${discounts.length}, Filters: ${filters.length}.`,
     );
   } finally {
     await prisma.$disconnect();

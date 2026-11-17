@@ -4,21 +4,36 @@ import {
   exportProductsToEssentialCsv,
   productToUniversalRow,
   productToEssentialRow,
+  sortProductsHierarchically,
   type DatabaseProductForExport,
 } from "./export";
 import { UNIVERSAL_COLUMNS, ESSENTIAL_COLUMNS } from "./schema";
 import { formatCsvTable } from "./csv";
 
+export interface StockExportFilterOptions {
+  status?: "active" | "all" | "archived";
+}
+
 /**
- * Fetch all stock records for a vendor with complete relational metadata.
+ * Fetch stock records for a vendor with complete relational metadata.
+ * Defaults to 'active' products only to avoid cluttering active working lists.
  */
 export async function fetchStockRecordsForExport(
   vendorId: string,
+  options?: StockExportFilterOptions,
 ): Promise<DatabaseProductForExport[]> {
   const prisma = getPrisma();
+  const status = options?.status ?? "active";
+
+  const where: Record<string, any> = { vendorId };
+  if (status === "active") {
+    where.isActive = true;
+  } else if (status === "archived") {
+    where.isActive = false;
+  }
 
   const products = await prisma.product.findMany({
-    where: { vendorId },
+    where,
     include: {
       brand: { select: { name: true } },
       category: {
@@ -53,22 +68,28 @@ export async function fetchStockRecordsForExport(
     orderBy: { name: "asc" },
   });
 
-  return products as unknown as DatabaseProductForExport[];
+  return sortProductsHierarchically(products as unknown as DatabaseProductForExport[]);
 }
 
 /**
  * Generate Universal Product Export as CSV string.
  */
-export async function generateUniversalStockCsv(vendorId: string): Promise<string> {
-  const products = await fetchStockRecordsForExport(vendorId);
+export async function generateUniversalStockCsv(
+  vendorId: string,
+  options?: StockExportFilterOptions,
+): Promise<string> {
+  const products = await fetchStockRecordsForExport(vendorId, options);
   return exportProductsToUniversalCsv(products);
 }
 
 /**
  * Generate Essential Product Export as CSV string.
  */
-export async function generateEssentialStockCsv(vendorId: string): Promise<string> {
-  const products = await fetchStockRecordsForExport(vendorId);
+export async function generateEssentialStockCsv(
+  vendorId: string,
+  options?: StockExportFilterOptions,
+): Promise<string> {
+  const products = await fetchStockRecordsForExport(vendorId, options);
   return exportProductsToEssentialCsv(products);
 }
 

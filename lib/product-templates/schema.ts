@@ -70,6 +70,218 @@ export const ESSENTIAL_COLUMNS = [
 
 export type EssentialColumn = (typeof ESSENTIAL_COLUMNS)[number];
 
+export interface ColumnInstruction {
+  required: boolean;
+  description: string;
+  example: string;
+}
+
+export const UNIVERSAL_COLUMN_INSTRUCTIONS: Record<UniversalColumn, ColumnInstruction> = {
+  "Product ID [DO NOT EDIT]": {
+    required: false,
+    description:
+      "System UUID. DO NOT EDIT! Leave unchanged when updating existing products. Leave blank when creating a new product.",
+    example: "a4ed0000-0000-4000-a000-000000000001 or (blank)",
+  },
+  "Product Name*": {
+    required: true,
+    description: "Full descriptive product title including net content/pack size.",
+    example: "Daawat Extra Long Basmati Rice 5kg",
+  },
+  Brand: {
+    required: false,
+    description:
+      "Manufacturer brand name. Leave blank for unbranded, fresh butcher meat, or loose produce. Do NOT use Aheed.",
+    example: "Daawat or (blank)",
+  },
+  "Category*": {
+    required: true,
+    description: "Category name. Matched case-insensitively.",
+    example: "Rice & Grains",
+  },
+  Department: {
+    required: false,
+    description: "Top-level department name (parent category).",
+    example: "Groceries",
+  },
+  "Price (£)*": {
+    required: true,
+    description: "Selling price in GBP (£). Decimal or integer.",
+    example: "14.99",
+  },
+  "Compare At Price (£)": {
+    required: false,
+    description: "Original/was price to show strike-through discount.",
+    example: "16.99",
+  },
+  "Cost Price (£)": {
+    required: false,
+    description: "Wholesale cost price in GBP.",
+    example: "11.50",
+  },
+  "VAT Rate": {
+    required: false,
+    description: "VAT rate: 0%, 5%, or 20%. UK groceries are standard 0%.",
+    example: "0%",
+  },
+  "Unit/Pack Size*": {
+    required: true,
+    description: "Display pack size label.",
+    example: "5kg",
+  },
+  "Net Content Amount": {
+    required: false,
+    description: "Numeric quantity for unit pricing calculations.",
+    example: "5",
+  },
+  "Net Content Unit": {
+    required: false,
+    description: "Unit: GRAM, KILOGRAM, MILLILITRE, LITRE, or EACH.",
+    example: "KILOGRAM",
+  },
+  Barcode: {
+    required: false,
+    description: "EAN-13, EAN-8, or UPC barcode.",
+    example: "5012345678900",
+  },
+  PLU: {
+    required: false,
+    description: "Price Look-Up code for fresh butcher or weighed produce.",
+    example: "4011",
+  },
+  "Stock Mode*": {
+    required: true,
+    description:
+      "TRACKED (decrement on purchase), UNTRACKED (unlimited), or UNKNOWN (needs audit).",
+    example: "TRACKED",
+  },
+  "Current Stock": {
+    required: false,
+    description: "Available quantity in units.",
+    example: "25",
+  },
+  "Low Stock Threshold": {
+    required: false,
+    description: "Alert threshold for low inventory warnings.",
+    example: "5",
+  },
+  "Is Halal": {
+    required: false,
+    description: "TRUE or FALSE.",
+    example: "TRUE",
+  },
+  "Is Vegetarian": {
+    required: false,
+    description: "TRUE or FALSE.",
+    example: "TRUE",
+  },
+  "Is Fresh": {
+    required: false,
+    description: "TRUE or FALSE.",
+    example: "FALSE",
+  },
+  "Is Organic": {
+    required: false,
+    description: "TRUE or FALSE.",
+    example: "FALSE",
+  },
+  "Is Gluten Free": {
+    required: false,
+    description: "TRUE or FALSE.",
+    example: "TRUE",
+  },
+  "Is HMC Certified": {
+    required: false,
+    description: "TRUE or FALSE. Halal Monitoring Committee certified.",
+    example: "FALSE",
+  },
+  "HMC Reference": {
+    required: false,
+    description: "HMC certificate or license number.",
+    example: "HMC-12345",
+  },
+  "HMC Verified At": {
+    required: false,
+    description: "Date when HMC certificate was audited (YYYY-MM-DD).",
+    example: "2026-01-15",
+  },
+  "Age Restriction": {
+    required: false,
+    description: "NONE, 16, or 18.",
+    example: "NONE",
+  },
+  "Country of Origin": {
+    required: false,
+    description: "Country where product originated.",
+    example: "India",
+  },
+  "Attr: Storage": {
+    required: false,
+    description: "Storage instructions filter.",
+    example: "Ambient, Chilled, or Frozen",
+  },
+  "Attr: Cut": {
+    required: false,
+    description: "Meat cut specification.",
+    example: "Boneless, Diced, Minced, Whole",
+  },
+  "Attr: Variety / Grain / Species": {
+    required: false,
+    description: "Product grain or species variety.",
+    example: "Basmati, Sella, Jasmine",
+  },
+  "Attr: Form": {
+    required: false,
+    description: "Product form factor.",
+    example: "Whole, Ground, Powder, Liquid",
+  },
+  "Offer Group Qty": {
+    required: false,
+    description: "Quantity required to trigger multi-buy discount (e.g. 2 for £5).",
+    example: "2",
+  },
+  "Offer Group Price (£)": {
+    required: false,
+    description: "Total bundle price in GBP when group quantity is met.",
+    example: "5.00",
+  },
+  "Short Description": {
+    required: false,
+    description: "Brief summary for search previews.",
+    example: "Premium aged Indian aromatic long grain rice.",
+  },
+  "Description / Notes": {
+    required: false,
+    description: "Full product description and handling instructions.",
+    example: "Ideal for biryani and pilaf.",
+  },
+  Ingredients: {
+    required: false,
+    description: "List of ingredients.",
+    example: "100% Basmati Rice",
+  },
+  "Allergen Info": {
+    required: false,
+    description: "Allergen warnings.",
+    example: "Packed in a facility that handles nuts and gluten.",
+  },
+  "URL Slug": {
+    required: false,
+    description: "Custom URL slug. Auto-generated from name if left blank.",
+    example: "daawat-extra-long-basmati-rice-5kg",
+  },
+  "Is Active": {
+    required: false,
+    description: "TRUE (visible to shoppers) or FALSE (hidden/draft).",
+    example: "TRUE",
+  },
+  "Is Featured": {
+    required: false,
+    description: "TRUE (showcased on landing page) or FALSE.",
+    example: "FALSE",
+  },
+};
+
 /** Normalize header label by stripping asterisks, parentheses, whitespace, lowercasing. */
 export function normalizeHeader(header: string): string {
   return header

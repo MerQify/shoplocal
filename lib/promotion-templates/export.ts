@@ -105,11 +105,44 @@ export function exportPromotionsToCsv(promotions: PromotionForExport[]): string 
   return formatCsvTable(PROMOTION_EXPORT_COLUMNS, rows);
 }
 
-export async function fetchPromotionsForExport(vendorId: string): Promise<PromotionForExport[]> {
+export interface PromotionExportFilterOptions {
+  status?: "active" | "all" | "archived";
+}
+
+export async function fetchPromotionsForExport(
+  vendorId: string,
+  options?: PromotionExportFilterOptions,
+): Promise<PromotionForExport[]> {
   const prisma = getPrisma();
+  const status = options?.status ?? "active";
+  const now = new Date();
+
+  const where: Record<string, any> = { vendorId };
+  if (status === "active") {
+    where.isActive = true;
+    where.OR = [{ endsAt: null }, { endsAt: { gte: now } }];
+  } else if (status === "archived") {
+    where.OR = [{ isActive: false }, { endsAt: { lt: now } }];
+  }
+
   const promotions = await prisma.promotion.findMany({
-    where: { vendorId },
-    include: {
+    where,
+    select: {
+      id: true,
+      headline: true,
+      subtitle: true,
+      badgeText: true,
+      callToActionText: true,
+      linkUrl: true,
+      priority: true,
+      isActive: true,
+      startsAt: true,
+      endsAt: true,
+      channel: true,
+      categoryId: true,
+      bundleId: true,
+      discountCodeId: true,
+      productId: true,
       category: { select: { name: true } },
       bundle: { select: { name: true } },
       product: { select: { name: true } },

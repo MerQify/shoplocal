@@ -159,9 +159,34 @@ export function productToEssentialRow(
   };
 }
 
+/** Hierarchical sorting: Department -> Category -> Product Name */
+export function sortProductsHierarchically(
+  products: DatabaseProductForExport[],
+): DatabaseProductForExport[] {
+  return [...products].sort((a, b) => {
+    // 1. Department (parent category name, or category name if top-level)
+    const deptA = (a.category?.parent?.name || a.category?.name || "").toLowerCase();
+    const deptB = (b.category?.parent?.name || b.category?.name || "").toLowerCase();
+    const deptCmp = deptA.localeCompare(deptB);
+    if (deptCmp !== 0) return deptCmp;
+
+    // 2. Category name
+    const catA = (a.category?.name || "").toLowerCase();
+    const catB = (b.category?.name || "").toLowerCase();
+    const catCmp = catA.localeCompare(catB);
+    if (catCmp !== 0) return catCmp;
+
+    // 3. Product name
+    const nameA = (a.name || "").toLowerCase();
+    const nameB = (b.name || "").toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+}
+
 /** Export all products to Universal CSV string */
 export function exportProductsToUniversalCsv(products: DatabaseProductForExport[]): string {
-  const rows = products.map((p) => {
+  const sorted = sortProductsHierarchically(products);
+  const rows = sorted.map((p) => {
     const rowObj = productToUniversalRow(p);
     return UNIVERSAL_COLUMNS.map((col) => rowObj[col]);
   });
@@ -170,7 +195,8 @@ export function exportProductsToUniversalCsv(products: DatabaseProductForExport[
 
 /** Export all products to Essential CSV string */
 export function exportProductsToEssentialCsv(products: DatabaseProductForExport[]): string {
-  const rows = products.map((p) => {
+  const sorted = sortProductsHierarchically(products);
+  const rows = sorted.map((p) => {
     const rowObj = productToEssentialRow(p);
     return ESSENTIAL_COLUMNS.map((col) => rowObj[col]);
   });

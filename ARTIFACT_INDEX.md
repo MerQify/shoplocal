@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-17T10:14:46.735Z` · commit `16e59e53` · `366` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-17T11:07:30.812Z` · commit `ba668257` · `367` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -348,6 +348,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Visual Identity Standards, Icon System, and AI Visual Art Direction (plan)](specs/2026-11-15-visual-identity-standards/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish a cohesive, professional and conversion-conscious visual identity across Aheed Food Centre by standardising icon specifications into 3 families, creating reusable icon design tokens, codifying strict AI art direction guardrails, and applying CRO principles. |
 | [Weekly opening hours control checkout slots (plan)](specs/2026-11-15-weekly-hours-slots/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1615. The weekly Opening hours now gate slots with the #1605 rules: a weekly closed day offers no slot, opening hours trim collection, and a dated holiday entry still wins for its date. |
 | [Worker CPU limit raised so cold starts stop failing (plan)](specs/2026-11-15-worker-cpu-limit/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1621. cpu_ms = 300 intermittently killed requests on freshly started isolates (503/524 on AFC staging). Raise it to 30000, the Workers Paid standard, for every environment. |
+| [Category-First Product Sorting, Master Multi-Sheet Export, and Archival Filtering (plan)](specs/2026-11-17-category-sorting-master-export-archival/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Hierarchical category-first product sorting, master multi-sheet workbook generation with native Excel AutoFilters, operational exports for categories, discount codes, and filters, archival status filtering, and unified store admin export hub. |
 | [Standardised Product Import/Export Templates and Platform Admin Stock Export (plan)](specs/2026-11-17-product-templates-and-stock-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Defines Universal and Essential product import/export schemas, exports existing stock into the Universal template, implements zero-decision bulk import/export processing, and provides a Platform Admin-only stock export page and API. |
 | [Product Template Brand Cleanup, Bundle & Promotion Export, and Protected Columns (plan)](specs/2026-11-17-template-brand-cleanup-and-bundle-promo-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Leaves Brand blank for unbranded products, supports CSV and Excel exports for Bundles and Promotions with two-way sync support, and marks system ID columns with explicit non-editable notices in templates and instructions. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.49.0 | 2026-11-12 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
