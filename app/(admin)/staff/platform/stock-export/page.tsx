@@ -104,7 +104,8 @@ export default async function PlatformStockExportPage() {
             Bundles & Promotions Exports
           </h2>
           <p className="text-sm text-slate-600 mb-4">
-            Export all active and draft bundles and homepage hero promotions for bulk review and offline records.
+            Export all active and draft bundles and homepage hero promotions for bulk review and
+            offline records.
           </p>
           <div className="flex flex-wrap gap-3">
             <a

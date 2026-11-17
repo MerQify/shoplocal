@@ -26,7 +26,12 @@ const UNIVERSAL_FIELD_GUIDE: [string, string, string, string][] = [
     "Text",
     "Full customer-facing product name (e.g. 'Daawat Extra Long Basmati Rice 5kg').",
   ],
-  ["Brand", "No", "Text", "Brand name (e.g. 'Daawat', 'Heera', 'Laila'). Leave blank if unbranded."],
+  [
+    "Brand",
+    "No",
+    "Text",
+    "Brand name (e.g. 'Daawat', 'Heera', 'Laila'). Leave blank if unbranded.",
+  ],
   [
     "Category*",
     "Yes",
@@ -160,7 +165,12 @@ const ESSENTIAL_FIELD_GUIDE: [string, string, string, string][] = [
     "Text",
     "Customer-facing product name (e.g. 'Daawat Basmati Rice 5kg').",
   ],
-  ["Brand", "No", "Text", "Brand name (e.g. 'Daawat', 'Heera', 'Laila'). Leave blank if unbranded."],
+  [
+    "Brand",
+    "No",
+    "Text",
+    "Brand name (e.g. 'Daawat', 'Heera', 'Laila'). Leave blank if unbranded.",
+  ],
   ["Category*", "Yes", "Text", "Category name or slug (e.g. 'Rice & Grains')."],
   ["Price (£)*", "Yes", "Decimal", "Selling price in GBP (e.g. '14.99')."],
   ["Unit/Pack Size*", "Yes", "Text", "Pack size display label (e.g. '5kg', 'Each', '1kg')."],

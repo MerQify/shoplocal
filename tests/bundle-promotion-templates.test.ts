@@ -48,9 +48,7 @@ describe("Bundles Export Templates", () => {
     expect(row["Is Active"]).toBe("TRUE");
     expect(row["Sort Order"]).toBe("1");
     expect(row["Total Items"]).toBe("2");
-    expect(row["Items Summary"]).toBe(
-      "2x Daawat Basmati Rice 5kg; 1x Shan Biryani Masala 50g",
-    );
+    expect(row["Items Summary"]).toBe("2x Daawat Basmati Rice 5kg; 1x Shan Biryani Masala 50g");
     expect(row["Items Specification [productId:quantity]"]).toBe("prod-1:2;prod-2:1");
   });
 

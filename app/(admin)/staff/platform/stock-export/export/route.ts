@@ -75,9 +75,12 @@ export async function GET(request: Request): Promise<Response> {
         : generateBlankEssentialCsv();
       filename = "essential-product-template.csv";
     } else {
-      return new Response("Invalid export type. Allowed: stock, universal, essential, bundles, promotions", {
-        status: 400,
-      });
+      return new Response(
+        "Invalid export type. Allowed: stock, universal, essential, bundles, promotions",
+        {
+          status: 400,
+        },
+      );
     }
 
     return new Response(csvData, {

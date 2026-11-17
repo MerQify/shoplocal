@@ -138,7 +138,13 @@ export function analyzeTemplateGrid(
 
     const rowErrors: RowValidationError[] = [];
 
-    const productId = getCell(row, "productiddonotedit", "productiddonoteditsystemid", "productid", "id");
+    const productId = getCell(
+      row,
+      "productiddonotedit",
+      "productiddonoteditsystemid",
+      "productid",
+      "id",
+    );
     const name = getCell(row, "productname", "name");
     const brand = getCell(row, "brand");
     const category = getCell(row, "category");
