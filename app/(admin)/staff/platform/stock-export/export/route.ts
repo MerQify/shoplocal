@@ -6,6 +6,9 @@ import {
 } from "@/lib/product-templates/service";
 import { fetchBundlesForExport, exportBundlesToCsv } from "@/lib/bundle-templates/export";
 import { fetchPromotionsForExport, exportPromotionsToCsv } from "@/lib/promotion-templates/export";
+import { fetchCategoriesForExport, exportCategoriesToCsv } from "@/lib/category-templates/export";
+import { fetchDiscountsForExport, exportDiscountsToCsv } from "@/lib/discount-templates/export";
+import { fetchFiltersForExport, exportFiltersToCsv } from "@/lib/filter-templates/export";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -31,8 +34,10 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const url = new URL(request.url);
-  const type = url.searchParams.get("type") || "stock"; // "stock" | "universal" | "essential" | "bundles" | "promotions"
+  const type = url.searchParams.get("type") || "stock"; // "stock" | "master" | "universal" | "essential" | "bundles" | "promotions" | "categories" | "discounts" | "filters"
   const format = url.searchParams.get("format") || "csv"; // "csv" | "xlsx"
+  const statusParam = url.searchParams.get("status");
+  const status = statusParam === "all" || statusParam === "archived" ? statusParam : "active";
 
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
@@ -42,16 +47,28 @@ export async function GET(request: Request): Promise<Response> {
     let filename = "";
 
     if (type === "stock") {
-      csvData = await generateUniversalStockCsv(auth.vendorId);
-      filename = `stock-export-${dateStr}.csv`;
+      csvData = await generateUniversalStockCsv(auth.vendorId, { status });
+      filename = `stock-${status}-export-${dateStr}.csv`;
     } else if (type === "bundles") {
-      const bundles = await fetchBundlesForExport(auth.vendorId);
+      const bundles = await fetchBundlesForExport(auth.vendorId, { status });
       csvData = exportBundlesToCsv(bundles);
-      filename = `bundles-export-${dateStr}.csv`;
+      filename = `bundles-${status}-export-${dateStr}.csv`;
     } else if (type === "promotions") {
-      const promos = await fetchPromotionsForExport(auth.vendorId);
+      const promos = await fetchPromotionsForExport(auth.vendorId, { status });
       csvData = exportPromotionsToCsv(promos);
-      filename = `promotions-export-${dateStr}.csv`;
+      filename = `promotions-${status}-export-${dateStr}.csv`;
+    } else if (type === "categories") {
+      const cats = await fetchCategoriesForExport(auth.vendorId, { status });
+      csvData = exportCategoriesToCsv(cats);
+      filename = `categories-${status}-export-${dateStr}.csv`;
+    } else if (type === "discounts") {
+      const discounts = await fetchDiscountsForExport(auth.vendorId, { status });
+      csvData = exportDiscountsToCsv(discounts);
+      filename = `discount-codes-${status}-export-${dateStr}.csv`;
+    } else if (type === "filters") {
+      const filters = await fetchFiltersForExport(auth.vendorId);
+      csvData = exportFiltersToCsv(filters);
+      filename = `filters-attributes-export-${dateStr}.csv`;
     } else if (type === "universal") {
       const templatePath = join(
         process.cwd(),
@@ -76,7 +93,7 @@ export async function GET(request: Request): Promise<Response> {
       filename = "essential-product-template.csv";
     } else {
       return new Response(
-        "Invalid export type. Allowed: stock, universal, essential, bundles, promotions",
+        "Invalid export type. Allowed: stock, universal, essential, bundles, promotions, categories, discounts, filters",
         {
           status: 400,
         },
@@ -97,7 +114,15 @@ export async function GET(request: Request): Promise<Response> {
     let filePath = "";
     let filename = "";
 
-    if (type === "stock") {
+    if (type === "master") {
+      filePath = join(
+        process.cwd(),
+        "public",
+        "templates",
+        "aheed-food-centre-master-stock-export.xlsx",
+      );
+      filename = `aheed-food-centre-master-stock-export.xlsx`;
+    } else if (type === "stock") {
       filePath = join(process.cwd(), "public", "templates", "aheed-food-centre-stock-export.xlsx");
       filename = `stock-export-${dateStr}.xlsx`;
     } else if (type === "universal") {
@@ -107,7 +132,7 @@ export async function GET(request: Request): Promise<Response> {
       filePath = join(process.cwd(), "public", "templates", "essential-product-template.xlsx");
       filename = "essential-product-template.xlsx";
     } else {
-      return new Response("Invalid export type. Allowed: stock, universal, essential", {
+      return new Response("Invalid export type. Allowed: master, stock, universal, essential", {
         status: 400,
       });
     }

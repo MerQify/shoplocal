@@ -8,6 +8,15 @@ every branch merges.
 
 ### Added
 
+- **Category-First Product Sorting, Master Multi-Sheet Export, Operational Exports, and Archival Filtering (#1638, 2026-11-17).**
+  - **Hierarchical Category-First Sorting:** Product exports now sort hierarchically: Department (parent category) &rarr; Category &rarr; Product Name (`sortProductsHierarchically`). Products belonging to the same category are grouped consecutively across all 6,103 export rows.
+  - **Master Multi-Sheet Excel Workbook:** Generated `public/templates/aheed-food-centre-master-stock-export.xlsx` (9.29 MB) containing 7 sheets: `Products` (with native AutoFilters), `Categories`, `Bundles`, `Promotions`, `Discount Codes`, `Filters & Attributes`, and `Field Instructions`. Native AutoFilter dropdowns enabled across all sheets.
+  - **New Operational Exporters & Endpoints:** Added dedicated export services and staff endpoints for Categories (`lib/category-templates/export.ts`, `/api/staff/categories/export`), Discount Codes (`lib/discount-templates/export.ts`, `/api/staff/discounts/export`), and Storefront Filters/Attributes (`lib/filter-templates/export.ts`, `/api/staff/filters/export`), plus live stock CSV (`/api/staff/stock/export`).
+  - **Archival & Status Filtering:** Added `status: "active" | "all" | "archived"` options to all export services and API routes. Active only is the clean default, excluding expired promotions and exhausted/expired discount codes.
+  - **Unified Store Admin UI Hub:** Added `StoreExportHub` component embedded in `/staff/products/import/page.tsx` with instant master workbook download, real-time filtered CSV/Excel downloads, blank template downloads, and two-way sync non-editable column guidelines. Added "Export & Templates" navigation link on `/staff/products`.
+  - **Tests & Guardrails:** Added unit suite `tests/operational-exports.test.ts` (14 tests). All 80 template and guardrail tests passing.
+  - No database migration.
+
 - **Product Template Brand Cleanup, Bundle & Promotion Export, and Protected Columns (#1636, 2026-11-17).**
   - **Brand Disassociation for Unbranded Products:** Unbranded products no longer default to "Aheed" in `lib/product-templates/export.ts` and are exported with empty Brand cells. On import, `Brand` is optional—blank brands are accepted without validation errors and assign `brandId: null`. Re-exported live catalogue data (6,103 products) in `public/templates/` with clean blank brand cells.
   - **Bundles & Promotions Export:** Added full CSV export capabilities for Bundles (`lib/bundle-templates/export.ts`) and Promotions (`lib/promotion-templates/export.ts`). Added download endpoints (`/api/staff/bundles/export`, `/api/staff/promotions/export`), UI buttons on `/staff/bundles` and `/staff/promotions`, and platform admin export links on `/staff/platform/stock-export`.

@@ -3,7 +3,7 @@ import { fetchPromotionsForExport, exportPromotionsToCsv } from "@/lib/promotion
 
 export const dynamic = "force-dynamic";
 
-export async function GET(): Promise<Response> {
+export async function GET(request: Request): Promise<Response> {
   const auth = await requireVendorRole("STAFF", "ADMIN");
   if (!auth.ok) {
     return new Response(auth.status === 401 ? "Sign in required" : "Staff only", {
@@ -11,10 +11,14 @@ export async function GET(): Promise<Response> {
     });
   }
 
-  const promotions = await fetchPromotionsForExport(auth.vendorId);
+  const { searchParams } = new URL(request.url);
+  const statusParam = searchParams.get("status");
+  const status = statusParam === "all" || statusParam === "archived" ? statusParam : "active";
+
+  const promotions = await fetchPromotionsForExport(auth.vendorId, { status });
   const csvContent = exportPromotionsToCsv(promotions);
   const dateStr = new Date().toISOString().slice(0, 10);
-  const filename = `promotions-export-${dateStr}.csv`;
+  const filename = `promotions-${status}-export-${dateStr}.csv`;
 
   return new Response(csvContent, {
     status: 200,

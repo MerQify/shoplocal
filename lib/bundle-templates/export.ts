@@ -66,18 +66,43 @@ export function exportBundlesToCsv(bundles: BundleForExport[]): string {
   return formatCsvTable(BUNDLE_EXPORT_COLUMNS, rows);
 }
 
-export async function fetchBundlesForExport(vendorId: string): Promise<BundleForExport[]> {
+export interface BundleExportFilterOptions {
+  status?: "active" | "all" | "archived";
+}
+
+export async function fetchBundlesForExport(
+  vendorId: string,
+  options?: BundleExportFilterOptions,
+): Promise<BundleForExport[]> {
   const prisma = getPrisma();
+  const status = options?.status ?? "active";
+
+  const where: Record<string, any> = { vendorId };
+  if (status === "active") {
+    where.isActive = true;
+  } else if (status === "archived") {
+    where.isActive = false;
+  }
+
   const bundles = await prisma.bundle.findMany({
-    where: { vendorId },
-    include: {
+    where,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      tagline: true,
+      isActive: true,
+      sortOrder: true,
       items: {
-        orderBy: { sortOrder: "asc" },
-        include: {
+        select: {
+          productId: true,
+          quantity: true,
+          sortOrder: true,
           product: {
             select: { name: true, unitLabel: true },
           },
         },
+        orderBy: { sortOrder: "asc" },
       },
     },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
