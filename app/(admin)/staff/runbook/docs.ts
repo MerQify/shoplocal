@@ -4239,6 +4239,18 @@ export const DOC_ARTICLES: any[] = [
     "content": "\n# Worker CPU limit raised so cold starts stop failing (plan)\n\nIssue `#1621`, a go-live blocker (`#1344`). On 2026-11-15 the owner hit Cloudflare **524**\ntimeouts on AFC staging. A probe then saw random **503**s and a 30 s hang. `wrangler tail\nafc-store-staging` showed `exceededCpu` \"Worker exceeded CPU time limit\" on `/checkout` and\n`/categories`.\n\n**Goal:** no request fails because of the Worker CPU ceiling, in any environment.\n\n**Cause.** `wrangler.toml` `[limits] cpu_ms = 300`. Its own history (`10 → 50 → 300`, `#415`)\nrecords why it exists:\n- React SSR plus Prisma's WASM instantiation on a **cold** isolate uses real CPU time.\n- The bundle has grown since then, so 300 ms is now the trip.\n\nProduction has the same limit and code.\n\n**Scope:**\n- Set `cpu_ms = 30000`, the Workers Paid standard, and extend the history comment.\n- Every `[env.*]` inherits `[limits]`; no environment overrides it.\n- Correct the one `env-setup.md` sentence that quoted 300.\n\n**Cost:** Workers bills CPU actually used beyond the 30M ms a month included, not the ceiling.\n\n**Deliberately excluded:** reducing cold-start CPU itself (bundle size, lazy Prisma init). That is\nworth a later look, but the ceiling must not be the failure mode at launch.\n\n**Open items carried forward:** none.\n"
   },
   {
+    "id": "specs/2026-11-17-auto-purge-cloudflare-cache/plan.md",
+    "title": "Automate Cloudflare Cache Purge on Deployment (plan)",
+    "audience": [
+      "dev"
+    ],
+    "visibility": "internal",
+    "category": "spec",
+    "summary": "Automate purging Cloudflare edge cache post-deploy in staging and production GitHub Actions workflows to guarantee immediate freshness upon visitor refresh.",
+    "lastUpdated": "2026-11-17",
+    "content": "\n# Automate Cloudflare Cache Purge on Deployment (plan)\n\nFixes #1644. Requirements: `requirements.md`.\n\n## Changes\n\n1. **`scripts/purge-cloudflare-cache.ts`:**\n   - Author standalone script to query Cloudflare zones via API (`CLOUDFLARE_API_TOKEN`).\n   - Match zones (`merqify.com`, `aheedfoodcentre.co.uk`) and execute `POST /zones/{zone_id}/purge_cache` with `{\"purge_everything\": true}`.\n   - Gracefully handle missing token or lack of Zone Purge permissions without failing deployment.\n\n2. **`.github/workflows/deploy-staging.yml` & `.github/workflows/deploy-production.yml`:**\n   - Add post-deploy cache purge step to `deploy` (platform) and `deploy-afc` (dedicated cell) jobs.\n\n3. **`tests/purge-cloudflare-cache.test.ts`:**\n   - Unit test coverage for zone listing, successful purge, error degradation, and missing token handling.\n"
+  },
+  {
     "id": "specs/2026-11-17-category-sorting-master-export-archival/plan.md",
     "title": "Category-First Product Sorting, Master Multi-Sheet Export, and Archival Filtering (plan)",
     "audience": [

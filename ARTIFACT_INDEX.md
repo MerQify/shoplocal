@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-17T12:10:34.773Z` · commit `66de00b6` · `369` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-17T12:30:33.633Z` · commit `f4b41371` · `370` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -348,6 +348,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Visual Identity Standards, Icon System, and AI Visual Art Direction (plan)](specs/2026-11-15-visual-identity-standards/plan.md) | spec | 1.0.0 | 2026-11-15 | approved | internal | Establish a cohesive, professional and conversion-conscious visual identity across Aheed Food Centre by standardising icon specifications into 3 families, creating reusable icon design tokens, codifying strict AI art direction guardrails, and applying CRO principles. |
 | [Weekly opening hours control checkout slots (plan)](specs/2026-11-15-weekly-hours-slots/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1615. The weekly Opening hours now gate slots with the #1605 rules: a weekly closed day offers no slot, opening hours trim collection, and a dated holiday entry still wins for its date. |
 | [Worker CPU limit raised so cold starts stop failing (plan)](specs/2026-11-15-worker-cpu-limit/plan.md) | spec | 1.0.0 | 2026-11-15 | draft | internal | #1621. cpu_ms = 300 intermittently killed requests on freshly started isolates (503/524 on AFC staging). Raise it to 30000, the Workers Paid standard, for every environment. |
+| [Automate Cloudflare Cache Purge on Deployment (plan)](specs/2026-11-17-auto-purge-cloudflare-cache/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Automate purging Cloudflare edge cache post-deploy in staging and production GitHub Actions workflows to guarantee immediate freshness upon visitor refresh. |
 | [Category-First Product Sorting, Master Multi-Sheet Export, and Archival Filtering (plan)](specs/2026-11-17-category-sorting-master-export-archival/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Hierarchical category-first product sorting, master multi-sheet workbook generation with native Excel AutoFilters, operational exports for categories, discount codes, and filters, archival status filtering, and unified store admin export hub. |
 | [Serve Master and Stock Excel Exports via Static Assets (plan)](specs/2026-11-17-fix-master-excel-export-download/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Fix master operational workbook and stock excel download failure by linking directly to Cloudflare static assets and replacing Worker filesystem readFileSync calls. |
 | [Move Templates & Operational Exports to /staff/platform/stock-export (plan)](specs/2026-11-17-move-export-hub-to-platform-stock-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Relocate the interactive Templates & Operational Exports section, Master Excel workbook download, and operational exports from /staff/products/import to /staff/platform/stock-export. |
