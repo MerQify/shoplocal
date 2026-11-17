@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireVendorRole } from "@/lib/auth-rbac";
-import { getPrisma } from "@/lib/db";
+import { listCategoriesForAdmin } from "@/lib/categories-service";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { PlatformExportHub } from "@/components/staff/platform-stock-export/PlatformExportHub";
@@ -38,12 +38,7 @@ export default async function PlatformStockExportPage() {
     );
   }
 
-  const prisma = getPrisma();
-  const categories = await prisma.category.findMany({
-    where: { vendorId: auth.vendorId },
-    select: { id: true, name: true, slug: true },
-    orderBy: { name: "asc" },
-  });
+  const categories = await listCategoriesForAdmin(auth.vendorId);
 
   return (
     <PageContainer width="wide">
