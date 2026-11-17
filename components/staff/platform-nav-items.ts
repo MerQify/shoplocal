@@ -47,6 +47,12 @@ export const PLATFORM_NAV_ITEMS: readonly PlatformNavItem[] = [
     icon: "globe",
   },
   {
+    href: "/staff/platform/stock-export",
+    label: "Stock & Template Export",
+    description: "Export full catalogue stock records and download standardised Universal/Essential templates.",
+    icon: "download",
+  },
+  {
     href: "/staff/platform/settings",
     label: "Platform Settings",
     description: "Cloudflare routing, email sender, Stripe Connect, and shared infra.",

@@ -8,6 +8,15 @@ every branch merges.
 
 ### Added
 
+- **Standardised Product Import/Export Templates and Platform Admin Stock Export (#1634, 2026-11-17).**
+  - **Universal Product Template (`lib/product-templates/`):** Comprehensive 40-column schema (.xlsx / .csv) covering all mandatory, optional, tax, dietary, speciality grocery attributes (`Attr: Storage`, `Attr: Cut`, `Attr: Variety / Grain / Species`, `Attr: Form`), HMC certifications, age restrictions, and multi-buy promotions.
+  - **Essential Product Template:** Streamlined 11-column schema (.xlsx / .csv) covering mandatory fields only plus Brand (`Product Name*`, `Brand*`, `Category*`, `Price (£)*`, `Unit/Pack Size*`, `Stock Mode*`, `Current Stock`, `Is Active`) for rapid bulk creation.
+  - **Two-Way Import Engine with Zero-Decision Automation:** Upload engine auto-detects template headers, validates row data with line-level diagnostics, matches existing records by Product ID, Barcode, PLU, or exact name, and auto-resolves CREATE / UPDATE with single-click application.
+  - **Platform Admin Stock Export:** Dedicated UI at `/staff/platform/stock-export` and download endpoint at `/staff/platform/stock-export/export`, strictly gated to `auth.via === "platform-admin"`.
+  - **Live Catalogue Stock Export:** Exported all 6,303 existing catalogue products from production into Universal and Essential templates (.xlsx / .csv) without data loss, stored in `public/templates/` and downloadable via platform admin panel.
+  - **Tests & Guardrails:** Added unit suite `tests/product-templates.test.ts` (15 tests) and RBAC suite `tests/platform-stock-export-rbac.test.ts` (3 tests); verified against `tests/rbac-gate-matrix.test.ts` and `tests/catalogue-import-guards.test.ts` (pure Worker bundle boundary preserved).
+  - No database migration.
+
 - **Staff and Store Email Setup Guide on Help Centre (/help) (#1619, 2026-11-15).** Added step-by-step guidance for store admins and staff to reply to customer enquiries as the store (`info@aheedfoodcentre.co.uk`) directly from personal Gmail or Google Groups.
   - Added quick-jump navigation chip and dedicated `#staff-email` section on `/help` (`app/(storefront)/help/page.tsx`) detailing Google App Password creation and Gmail "Send mail as" SMTP configuration.
   - Clarified Google Groups distribution mechanics (inbound distribution automatic; outbound replies require individual sender authentication or Staff Panel).
