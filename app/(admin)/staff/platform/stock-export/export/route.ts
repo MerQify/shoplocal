@@ -9,8 +9,6 @@ import { fetchPromotionsForExport, exportPromotionsToCsv } from "@/lib/promotion
 import { fetchCategoriesForExport, exportCategoriesToCsv } from "@/lib/category-templates/export";
 import { fetchDiscountsForExport, exportDiscountsToCsv } from "@/lib/discount-templates/export";
 import { fetchFiltersForExport, exportFiltersToCsv } from "@/lib/filter-templates/export";
-import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
 
 /**
  * Platform Admin-only stock, bundle, promotion and template export endpoint.
@@ -70,26 +68,10 @@ export async function GET(request: Request): Promise<Response> {
       csvData = exportFiltersToCsv(filters);
       filename = `filters-attributes-export-${dateStr}.csv`;
     } else if (type === "universal") {
-      const templatePath = join(
-        process.cwd(),
-        "public",
-        "templates",
-        "universal-product-template.csv",
-      );
-      csvData = existsSync(templatePath)
-        ? readFileSync(templatePath, "utf8")
-        : generateBlankUniversalCsv();
+      csvData = generateBlankUniversalCsv();
       filename = "universal-product-template.csv";
     } else if (type === "essential") {
-      const templatePath = join(
-        process.cwd(),
-        "public",
-        "templates",
-        "essential-product-template.csv",
-      );
-      csvData = existsSync(templatePath)
-        ? readFileSync(templatePath, "utf8")
-        : generateBlankEssentialCsv();
+      csvData = generateBlankEssentialCsv();
       filename = "essential-product-template.csv";
     } else {
       return new Response(
@@ -111,45 +93,23 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   if (format === "xlsx") {
-    let filePath = "";
-    let filename = "";
+    let staticPath = "";
 
     if (type === "master") {
-      filePath = join(
-        process.cwd(),
-        "public",
-        "templates",
-        "aheed-food-centre-master-stock-export.xlsx",
-      );
-      filename = `aheed-food-centre-master-stock-export.xlsx`;
+      staticPath = "/templates/aheed-food-centre-master-stock-export.xlsx";
     } else if (type === "stock") {
-      filePath = join(process.cwd(), "public", "templates", "aheed-food-centre-stock-export.xlsx");
-      filename = `stock-export-${dateStr}.xlsx`;
+      staticPath = "/templates/aheed-food-centre-stock-export.xlsx";
     } else if (type === "universal") {
-      filePath = join(process.cwd(), "public", "templates", "universal-product-template.xlsx");
-      filename = "universal-product-template.xlsx";
+      staticPath = "/templates/universal-product-template.xlsx";
     } else if (type === "essential") {
-      filePath = join(process.cwd(), "public", "templates", "essential-product-template.xlsx");
-      filename = "essential-product-template.xlsx";
+      staticPath = "/templates/essential-product-template.xlsx";
     } else {
       return new Response("Invalid export type. Allowed: master, stock, universal, essential", {
         status: 400,
       });
     }
 
-    if (!existsSync(filePath)) {
-      return new Response("Export file not found. Run generation script first.", { status: 404 });
-    }
-
-    const fileBuffer = readFileSync(filePath);
-    return new Response(fileBuffer, {
-      status: 200,
-      headers: {
-        "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "content-disposition": `attachment; filename="${filename}"`,
-        "cache-control": "no-store",
-      },
-    });
+    return Response.redirect(new URL(staticPath, request.url), 302);
   }
 
   return new Response("Invalid format: must be 'csv' or 'xlsx'", { status: 400 });

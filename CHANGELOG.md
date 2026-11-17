@@ -6,6 +6,13 @@ every branch merges.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Serve Master and Stock Excel Exports via Static Assets (#1642, 2026-11-17).**
+  - **Static Asset Direct Links:** Updated `PlatformExportHub.tsx` to link Master Excel and Universal Stock Excel downloads directly to `/templates/aheed-food-centre-master-stock-export.xlsx` and `/templates/aheed-food-centre-stock-export.xlsx`, preventing 404 "File wasn't available on site" errors caused by Node.js `fs.readFileSync` on Cloudflare Worker isolates.
+  - **Worker Safe XLSX Export Route:** Updated `app/(admin)/staff/platform/stock-export/export/route.ts` to redirect (`302`) `format=xlsx` requests directly to their static asset counterparts instead of reading the local filesystem. Removed Node `fs` and `path` dependencies.
+  - No database migration.
+
 ### Added
 
 - **Relocate Templates & Operational Exports to /staff/platform/stock-export (#1640, 2026-11-17).**
