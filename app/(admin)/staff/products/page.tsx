@@ -160,7 +160,7 @@ export default async function StaffProductsPage({
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="/staff/products/import#export-hub"
+            href="/staff/platform/stock-export"
             className="inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-3.5 py-2.5 text-sm font-semibold text-primary transition hover:bg-surface-muted"
           >
             <Icon name="download" className="h-4 w-4 text-primary" />
