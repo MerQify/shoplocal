@@ -711,6 +711,14 @@ export const PLATFORM: RoleCatalogue = {
           status: "partial",
           note: "Read-only: domains cannot be added or verified here yet (#1329).",
         },
+        {
+          name: "Stock and template export",
+          what: "Exports live catalogue stock records and provides standardised Universal and Essential bulk import templates.",
+          value: "Platform admins can export stock and download standard creation templates for any store.",
+          demo: "Download the Universal template or live catalogue export in Excel or CSV.",
+          route: "/staff/platform/stock-export",
+          status: "live",
+        },
       ],
     },
     {
