@@ -51,8 +51,12 @@ export async function purgeZoneCache(
       return { ok: true, message: `Successfully purged cache for ${zoneName} (${zoneId})` };
     }
 
-    const errDetails = data.errors?.map((e) => `${e.code}: ${e.message}`).join(", ") ?? res.statusText;
-    return { ok: false, message: `Failed to purge cache for ${zoneName} (${zoneId}): ${errDetails}` };
+    const errDetails =
+      data.errors?.map((e) => `${e.code}: ${e.message}`).join(", ") ?? res.statusText;
+    return {
+      ok: false,
+      message: `Failed to purge cache for ${zoneName} (${zoneId}): ${errDetails}`,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { ok: false, message: `Network error purging ${zoneName} (${zoneId}): ${msg}` };
@@ -82,7 +86,8 @@ export async function purgeAllRelevantZones(
 
     const data = (await res.json()) as CloudflareZonesResponse;
     if (!data.success || !data.result) {
-      const errDetails = data.errors?.map((e) => `${e.code}: ${e.message}`).join(", ") ?? "Unknown error";
+      const errDetails =
+        data.errors?.map((e) => `${e.code}: ${e.message}`).join(", ") ?? "Unknown error";
       console.warn(`[purge-cache] Cloudflare API error listing zones: ${errDetails}`);
       return;
     }
@@ -120,7 +125,9 @@ export async function purgeAllRelevantZones(
 async function main(): Promise<void> {
   const token = process.env.CLOUDFLARE_API_TOKEN;
   if (!token) {
-    console.log("[purge-cache] CLOUDFLARE_API_TOKEN is not set; skipping Cloudflare edge cache purge.");
+    console.log(
+      "[purge-cache] CLOUDFLARE_API_TOKEN is not set; skipping Cloudflare edge cache purge.",
+    );
     return;
   }
 
