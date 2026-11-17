@@ -6,7 +6,65 @@ every branch merges.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Essential Live Stock Export and Metadata Dropdowns in UI and Excel Workbooks (#1646, 2026-11-17).**
+  - **Live Essential Stock Export:** Fixed `app/(admin)/staff/platform/stock-export/export/route.ts` where requesting `type=essential` previously returned the blank template header (`generateBlankEssentialCsv()`). It now calls `generateEssentialStockCsv(auth.vendorId, { status, category })`, streaming actual live product records in 10-column Essential format.
+  - **Category-Aware Export Service:** Extended `fetchStockRecordsForExport` in `lib/product-templates/service.ts` with `category` filter support matching `categoryId`, `category.slug`, `category.name`, or parent categories.
+  - **Export Hub Metadata Dropdowns:** In `components/staff/platform-stock-export/PlatformExportHub.tsx`, added interactive dropdown selectors for Status (Active Only, All Records, Archived Only) and Department/Category (populated from live vendor categories passed via `page.tsx`).
+  - **Essential Excel (.xlsx) Download:** Added direct download link for Essential Stock Export in Excel format (`/templates/aheed-food-centre-essential-export.xlsx`) alongside CSV.
+  - **Excel In-Cell Data Validation Dropdowns:** Enhanced `scripts/lib/read-spreadsheet.ts` to inject native OpenXML `<dataValidations>` into generated `.xlsx` spreadsheets using `fflate`. Generated workbooks (`universal-product-template.xlsx`, `essential-product-template.xlsx`, `aheed-food-centre-master-stock-export.xlsx`, `aheed-food-centre-stock-export.xlsx`, `aheed-food-centre-essential-export.xlsx`) now feature native dropdown validation for VAT Rate, Stock Mode, Storage Condition, Units of Measure, and Dietary Flags.
+  - **Tests:** Updated `tests/platform-stock-export-rbac.test.ts` (5 tests passing).
+  - No database migration.
+
 ### Added
+
+- **Automate Cloudflare Cache Purge on Deployment (#1644, 2026-11-17).**
+  - **Post-Deploy Edge Purge:** Authored `scripts/purge-cloudflare-cache.ts` resolving active Cloudflare zones (`merqify.com`, `aheedfoodcentre.co.uk`) and triggering `POST /zones/{zone_id}/purge_cache` with `{"purge_everything": true}`.
+  - **CI Workflow Integration:** Integrated automated cache purge into `.github/workflows/deploy-staging.yml` and `.github/workflows/deploy-production.yml` across both platform `deploy` and dedicated `deploy-afc` jobs.
+  - **Graceful Failure Contract:** Script catches API/network errors and warns without non-zero exit codes to prevent blocking successful Worker deployments if token lacks Zone permissions.
+  - **Tests:** Added `tests/purge-cloudflare-cache.test.ts` (3 tests).
+  - No database migration.
+
+### Fixed
+
+- **Serve Master and Stock Excel Exports via Static Assets (#1642, 2026-11-17).**
+  - **Static Asset Direct Links:** Updated `PlatformExportHub.tsx` to link Master Excel and Universal Stock Excel downloads directly to `/templates/aheed-food-centre-master-stock-export.xlsx` and `/templates/aheed-food-centre-stock-export.xlsx`, preventing 404 "File wasn't available on site" errors caused by Node.js `fs.readFileSync` on Cloudflare Worker isolates.
+  - **Worker Safe XLSX Export Route:** Updated `app/(admin)/staff/platform/stock-export/export/route.ts` to redirect (`302`) `format=xlsx` requests directly to their static asset counterparts instead of reading the local filesystem. Removed Node `fs` and `path` dependencies.
+  - No database migration.
+
+### Added
+
+- **Relocate Templates & Operational Exports to /staff/platform/stock-export (#1640, 2026-11-17).**
+  - **Platform Stock Export UI:** Moved the complete "Templates & Operational Exports" section into `app/(admin)/staff/platform/stock-export/page.tsx` via `PlatformExportHub.tsx`. Features the all-in-one Master Excel workbook download, active vs. all records toggle, live operational exports (Universal, Essential, Categories, Bundles, Promotions, Discounts, Filters), and blank template downloads.
+  - **Clean Product Import Page:** Removed the embedded export card and anchor from `/staff/products/import/page.tsx`, keeping the import page focused on uploading and reviewing imports, with a header action link directing to `/staff/platform/stock-export`.
+  - **Products Navigation Link:** Updated the "Export & Templates" link on `/staff/products` to point directly to `/staff/platform/stock-export`.
+  - No database migration.
+
+- **Category-First Product Sorting, Master Multi-Sheet Export, Operational Exports, and Archival Filtering (#1638, 2026-11-17).**
+  - **Hierarchical Category-First Sorting:** Product exports now sort hierarchically: Department (parent category) &rarr; Category &rarr; Product Name (`sortProductsHierarchically`). Products belonging to the same category are grouped consecutively across all 6,103 export rows.
+  - **Master Multi-Sheet Excel Workbook:** Generated `public/templates/aheed-food-centre-master-stock-export.xlsx` (9.29 MB) containing 7 sheets: `Products` (with native AutoFilters), `Categories`, `Bundles`, `Promotions`, `Discount Codes`, `Filters & Attributes`, and `Field Instructions`. Native AutoFilter dropdowns enabled across all sheets.
+  - **New Operational Exporters & Endpoints:** Added dedicated export services and staff endpoints for Categories (`lib/category-templates/export.ts`, `/api/staff/categories/export`), Discount Codes (`lib/discount-templates/export.ts`, `/api/staff/discounts/export`), and Storefront Filters/Attributes (`lib/filter-templates/export.ts`, `/api/staff/filters/export`), plus live stock CSV (`/api/staff/stock/export`).
+  - **Archival & Status Filtering:** Added `status: "active" | "all" | "archived"` options to all export services and API routes. Active only is the clean default, excluding expired promotions and exhausted/expired discount codes.
+  - **Unified Store Admin UI Hub:** Added `StoreExportHub` component embedded in `/staff/products/import/page.tsx` with instant master workbook download, real-time filtered CSV/Excel downloads, blank template downloads, and two-way sync non-editable column guidelines. Added "Export & Templates" navigation link on `/staff/products`.
+  - **Tests & Guardrails:** Added unit suite `tests/operational-exports.test.ts` (14 tests). All 80 template and guardrail tests passing.
+  - No database migration.
+
+- **Product Template Brand Cleanup, Bundle & Promotion Export, and Protected Columns (#1636, 2026-11-17).**
+  - **Brand Disassociation for Unbranded Products:** Unbranded products no longer default to "Aheed" in `lib/product-templates/export.ts` and are exported with empty Brand cells. On import, `Brand` is optional—blank brands are accepted without validation errors and assign `brandId: null`. Re-exported live catalogue data (6,103 products) in `public/templates/` with clean blank brand cells.
+  - **Bundles & Promotions Export:** Added full CSV export capabilities for Bundles (`lib/bundle-templates/export.ts`) and Promotions (`lib/promotion-templates/export.ts`). Added download endpoints (`/api/staff/bundles/export`, `/api/staff/promotions/export`), UI buttons on `/staff/bundles` and `/staff/promotions`, and platform admin export links on `/staff/platform/stock-export`.
+  - **Protected System ID Columns:** Column headers updated to `Product ID [DO NOT EDIT]`, `Bundle ID [DO NOT EDIT]`, and `Promotion ID [DO NOT EDIT]`. Documented clearly in Excel Field Instructions that modifying system IDs breaks two-way updates. Implemented backward-compatible alias resolution so legacy headers continue to import seamlessly.
+  - **Tests:** Added `tests/bundle-promotion-templates.test.ts` (7 tests) and updated `tests/product-templates.test.ts` (18 tests total, all passing).
+  - No database migration.
+
+- **Standardised Product Import/Export Templates and Platform Admin Stock Export (#1634, 2026-11-17).**
+  - **Universal Product Template (`lib/product-templates/`):** Comprehensive 40-column schema (.xlsx / .csv) covering all mandatory, optional, tax, dietary, speciality grocery attributes (`Attr: Storage`, `Attr: Cut`, `Attr: Variety / Grain / Species`, `Attr: Form`), HMC certifications, age restrictions, and multi-buy promotions.
+  - **Essential Product Template:** Streamlined 11-column schema (.xlsx / .csv) covering mandatory fields only plus Brand (`Product Name*`, `Brand*`, `Category*`, `Price (£)*`, `Unit/Pack Size*`, `Stock Mode*`, `Current Stock`, `Is Active`) for rapid bulk creation.
+  - **Two-Way Import Engine with Zero-Decision Automation:** Upload engine auto-detects template headers, validates row data with line-level diagnostics, matches existing records by Product ID, Barcode, PLU, or exact name, and auto-resolves CREATE / UPDATE with single-click application.
+  - **Platform Admin Stock Export:** Dedicated UI at `/staff/platform/stock-export` and download endpoint at `/staff/platform/stock-export/export`, strictly gated to `auth.via === "platform-admin"`.
+  - **Live Catalogue Stock Export:** Exported all 6,303 existing catalogue products from production into Universal and Essential templates (.xlsx / .csv) without data loss, stored in `public/templates/` and downloadable via platform admin panel.
+  - **Tests & Guardrails:** Added unit suite `tests/product-templates.test.ts` (15 tests) and RBAC suite `tests/platform-stock-export-rbac.test.ts` (3 tests); verified against `tests/rbac-gate-matrix.test.ts` and `tests/catalogue-import-guards.test.ts` (pure Worker bundle boundary preserved).
+  - No database migration.
 
 - **Staff and Store Email Setup Guide on Help Centre (/help) (#1619, 2026-11-15).** Added step-by-step guidance for store admins and staff to reply to customer enquiries as the store (`info@aheedfoodcentre.co.uk`) directly from personal Gmail or Google Groups.
   - Added quick-jump navigation chip and dedicated `#staff-email` section on `/help` (`app/(storefront)/help/page.tsx`) detailing Google App Password creation and Gmail "Send mail as" SMTP configuration.

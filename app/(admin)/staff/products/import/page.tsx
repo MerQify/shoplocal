@@ -43,6 +43,12 @@ export default async function StaffProductImportPage() {
           </p>
         </div>
         <div className="flex gap-2 self-start">
+          <Link
+            href="/staff/platform/stock-export"
+            className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20"
+          >
+            Stock &amp; template export →
+          </Link>
           {settings && (
             <Link
               href="/staff/products/import/settings"

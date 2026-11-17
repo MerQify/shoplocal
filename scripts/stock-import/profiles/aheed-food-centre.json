@@ -1,5 +1,5 @@
 {
-  "notes": "Aheed Food Centre. Owner price lists: product name (brand first), size, price; no header row; a row with only a name is a section heading. First run 2026-11-14 (#1570): spices list and Shan list. Owner decisions: clean names on matched till products; 'x / y' form rows split in two. #1573 (2026-11-14): presets general, spices, rice and fish supply the naming order and the Form, Variety, Grain, Species, Storage, Cut, Grade and Flavour filters; till words the list drops are kept. Laziza list (2026-11-14): file rule brand Laziza; list typos biriuani, sinshi, masal fixed by spelling. #1578: generic synonyms, form words, conflicting forms and 'curry' moved into the general and spices presets; the store keeps its own spellings and brands. Brand clean-up 2026-11-14: 'shanker' is Shankar. Owner 2026-11-14: T S / TS / T/S / T.S is Tropical Sun; Suryaa is Surya.",
+  "notes": "Aheed Food Centre. Owner price lists: product name (brand first), size, price; no header row; a row with only a name is a section heading. First run 2026-11-14 (#1570): spices list and Shan list. Owner decisions: clean names on matched till products; 'x / y' form rows split in two. #1573 (2026-11-14): presets general, spices, rice and fish supply the naming order and the Form, Variety, Grain, Species, Storage, Cut, Grade and Flavour filters; till words the list drops are kept. Laziza list (2026-11-14): file rule brand Laziza; list typos biriuani, sinshi, masal fixed by spelling. #1578: generic synonyms, form words, conflicting forms and 'curry' moved into the general and spices presets; the store keeps its own spellings and brands. Brand clean-up 2026-11-14: 'shanker' is Shankar. Owner 2026-11-14: T S / TS / T/S / T.S is Tropical Sun; Suryaa is Surya. Rice and fresh butchery/fish/veg/snacks lists 2026-11-16: standard header columns Category, Product, Size, Price, Offer, Notes; category mappings for meat, poultry, fish, veg, snacks and rice; added Rice and Butchery brand aliases.",
   "vendorSlug": "aheed-food-centre",
   "presets": ["general", "spices", "rice", "fish"],
   "headerRow": "none",
@@ -12,7 +12,31 @@
   "sectionCategories": {
     "spices": "spices-masalas"
   },
-  "categoryMap": {},
+  "categoryMap": {
+    "rice & grains": "rice-grains",
+    "whole chicken": "chicken-poultry",
+    "chicken cuts": "chicken-poultry",
+    "offal": "offal",
+    "fresh meat": "halal-meat",
+    "frozen meat": "frozen-meat",
+    "box offers": "frozen-meat",
+    "frozen fish": "frozen-fish",
+    "prawns": "prawns",
+    "crab & squid": "crab-squid-seafood",
+    "other fish": "fish",
+    "diamond brand": "fish",
+    "herbs & leaves": "fresh-vegetables",
+    "chillies & peppers": "fresh-vegetables",
+    "vegetables": "fresh-vegetables",
+    "onions": "onions-potatoes-roots",
+    "roots & other": "onions-potatoes-roots",
+    "fruits": "fresh-fruit",
+    "mutton": "pastries",
+    "chicken": "pastries",
+    "vadai & snacks": "pastries",
+    "rice & meals": "snacks",
+    "other": "pastries"
+  },
   "files": [
     {
       "match": "shan",
@@ -68,7 +92,7 @@
     },
     {
       "name": "Shankar",
-      "aliases": ["shanker"]
+      "aliases": ["shanker", "sankar"]
     },
     {
       "name": "Tropical Sun",
@@ -77,6 +101,142 @@
     {
       "name": "Surya",
       "aliases": ["suryaa"]
+    },
+    {
+      "name": "Pluvera",
+      "aliases": []
+    },
+    {
+      "name": "Elephant",
+      "aliases": []
+    },
+    {
+      "name": "Pride",
+      "aliases": []
+    },
+    {
+      "name": "Tilda",
+      "aliases": []
+    },
+    {
+      "name": "Laila",
+      "aliases": []
+    },
+    {
+      "name": "Daawat",
+      "aliases": []
+    },
+    {
+      "name": "Kohinoor",
+      "aliases": []
+    },
+    {
+      "name": "Akash",
+      "aliases": []
+    },
+    {
+      "name": "Badshah",
+      "aliases": []
+    },
+    {
+      "name": "Salaam",
+      "aliases": []
+    },
+    {
+      "name": "Aeroplane",
+      "aliases": []
+    },
+    {
+      "name": "India Gate",
+      "aliases": []
+    },
+    {
+      "name": "Inndu",
+      "aliases": []
+    },
+    {
+      "name": "Enrich",
+      "aliases": []
+    },
+    {
+      "name": "Kaaviya",
+      "aliases": []
+    },
+    {
+      "name": "Ajmi",
+      "aliases": []
+    },
+    {
+      "name": "Apna",
+      "aliases": []
+    },
+    {
+      "name": "Mahmood",
+      "aliases": []
+    },
+    {
+      "name": "Veetee",
+      "aliases": []
+    },
+    {
+      "name": "Sunland",
+      "aliases": []
+    },
+    {
+      "name": "Mayil",
+      "aliases": []
+    },
+    {
+      "name": "Ahmed",
+      "aliases": []
+    },
+    {
+      "name": "Afraid",
+      "aliases": []
+    },
+    {
+      "name": "Aubkass",
+      "aliases": ["abu kass"]
+    },
+    {
+      "name": "Soghaat",
+      "aliases": []
+    },
+    {
+      "name": "Banadir",
+      "aliases": []
+    },
+    {
+      "name": "A1",
+      "aliases": []
+    },
+    {
+      "name": "AAA",
+      "aliases": []
+    },
+    {
+      "name": "Asli",
+      "aliases": []
+    },
+    {
+      "name": "Anjoman",
+      "aliases": []
+    },
+    {
+      "name": "Annam",
+      "aliases": []
+    },
+    {
+      "name": "Trophy",
+      "aliases": []
+    },
+    {
+      "name": "Tolly Boy",
+      "aliases": ["trolly boy", "trolly"]
+    },
+    {
+      "name": "Ani",
+      "aliases": ["aani"]
     }
   ],
   "spelling": {
