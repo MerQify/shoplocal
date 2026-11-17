@@ -1,3 +1,3 @@
-﻿Product ID [DO NOT EDIT],Product Name*,Brand,Category*,Price (£)*,Unit/Pack Size*,Barcode,PLU,Stock Mode*,Current Stock,Is Active
-,Daawat Extra Long Basmati Rice 5kg,Daawat,Rice & Grains,14.99,5kg,5012345678901,1001,TRACKED,45,TRUE
-,Fresh Halal Baby Chicken Curry Cut 1kg,,Chicken & Poultry,4.99,1kg,,2045,UNTRACKED,,TRUE
+﻿Product ID [DO NOT EDIT],Product Name*,Brand,Category*,Price (£)*,Unit/Pack Size*,Barcode,PLU,Image Available,Stock Mode*,Current Stock,Is Active
+,Daawat Extra Long Basmati Rice 5kg,Daawat,Rice & Grains,14.99,5kg,5012345678901,1001,TRUE,TRACKED,45,TRUE
+,Fresh Halal Baby Chicken Curry Cut 1kg,,Chicken & Poultry,4.99,1kg,,2045,TRUE,UNTRACKED,,TRUE

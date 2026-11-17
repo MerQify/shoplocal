@@ -75,6 +75,11 @@ export async function fetchStockRecordsForExport(
           numericValue: true,
         },
       },
+      images: {
+        select: {
+          storageKey: true,
+        },
+      },
     },
     orderBy: { name: "asc" },
   });
@@ -138,6 +143,7 @@ export function getUniversalSampleRows(): Record<string, string>[] {
       "Net Content Unit": "KILOGRAM",
       Barcode: "5012345678901",
       PLU: "1001",
+      "Image Available": "TRUE",
       "Stock Mode*": "TRACKED",
       "Current Stock": "45",
       "Low Stock Threshold": "5",
@@ -181,6 +187,7 @@ export function getUniversalSampleRows(): Record<string, string>[] {
       "Net Content Unit": "KILOGRAM",
       Barcode: "",
       PLU: "2045",
+      "Image Available": "TRUE",
       "Stock Mode*": "UNTRACKED",
       "Current Stock": "",
       "Low Stock Threshold": "",
@@ -222,6 +229,7 @@ export function getEssentialSampleRows(): Record<string, string>[] {
       "Unit/Pack Size*": "5kg",
       Barcode: "5012345678901",
       PLU: "1001",
+      "Image Available": "TRUE",
       "Stock Mode*": "TRACKED",
       "Current Stock": "45",
       "Is Active": "TRUE",
@@ -235,6 +243,7 @@ export function getEssentialSampleRows(): Record<string, string>[] {
       "Unit/Pack Size*": "1kg",
       Barcode: "",
       PLU: "2045",
+      "Image Available": "TRUE",
       "Stock Mode*": "UNTRACKED",
       "Current Stock": "",
       "Is Active": "TRUE",

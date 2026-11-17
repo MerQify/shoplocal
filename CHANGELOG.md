@@ -6,6 +6,17 @@ every branch merges.
 
 ## [Unreleased]
 
+### Added
+
+- **Product Export Image Availability Indicator (#1649, 2026-11-17).**
+  - **Image Availability Column:** Added `Image Available` to `UNIVERSAL_COLUMNS` and `ESSENTIAL_COLUMNS` in `lib/product-templates/schema.ts` and `DatabaseProductForExport` in `lib/product-templates/export.ts`.
+  - **Accurate Image Detection:** Derives `Image Available` as `TRUE` if a product possesses at least one real product image, and `FALSE` if the product has no images or only seeded placeholder images (`/main.svg`).
+  - **Live & Static Workbook Coverage:** Updated `fetchStockRecordsForExport` in `lib/product-templates/service.ts` to include `images` relation, updated static generation scripts (`generate-templates.ts`, `export-all-stock.ts`), and refreshed all `.xlsx` and `.csv` files under `public/templates/`.
+  - **Excel In-Cell Dropdown Rules:** Configured `"Image Available": "TRUE,FALSE"` in `UNIVERSAL_DROPDOWN_RULES` and `ESSENTIAL_DROPDOWN_RULES` for native Excel validation dropdowns.
+  - **Import Tolerance:** Configured `analyzeTemplateGrid` to treat `Image Available` as an informational/audit flag without causing import rejection.
+  - **Tests:** Added unit tests in `tests/product-templates.test.ts` for placeholder vs. real image derivation and schema adherence (20 tests passing).
+  - No database migration.
+
 ### Fixed
 
 - **Essential Live Stock Export and Metadata Dropdowns in UI and Excel Workbooks (#1646, 2026-11-17).**

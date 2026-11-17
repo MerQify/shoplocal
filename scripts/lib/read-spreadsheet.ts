@@ -107,12 +107,14 @@ export const UNIVERSAL_DROPDOWN_RULES: Record<string, string> = {
   "Is Gluten Free": "TRUE,FALSE",
   "Is HMC Certified": "TRUE,FALSE",
   "Attr: Storage": "Ambient,Chilled,Frozen",
+  "Image Available": "TRUE,FALSE",
   "Is Active": "TRUE,FALSE",
   "Is Featured": "TRUE,FALSE",
 };
 
 /** Standard enum validation lists for Essential stock sheets */
 export const ESSENTIAL_DROPDOWN_RULES: Record<string, string> = {
+  "Image Available": "TRUE,FALSE",
   "Stock Mode*": "TRACKED,UNTRACKED,INFINITE,UNKNOWN",
   "Is Active": "TRUE,FALSE",
 };
