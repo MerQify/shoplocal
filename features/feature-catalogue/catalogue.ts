@@ -714,7 +714,8 @@ export const PLATFORM: RoleCatalogue = {
         {
           name: "Stock and template export",
           what: "Exports live catalogue stock records and provides standardised Universal and Essential bulk import templates.",
-          value: "Platform admins can export stock and download standard creation templates for any store.",
+          value:
+            "Platform admins can export stock and download standard creation templates for any store.",
           demo: "Download the Universal template or live catalogue export in Excel or CSV.",
           route: "/staff/platform/stock-export",
           status: "live",
