@@ -24,6 +24,7 @@ export const UNIVERSAL_COLUMNS = [
   "Net Content Unit",
   "Barcode",
   "PLU",
+  "Image Available",
   "Stock Mode*",
   "Current Stock",
   "Low Stock Threshold",
@@ -63,6 +64,7 @@ export const ESSENTIAL_COLUMNS = [
   "Unit/Pack Size*",
   "Barcode",
   "PLU",
+  "Image Available",
   "Stock Mode*",
   "Current Stock",
   "Is Active",
@@ -148,6 +150,12 @@ export const UNIVERSAL_COLUMN_INSTRUCTIONS: Record<UniversalColumn, ColumnInstru
     required: false,
     description: "Price Look-Up code for fresh butcher or weighed produce.",
     example: "4011",
+  },
+  "Image Available": {
+    required: false,
+    description:
+      "TRUE if product has a live photo/image, FALSE if missing or seeded placeholder. Informational audit flag.",
+    example: "TRUE or FALSE",
   },
   "Stock Mode*": {
     required: true,

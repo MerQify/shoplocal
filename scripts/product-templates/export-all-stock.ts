@@ -109,6 +109,11 @@ async function main() {
             numericValue: true,
           },
         },
+        images: {
+          select: {
+            storageKey: true,
+          },
+        },
       },
     });
 
