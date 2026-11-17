@@ -7,7 +7,6 @@ import { getStockImportSettings, listStockImportRuns } from "@/lib/stock-import-
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { StockImportUpload } from "@/components/staff/stock-import/StockImportUpload";
-import { StoreExportHub } from "@/components/staff/stock-import/StoreExportHub";
 
 export const dynamic = "force-dynamic";
 
@@ -44,12 +43,12 @@ export default async function StaffProductImportPage() {
           </p>
         </div>
         <div className="flex gap-2 self-start">
-          <a
-            href="#export-hub"
+          <Link
+            href="/staff/platform/stock-export"
             className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20"
           >
-            Templates &amp; Exports ↓
-          </a>
+            Stock &amp; template export →
+          </Link>
           {settings && (
             <Link
               href="/staff/products/import/settings"
@@ -71,8 +70,6 @@ export default async function StaffProductImportPage() {
         hasSettings={settings !== null}
         categories={categories.map((c) => ({ slug: c.slug, name: c.name }))}
       />
-
-      <StoreExportHub />
 
       <section className="mt-8">
         <h2 className="mb-3 text-lg font-semibold text-primary">Recent imports</h2>

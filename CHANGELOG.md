@@ -8,6 +8,12 @@ every branch merges.
 
 ### Added
 
+- **Relocate Templates & Operational Exports to /staff/platform/stock-export (#1640, 2026-11-17).**
+  - **Platform Stock Export UI:** Moved the complete "Templates & Operational Exports" section into `app/(admin)/staff/platform/stock-export/page.tsx` via `PlatformExportHub.tsx`. Features the all-in-one Master Excel workbook download, active vs. all records toggle, live operational exports (Universal, Essential, Categories, Bundles, Promotions, Discounts, Filters), and blank template downloads.
+  - **Clean Product Import Page:** Removed the embedded export card and anchor from `/staff/products/import/page.tsx`, keeping the import page focused on uploading and reviewing imports, with a header action link directing to `/staff/platform/stock-export`.
+  - **Products Navigation Link:** Updated the "Export & Templates" link on `/staff/products` to point directly to `/staff/platform/stock-export`.
+  - No database migration.
+
 - **Category-First Product Sorting, Master Multi-Sheet Export, Operational Exports, and Archival Filtering (#1638, 2026-11-17).**
   - **Hierarchical Category-First Sorting:** Product exports now sort hierarchically: Department (parent category) &rarr; Category &rarr; Product Name (`sortProductsHierarchically`). Products belonging to the same category are grouped consecutively across all 6,103 export rows.
   - **Master Multi-Sheet Excel Workbook:** Generated `public/templates/aheed-food-centre-master-stock-export.xlsx` (9.29 MB) containing 7 sheets: `Products` (with native AutoFilters), `Categories`, `Bundles`, `Promotions`, `Discount Codes`, `Filters & Attributes`, and `Field Instructions`. Native AutoFilter dropdowns enabled across all sheets.
