@@ -66,4 +66,24 @@ describe("Platform Stock Export Route RBAC (#1634)", () => {
     expect(res.headers.get("content-type")).toContain("text/csv");
     expect(res.headers.get("content-disposition")).toContain("attachment; filename=");
   });
+
+  it("redirects 302 to static asset when format is xlsx (#1642)", async () => {
+    requireVendorRole.mockResolvedValue({
+      ok: true,
+      role: "ADMIN",
+      vendorId: "vendor-1",
+      via: "platform-admin",
+    });
+    const { GET } = await import("@/app/(admin)/staff/platform/stock-export/export/route");
+
+    const req = new Request(
+      "http://localhost/staff/platform/stock-export/export?type=master&format=xlsx",
+    );
+    const res = await GET(req);
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe(
+      "http://localhost/templates/aheed-food-centre-master-stock-export.xlsx",
+    );
+  });
 });

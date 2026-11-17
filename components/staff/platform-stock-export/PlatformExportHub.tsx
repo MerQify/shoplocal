@@ -84,7 +84,7 @@ export function PlatformExportHub() {
             </p>
           </div>
           <a
-            href="/staff/platform/stock-export/export?type=master&format=xlsx"
+            href="/templates/aheed-food-centre-master-stock-export.xlsx"
             download="aheed-food-centre-master-stock-export.xlsx"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs transition hover:bg-emerald-800 shrink-0"
           >
@@ -125,7 +125,7 @@ export function PlatformExportHub() {
                   CSV
                 </a>
                 <a
-                  href="/staff/platform/stock-export/export?type=stock&format=xlsx"
+                  href="/templates/aheed-food-centre-stock-export.xlsx"
                   download
                   className="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 hover:bg-emerald-200"
                 >
