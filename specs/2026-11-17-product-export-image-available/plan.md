@@ -1,3 +1,16 @@
+---
+id: 2026-11-17-product-export-image-available-plan
+title: "Product Export Image Availability Indicator (plan)"
+audience: [dev]
+type: spec
+status: approved
+version: "1.0.0"
+updated: 2026-11-17
+visibility: internal
+summary: "Add Image Available column to Universal and Essential product exports, static templates, Master Operational workbook, and native Excel in-cell dropdown rules."
+tags: [catalogue, export, image-available, templates, excel, dropdowns]
+---
+
 # Product Export Image Availability Indicator (plan)
 
 Fixes #1649.
