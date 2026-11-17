@@ -12,6 +12,7 @@ import { formatCsvTable } from "./csv";
 
 export interface StockExportFilterOptions {
   status?: "active" | "all" | "archived";
+  category?: string;
 }
 
 /**
@@ -30,6 +31,16 @@ export async function fetchStockRecordsForExport(
     where.isActive = true;
   } else if (status === "archived") {
     where.isActive = false;
+  }
+
+  if (options?.category && options.category !== "all") {
+    where.OR = [
+      { categoryId: options.category },
+      { category: { slug: options.category } },
+      { category: { name: options.category } },
+      { category: { parent: { slug: options.category } } },
+      { category: { parent: { name: options.category } } },
+    ];
   }
 
   const products = await prisma.product.findMany({

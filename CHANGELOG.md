@@ -6,6 +6,17 @@ every branch merges.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Essential Live Stock Export and Metadata Dropdowns in UI and Excel Workbooks (#1646, 2026-11-17).**
+  - **Live Essential Stock Export:** Fixed `app/(admin)/staff/platform/stock-export/export/route.ts` where requesting `type=essential` previously returned the blank template header (`generateBlankEssentialCsv()`). It now calls `generateEssentialStockCsv(auth.vendorId, { status, category })`, streaming actual live product records in 10-column Essential format.
+  - **Category-Aware Export Service:** Extended `fetchStockRecordsForExport` in `lib/product-templates/service.ts` with `category` filter support matching `categoryId`, `category.slug`, `category.name`, or parent categories.
+  - **Export Hub Metadata Dropdowns:** In `components/staff/platform-stock-export/PlatformExportHub.tsx`, added interactive dropdown selectors for Status (Active Only, All Records, Archived Only) and Department/Category (populated from live vendor categories passed via `page.tsx`).
+  - **Essential Excel (.xlsx) Download:** Added direct download link for Essential Stock Export in Excel format (`/templates/aheed-food-centre-essential-export.xlsx`) alongside CSV.
+  - **Excel In-Cell Data Validation Dropdowns:** Enhanced `scripts/lib/read-spreadsheet.ts` to inject native OpenXML `<dataValidations>` into generated `.xlsx` spreadsheets using `fflate`. Generated workbooks (`universal-product-template.xlsx`, `essential-product-template.xlsx`, `aheed-food-centre-master-stock-export.xlsx`, `aheed-food-centre-stock-export.xlsx`, `aheed-food-centre-essential-export.xlsx`) now feature native dropdown validation for VAT Rate, Stock Mode, Storage Condition, Units of Measure, and Dietary Flags.
+  - **Tests:** Updated `tests/platform-stock-export-rbac.test.ts` (5 tests passing).
+  - No database migration.
+
 ### Added
 
 - **Automate Cloudflare Cache Purge on Deployment (#1644, 2026-11-17).**

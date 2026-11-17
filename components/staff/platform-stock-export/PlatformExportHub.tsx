@@ -3,45 +3,68 @@
 import { useState } from "react";
 import { Icon } from "@/components/icons/Icon";
 
-export function PlatformExportHub() {
-  const [statusFilter, setStatusFilter] = useState<"active" | "all">("active");
+export interface PlatformExportHubProps {
+  categories?: { id: string; name: string; slug: string }[];
+}
 
-  const querySuffix = statusFilter === "all" ? "&status=all" : "&status=active";
+export function PlatformExportHub({ categories = [] }: PlatformExportHubProps) {
+  const [statusFilter, setStatusFilter] = useState<"active" | "all" | "archived">("active");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+
+  const querySuffix = `?status=${statusFilter}${categoryFilter ? `&category=${encodeURIComponent(categoryFilter)}` : ""}`;
+
+  const selectedCategoryName = categories.find((c) => c.slug === categoryFilter)?.name;
 
   return (
     <div id="export-hub" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-slate-100 pb-5">
         <div>
           <h2 className="text-xl font-bold text-slate-900">Templates &amp; Operational Exports</h2>
           <p className="text-sm text-slate-600">
-            Download pre-formatted import templates, master workbooks with native AutoFilters, or
-            live catalogue and operational data for backup, audit, and batch edits.
+            Download pre-formatted import templates, master workbooks with native AutoFilters and
+            in-cell dropdowns, or live catalogue data for backup, audit, and batch edits.
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-slate-50 p-1">
-          <span className="px-2 text-xs font-medium text-slate-500">Export Filter:</span>
-          <button
-            type="button"
-            onClick={() => setStatusFilter("active")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-              statusFilter === "active"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "text-slate-700 hover:text-slate-900"
-            }`}
-          >
-            Active Only (Uncluttered)
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter("all")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-              statusFilter === "all"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "text-slate-700 hover:text-slate-900"
-            }`}
-          >
-            All (Include Inactive / Expired)
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Metadata Dropdown: Status Filter */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5">
+            <label htmlFor="status-filter-select" className="text-xs font-semibold text-slate-600">
+              Status:
+            </label>
+            <select
+              id="status-filter-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "active" | "all" | "archived")}
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-slate-900 focus:outline-hidden"
+            >
+              <option value="active">Active Only (Uncluttered)</option>
+              <option value="all">All Records (Active &amp; Inactive)</option>
+              <option value="archived">Archived / Inactive Only</option>
+            </select>
+          </div>
+
+          {/* Metadata Dropdown: Category / Department Filter */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5">
+            <label
+              htmlFor="category-filter-select"
+              className="text-xs font-semibold text-slate-600"
+            >
+              Category:
+            </label>
+            <select
+              id="category-filter-select"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-slate-900 focus:outline-hidden max-w-[200px]"
+            >
+              <option value="">All Departments &amp; Categories</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.slug}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -104,8 +127,21 @@ export function PlatformExportHub() {
           </h4>
           <p className="mb-4 text-xs text-slate-500">
             Direct real-time exports generated from your live database based on your filter
-            selection (<strong>{statusFilter === "active" ? "Active Only" : "All Records"}</strong>
-            ):
+            selection:{" "}
+            <strong>
+              {statusFilter === "active"
+                ? "Active Only"
+                : statusFilter === "archived"
+                  ? "Archived Only"
+                  : "All Records"}
+            </strong>
+            {selectedCategoryName && (
+              <>
+                {" "}
+                in <strong>{selectedCategoryName}</strong>
+              </>
+            )}
+            .
           </p>
 
           <div className="space-y-2.5">
@@ -141,13 +177,22 @@ export function PlatformExportHub() {
                   Core 10 columns for quick stock audits
                 </span>
               </div>
-              <a
-                href={`/staff/platform/stock-export/export?type=essential&format=csv${querySuffix}`}
-                download
-                className="rounded-lg border border-slate-200 bg-white px-2 py-1 font-medium text-slate-700 hover:bg-slate-50"
-              >
-                CSV
-              </a>
+              <div className="flex gap-1.5">
+                <a
+                  href={`/staff/platform/stock-export/export?type=essential&format=csv${querySuffix}`}
+                  download
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  CSV
+                </a>
+                <a
+                  href="/templates/aheed-food-centre-essential-export.xlsx"
+                  download
+                  className="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 hover:bg-emerald-200"
+                >
+                  Excel (.xlsx)
+                </a>
+              </div>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-2xs">
