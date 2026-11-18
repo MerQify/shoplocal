@@ -296,8 +296,23 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     <Icon name="circle-check" className="h-4 w-4" />
                   </div>
                   <div className="text-xs">
-                    <p className="font-bold text-primary">100% Halal Verified</p>
-                    <p className="text-primary-muted">Certified halal supply chain and handling.</p>
+                    {/* #1658 — a certification claim only when this product carries one; the
+                        reference itself renders further down. */}
+                    {product.isHmcCertified ? (
+                      <>
+                        <p className="font-bold text-primary">HMC certified halal</p>
+                        <p className="text-primary-muted">
+                          Certified by the Halal Monitoring Committee.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-bold text-primary">Halal</p>
+                        <p className="text-primary-muted">
+                          Sold as halal. Ask us if you need certification details.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}

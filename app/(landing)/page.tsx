@@ -92,10 +92,15 @@ export default async function HomePage() {
                     : `Local Delivery across ${localityName}`}
                 </span>
               </div>
-              <div className="inline-flex items-center gap-2 bg-black/25 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-                <IconMedallion icon3d="halal-certified" size={24} className="-my-1" decorative />
-                <span>100% Certified HMC Halal</span>
-              </div>
+              {/* #1658 — was hard-coded for every vendor, so an electronics shop claimed certified
+                  halal (the #239 incident again). Only a vendor that has switched on both Halal and
+                  HMC certification makes this claim, and it no longer says "100%". */}
+              {profile?.showHalalLabel && profile.showHmcCertification && (
+                <div className="inline-flex items-center gap-2 bg-black/25 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+                  <IconMedallion icon3d="halal-certified" size={24} className="-my-1" decorative />
+                  <span>HMC certified halal</span>
+                </div>
+              )}
             </div>
 
             {/* The ONE slot that keeps a fallback rather than hiding: this is the
