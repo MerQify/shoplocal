@@ -50,13 +50,19 @@ export default async function HelpPage() {
   const isStaff = auth.ok;
 
   let detectedRole: UserJourneyRole = "customer";
+  // #1652 — journeys the viewer may see: their own role and those beneath it. An anonymous shopper
+  // sees the customer journey only; the rest is internal operating guidance.
+  let journeyRoles: UserJourneyRole[] = ["customer"];
   if (auth.ok) {
     if (auth.via === "platform-admin") {
       detectedRole = "platform-admin";
+      journeyRoles = ["customer", "staff", "store-admin", "platform-admin"];
     } else if (auth.via === "ADMIN") {
       detectedRole = "store-admin";
+      journeyRoles = ["customer", "staff", "store-admin"];
     } else if (auth.via === "STAFF") {
       detectedRole = "staff";
+      journeyRoles = ["customer", "staff"];
     }
   }
 
@@ -139,15 +145,18 @@ export default async function HelpPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/15 bg-surface-muted hover:bg-white hover:border-black/30 transition-colors text-primary"
           >
             <Icon name="store" className="w-3.5 h-3.5 text-action" />
-            <span>Platform User Journeys</span>
+            <span>{isStaff ? "Platform User Journeys" : "How shopping works"}</span>
           </a>
-          <a
-            href="#staff-email"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/15 bg-surface-muted hover:bg-white hover:border-black/30 transition-colors text-primary"
-          >
-            <Icon name="mail" className="w-3.5 h-3.5 text-action" />
-            <span>Staff Email Setup</span>
-          </a>
+          {/* #1652 — staff-only guide; never shown to shoppers. */}
+          {isStaff && (
+            <a
+              href="#staff-email"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/15 bg-surface-muted hover:bg-white hover:border-black/30 transition-colors text-primary"
+            >
+              <Icon name="mail" className="w-3.5 h-3.5 text-action" />
+              <span>Staff Email Setup</span>
+            </a>
+          )}
           {profile && (
             <a
               href="#contact"
@@ -289,166 +298,172 @@ export default async function HelpPage() {
           {/* #1385 — Interactive role-based user journey maps with delivery anchor */}
           <div id="delivery" className="scroll-mt-24">
             <div id="journeys">
-              <RoleJourneyMaps detectedRole={detectedRole} />
+              <RoleJourneyMaps detectedRole={detectedRole} roles={journeyRoles} />
             </div>
           </div>
 
-          {/* Staff & Store Email Guide */}
-          <section
-            id="staff-email"
-            className="scroll-mt-24 rounded-2xl border border-black/10 bg-white p-6 sm:p-8 shadow-xs space-y-6"
-          >
-            <div className="flex items-center gap-3 border-b border-black/10 pb-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-action-tint text-action">
-                <Icon name="mail" className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-primary">
-                  Staff &amp; Store Email Setup: Sending from Gmail
-                </h2>
-                <p className="text-xs sm:text-sm text-primary-muted mt-0.5">
-                  Step-by-step instructions for store admins and staff to reply to customer
-                  enquiries as {profile?.senderEmail ?? "info@aheedfoodcentre.co.uk"} directly from
-                  personal Gmail.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Step 1 Card */}
-              <div className="rounded-xl border border-black/10 bg-surface-muted p-5 space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-action text-white text-xs font-bold shrink-0">
-                    1
-                  </span>
-                  <h3 className="font-bold text-sm sm:text-base text-primary">
-                    Create a Google App Password (1 min)
-                  </h3>
+          {/* Staff & Store Email Guide — #1652: authenticated staff only. */}
+          {isStaff && (
+            <section
+              id="staff-email"
+              className="scroll-mt-24 rounded-2xl border border-black/10 bg-white p-6 sm:p-8 shadow-xs space-y-6"
+            >
+              <div className="flex items-center gap-3 border-b border-black/10 pb-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-action-tint text-action">
+                  <Icon name="mail" className="h-5 w-5" />
                 </div>
-                <p className="text-xs text-primary-muted leading-relaxed">
-                  Gmail requires a secure 16-character App Password to authorize sending as your
-                  store address.
-                </p>
-                <ol className="list-decimal list-inside text-xs text-primary-muted space-y-1.5 pl-1">
-                  <li>
-                    Go to your{" "}
-                    <a
-                      href="https://myaccount.google.com/security"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-action hover:underline"
-                    >
-                      Google Account Security Settings
-                    </a>
-                    .
-                  </li>
-                  <li>
-                    Ensure <strong>2-Step Verification</strong> is turned <strong>ON</strong>.
-                  </li>
-                  <li>
-                    Search for <strong>App Passwords</strong> (under 2-Step Verification).
-                  </li>
-                  <li>
-                    Enter app name <strong>Store Email</strong> and click <strong>Create</strong>.
-                  </li>
-                  <li>
-                    Copy the <strong>16-character password</strong> (e.g.{" "}
-                    <code className="bg-white px-1.5 py-0.5 rounded border border-black/10">
-                      abcd efgh ijkl mnop
-                    </code>
-                    ).
-                  </li>
-                </ol>
-              </div>
-
-              {/* Step 2 Card */}
-              <div className="rounded-xl border border-black/10 bg-surface-muted p-5 space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-action text-white text-xs font-bold shrink-0">
-                    2
-                  </span>
-                  <h3 className="font-bold text-sm sm:text-base text-primary">
-                    Add Store Address to Gmail (&quot;Send mail as&quot;)
-                  </h3>
-                </div>
-                <p className="text-xs text-primary-muted leading-relaxed">
-                  Configure Gmail to send through its outgoing SMTP server using your store alias.
-                </p>
-                <ol className="list-decimal list-inside text-xs text-primary-muted space-y-1.5 pl-1">
-                  <li>
-                    In desktop Gmail, click <strong>Gear icon</strong> (top right) →{" "}
-                    <strong>See all settings</strong>.
-                  </li>
-                  <li>
-                    Go to the <strong>Accounts and Import</strong> tab.
-                  </li>
-                  <li>
-                    Under <strong>Send mail as</strong>, click{" "}
-                    <strong>Add another email address</strong>.
-                  </li>
-                  <li>
-                    Enter your name and store email (e.g.{" "}
-                    <strong>{profile?.senderEmail ?? "info@aheedfoodcentre.co.uk"}</strong>), and{" "}
-                    <strong>uncheck</strong> &quot;Treat as an alias&quot;.
-                  </li>
-                  <li>
-                    Set <strong>SMTP Server:</strong>{" "}
-                    <code className="bg-white px-1 rounded border border-black/10">
-                      smtp.gmail.com
-                    </code>
-                    , <strong>Port:</strong>{" "}
-                    <code className="bg-white px-1 rounded border border-black/10">587</code>,{" "}
-                    <strong>Username:</strong> your personal Gmail address, and paste the{" "}
-                    <strong>16-character App Password</strong>.
-                  </li>
-                  <li>
-                    Click <strong>Add Account</strong>, then enter the verification code sent to the
-                    store address to confirm.
-                  </li>
-                </ol>
-              </div>
-            </div>
-
-            {/* Google Groups Note & Zero-Setup Alternative */}
-            <div className="rounded-xl bg-action-tint/50 border border-action/20 p-4 space-y-3 text-xs">
-              <div className="flex items-start gap-3">
-                <Icon name="users" className="w-5 h-5 text-action shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <h4 className="font-bold text-primary text-sm">
-                    Can this be configured once for a Google Group?
-                  </h4>
-                  <p className="text-primary-muted leading-relaxed">
-                    <strong>Inbound: Yes.</strong> Forwarding your store email to a Google Group
-                    automatically delivers incoming emails to all group members.
-                  </p>
-                  <p className="text-primary-muted leading-relaxed">
-                    <strong>Outbound: No.</strong> Google Groups is a distribution list, not an
-                    individual mailbox with SMTP credentials. When staff reply from personal Gmail,
-                    Google SMTP authenticates that specific person. Therefore, each staff member
-                    replying from Gmail completes Step 1 &amp; 2 in their own Google account.
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-primary">
+                    Staff &amp; Store Email Setup: Sending from Gmail
+                  </h2>
+                  <p className="text-xs sm:text-sm text-primary-muted mt-0.5">
+                    Step-by-step instructions for store admins and staff to reply to customer
+                    enquiries as {profile?.senderEmail ?? "your store address"} directly from
+                    personal Gmail.
                   </p>
                 </div>
               </div>
 
-              <div className="border-t border-action/20 pt-3 flex items-start gap-3">
-                <Icon name="shield-check" className="w-5 h-5 text-action shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <h4 className="font-bold text-primary text-sm">
-                    Zero-Setup Alternative: Staff Panel Enquiries Inbox
-                  </h4>
-                  <p className="text-primary-muted leading-relaxed">
-                    Staff don&apos;t need to configure personal Gmail if they use the Staff Panel.
-                    Open{" "}
-                    <Link href="/staff/enquiries" className="font-bold text-action hover:underline">
-                      Enquiries &amp; Inbox (/staff/enquiries)
-                    </Link>{" "}
-                    and click <strong>Reply to Customer</strong>. Replies are automatically sent as
-                    the store and logged for the team.
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Step 1 Card */}
+                <div className="rounded-xl border border-black/10 bg-surface-muted p-5 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-action text-white text-xs font-bold shrink-0">
+                      1
+                    </span>
+                    <h3 className="font-bold text-sm sm:text-base text-primary">
+                      Create a Google App Password (1 min)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-primary-muted leading-relaxed">
+                    Gmail requires a secure 16-character App Password to authorize sending as your
+                    store address.
                   </p>
+                  <ol className="list-decimal list-inside text-xs text-primary-muted space-y-1.5 pl-1">
+                    <li>
+                      Go to your{" "}
+                      <a
+                        href="https://myaccount.google.com/security"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-action hover:underline"
+                      >
+                        Google Account Security Settings
+                      </a>
+                      .
+                    </li>
+                    <li>
+                      Ensure <strong>2-Step Verification</strong> is turned <strong>ON</strong>.
+                    </li>
+                    <li>
+                      Search for <strong>App Passwords</strong> (under 2-Step Verification).
+                    </li>
+                    <li>
+                      Enter app name <strong>Store Email</strong> and click <strong>Create</strong>.
+                    </li>
+                    <li>
+                      Copy the <strong>16-character password</strong> (e.g.{" "}
+                      <code className="bg-white px-1.5 py-0.5 rounded border border-black/10">
+                        abcd efgh ijkl mnop
+                      </code>
+                      ).
+                    </li>
+                  </ol>
+                </div>
+
+                {/* Step 2 Card */}
+                <div className="rounded-xl border border-black/10 bg-surface-muted p-5 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-action text-white text-xs font-bold shrink-0">
+                      2
+                    </span>
+                    <h3 className="font-bold text-sm sm:text-base text-primary">
+                      Add Store Address to Gmail (&quot;Send mail as&quot;)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-primary-muted leading-relaxed">
+                    Configure Gmail to send through its outgoing SMTP server using your store alias.
+                  </p>
+                  <ol className="list-decimal list-inside text-xs text-primary-muted space-y-1.5 pl-1">
+                    <li>
+                      In desktop Gmail, click <strong>Gear icon</strong> (top right) →{" "}
+                      <strong>See all settings</strong>.
+                    </li>
+                    <li>
+                      Go to the <strong>Accounts and Import</strong> tab.
+                    </li>
+                    <li>
+                      Under <strong>Send mail as</strong>, click{" "}
+                      <strong>Add another email address</strong>.
+                    </li>
+                    <li>
+                      Enter your name and store email (e.g.{" "}
+                      <strong>{profile?.senderEmail ?? "your store address"}</strong>), and{" "}
+                      <strong>uncheck</strong> &quot;Treat as an alias&quot;.
+                    </li>
+                    <li>
+                      Set <strong>SMTP Server:</strong>{" "}
+                      <code className="bg-white px-1 rounded border border-black/10">
+                        smtp.gmail.com
+                      </code>
+                      , <strong>Port:</strong>{" "}
+                      <code className="bg-white px-1 rounded border border-black/10">587</code>,{" "}
+                      <strong>Username:</strong> your personal Gmail address, and paste the{" "}
+                      <strong>16-character App Password</strong>.
+                    </li>
+                    <li>
+                      Click <strong>Add Account</strong>, then enter the verification code sent to
+                      the store address to confirm.
+                    </li>
+                  </ol>
                 </div>
               </div>
-            </div>
-          </section>
+
+              {/* Google Groups Note & Zero-Setup Alternative */}
+              <div className="rounded-xl bg-action-tint/50 border border-action/20 p-4 space-y-3 text-xs">
+                <div className="flex items-start gap-3">
+                  <Icon name="users" className="w-5 h-5 text-action shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-primary text-sm">
+                      Can this be configured once for a Google Group?
+                    </h4>
+                    <p className="text-primary-muted leading-relaxed">
+                      <strong>Inbound: Yes.</strong> Forwarding your store email to a Google Group
+                      automatically delivers incoming emails to all group members.
+                    </p>
+                    <p className="text-primary-muted leading-relaxed">
+                      <strong>Outbound: No.</strong> Google Groups is a distribution list, not an
+                      individual mailbox with SMTP credentials. When staff reply from personal
+                      Gmail, Google SMTP authenticates that specific person. Therefore, each staff
+                      member replying from Gmail completes Step 1 &amp; 2 in their own Google
+                      account.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-action/20 pt-3 flex items-start gap-3">
+                  <Icon name="shield-check" className="w-5 h-5 text-action shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <h4 className="font-bold text-primary text-sm">
+                      Zero-Setup Alternative: Staff Panel Enquiries Inbox
+                    </h4>
+                    <p className="text-primary-muted leading-relaxed">
+                      Staff don&apos;t need to configure personal Gmail if they use the Staff Panel.
+                      Open{" "}
+                      <Link
+                        href="/staff/enquiries"
+                        className="font-bold text-action hover:underline"
+                      >
+                        Enquiries &amp; Inbox (/staff/enquiries)
+                      </Link>{" "}
+                      and click <strong>Reply to Customer</strong>. Replies are automatically sent
+                      as the store and logged for the team.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* #1012 — FAQs: the vendor's own answers */}
           {faqs.length > 0 && (
