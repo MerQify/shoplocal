@@ -24,9 +24,12 @@ import "./globals.css";
 export default function GlobalError({
   error,
   reset,
+  retry,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
+  /** Re-fetches and re-renders the segment (Next 16.2+); `reset` only re-renders (#1666). */
+  retry?: () => void;
 }) {
   useEffect(() => {
     console.error("Caught by global error boundary:", error);
@@ -40,7 +43,7 @@ export default function GlobalError({
         <ErrorPanel
           title="Something went wrong"
           message="We hit a problem loading the store. Trying again may help; if it keeps happening, please contact support."
-          onRetry={reset}
+          onRetry={retry ?? reset}
         />
       </body>
     </html>

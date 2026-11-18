@@ -22,9 +22,12 @@ import { reloadIfStaleDeployment } from "@/lib/stale-deployment";
 export default function AdminError({
   error,
   reset,
+  retry,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
+  /** Re-fetches and re-renders the segment (Next 16.2+); `reset` only re-renders (#1666). */
+  retry?: () => void;
 }) {
   useEffect(() => {
     console.error("Caught by staff portal error boundary:", error);
@@ -36,7 +39,7 @@ export default function AdminError({
     <ErrorPanel
       title="Something went wrong"
       message="We couldn't load this panel. Trying again may help; if it keeps happening, please report it."
-      onRetry={reset}
+      onRetry={retry ?? reset}
       fullHeight={false}
     />
   );
