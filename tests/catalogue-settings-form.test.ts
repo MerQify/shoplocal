@@ -16,6 +16,7 @@ const ALL_OFF: CatalogueSettingsRaw = {
   showVegetarianLabel: null,
   showGlutenFreeLabel: null,
   showHmcCertification: null,
+  showAllergenNotice: null,
   storeDescription: "",
 };
 
@@ -79,5 +80,14 @@ describe("parseCatalogueSettings (#905 R5)", () => {
 
   it("the initial form state carries no error", () => {
     expect(initialCatalogueSettingsState).toEqual({ error: null, field: null, saved: false });
+  });
+});
+
+describe("parseCatalogueSettings — allergen notice (#1656)", () => {
+  it("is on exactly when the browser submitted 'on', and off by default", () => {
+    const off = parseCatalogueSettings(ALL_OFF);
+    expect(off.ok && off.value.showAllergenNotice).toBe(false);
+    const on = parseCatalogueSettings({ ...ALL_OFF, showAllergenNotice: "on" });
+    expect(on.ok && on.value.showAllergenNotice).toBe(true);
   });
 });

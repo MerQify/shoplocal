@@ -938,6 +938,24 @@ export function StorefrontConfigForm({
           </p>
         </fieldset>
 
+        {/* #1656 — a storefront notice, not a product label, so it sits outside that fieldset. */}
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 text-sm font-bold text-black">
+            <input
+              type="checkbox"
+              name="showAllergenNotice"
+              defaultChecked={initialConfig.showAllergenNotice}
+              className="h-5 w-5 rounded border-black/20 text-primary focus:ring-primary"
+            />
+            Show allergen notice
+          </label>
+          <p className="text-xs text-black/60">
+            For stores that sell food. Product, basket and checkout pages tell shoppers to ask you
+            about allergens before they order, with the phone number and email from your footer
+            contact details.
+          </p>
+        </div>
+
         <div className="flex flex-col gap-2">
           <label htmlFor="storeDescription" className="font-bold text-black">
             What this store sells

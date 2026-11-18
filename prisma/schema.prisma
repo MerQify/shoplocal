@@ -754,6 +754,10 @@ model VendorConfig {
   showVegetarianLabel         Boolean            @default(false)
   showGlutenFreeLabel         Boolean            @default(false)
   showHmcCertification        Boolean            @default(false)
+  // #1656 — stopgap until structured allergen data (#1653): when on, product, basket and checkout
+  // pages tell shoppers to ask the store about allergens before ordering, with the store's own
+  // contact details. Off by default so non-food vendors are unaffected.
+  showAllergenNotice          Boolean            @default(false)
   // #905 — what this store sells, in the admin's own words (max 200 chars, one line). Given to
   // the AI prompts (list normalisation, synonym proposals, net-content suggestions) in place of
   // a hardcoded "grocery" framing; null = neutral wording.

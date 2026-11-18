@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { getCartRepository } from "@/lib/cart-service";
 import { getCartIdentity } from "@/lib/cart-identity";
 import { getCurrentVendorProfile } from "@/lib/vendor-service";
+import { AllergenNotice } from "@/components/product/AllergenNotice";
 import { getAuth } from "@/lib/auth";
 import { computeTotals } from "@/lib/order-totals";
 import { formatPrice } from "@/components/product/format-price";
@@ -140,6 +141,11 @@ export default async function CheckoutPage() {
           <p className="text-xs text-black/60">Bank-grade encrypted Stripe card payment</p>
         </div>
       </div>
+
+      {/* #1656 — the last place to ask about allergens before paying. */}
+      {vendor?.showAllergenNotice && (
+        <AllergenNotice phone={vendor.contactPhone} email={vendor.contactEmail} className="mb-6" />
+      )}
 
       {progress.kind === "below-minimum" && (
         <p className="mb-4 rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
