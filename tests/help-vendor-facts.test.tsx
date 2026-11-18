@@ -64,6 +64,7 @@ const state = {
   loyalty: LOYALTY_OFF as unknown,
   tiers: [] as unknown[],
   faqs: [] as unknown[],
+  auth: { ok: false, status: 403 } as unknown,
 };
 
 // #1052 — the contact card mounts the help assistant, whose server actions must not run here.
@@ -75,7 +76,7 @@ vi.mock("@/features/assistant/assistant", () => ({
 }));
 
 vi.mock("@/lib/auth-rbac", () => ({
-  requireVendorRole: async () => ({ ok: false, status: 403 }),
+  requireVendorRole: async () => state.auth,
 }));
 
 vi.mock("@/lib/vendor-service", () => ({
@@ -122,6 +123,7 @@ beforeEach(() => {
   state.loyalty = LOYALTY_OFF;
   state.tiers = [];
   state.faqs = [];
+  state.auth = { ok: false, status: 403 };
 });
 
 afterEach(cleanup);
@@ -138,20 +140,34 @@ describe("/help loyalty gate (#1013 R1, R9)", () => {
   });
 });
 
-describe("/help role journeys & delivery anchor (#1385)", () => {
-  it("renders the interactive role journeys and delivery anchor for footer navigation", async () => {
+describe("/help role journeys & delivery anchor (#1385, #1652)", () => {
+  it("shows an anonymous shopper the customer journey only, with the delivery anchor", async () => {
     await renderHelp();
 
     const text = document.body.textContent ?? "";
-    expect(text).toMatch(/Platform User Journey Maps/i);
+    expect(text).toMatch(/How shopping works/i);
     expect(text).toMatch(/Customer \(Shopper\)/i);
-    expect(text).toMatch(/Store Staff/i);
-    expect(text).toMatch(/Store Admin/i);
-    expect(text).toMatch(/Platform Admin/i);
+    // #1652 — the staff, admin and platform journeys are internal guidance.
+    expect(text).not.toMatch(/Store Staff/i);
+    expect(text).not.toMatch(/Store Admin/i);
+    expect(text).not.toMatch(/Platform Admin/i);
+    expect(document.querySelector('[role="tablist"]')).toBeNull();
 
     // Footer links to /help#delivery
     const deliveryAnchor = document.getElementById("delivery");
     expect(deliveryAnchor).not.toBeNull();
+  });
+
+  it("still shows a platform admin every role journey", async () => {
+    state.auth = { ok: true, via: "platform-admin" };
+    await renderHelp();
+
+    const text = document.body.textContent ?? "";
+    expect(text).toMatch(/Platform User Journey Maps/i);
+    expect(text).toMatch(/Store Staff/i);
+    expect(text).toMatch(/Store Admin/i);
+    expect(text).toMatch(/Platform Admin/i);
+    expect(document.querySelector('[role="tablist"]')).not.toBeNull();
   });
 
   it("has retired redundant static facts and shopping guide in favour of interactive journey maps", async () => {
@@ -194,5 +210,24 @@ describe("/help contact card (#1052)", () => {
     };
     await renderHelp();
     expect(screen.queryByRole("heading", { name: "Still need help?" })).toBeNull();
+  });
+});
+
+describe("/help staff email guide (#1652)", () => {
+  it("is not shown to an anonymous shopper", async () => {
+    await renderHelp();
+
+    expect(document.getElementById("staff-email")).toBeNull();
+    const text = document.body.textContent ?? "";
+    expect(text).not.toMatch(/Staff Email Setup/i);
+    expect(text).not.toMatch(/App Password/i);
+  });
+
+  it("is shown to authenticated staff", async () => {
+    state.auth = { ok: true, via: "STAFF" };
+    await renderHelp();
+
+    expect(document.getElementById("staff-email")).not.toBeNull();
+    expect(screen.getByText("Staff Email Setup")).toBeTruthy();
   });
 });

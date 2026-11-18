@@ -31,7 +31,7 @@ export default async function TermsPage() {
       <article className="prose prose-sm max-w-none space-y-6">
         <header className="border-b border-black/10 pb-4">
           <h1 className="text-2xl font-bold tracking-tight">{vendorName} — Terms of Service</h1>
-          <p className="text-xs text-primary-muted mt-1">Last updated: August 13, 2026</p>
+          <p className="text-xs text-primary-muted mt-1">Last updated: November 18, 2026</p>
         </header>
 
         <section className="space-y-2">
@@ -63,28 +63,43 @@ export default async function TermsPage() {
 
         {/* #1055 — the footer's "Returns & refunds" link lands here. */}
         <section id="refunds" className="scroll-mt-24 space-y-2">
-          <h2 className="text-lg font-semibold text-primary">4. Order Cancellations & Refunds</h2>
+          <h2 className="text-lg font-semibold text-primary">
+            4. Cancellations, Returns & Refunds
+          </h2>
+          {/* #1652 — written for the shopper and vendor-neutral: this page serves every vendor,
+              so it states the statutory position rather than one trade's examples or deadlines. */}
+          <h3 className="text-sm font-semibold text-primary">Changing or cancelling an order</h3>
           <p className="text-sm text-primary-muted leading-relaxed">
-            Orders can be cancelled before picking commences by contacting customer support. For
-            fresh or perishable items, cancellations after processing are subject to verification
-            under UK Consumer Rights Law.
+            You can cancel an order at no cost until we start preparing it. Contact us with your
+            order number and we will cancel it and refund you in full.
+          </p>
+          <h3 className="text-sm font-semibold text-primary">Something wrong with your order?</h3>
+          <p className="text-sm text-primary-muted leading-relaxed">
+            If an item arrives damaged, faulty, missing or not what you ordered, tell us as soon as
+            possible after you receive it. Include your order number and, if you can, a photo. We
+            will replace the item or refund it. Your statutory rights under the Consumer Rights Act
+            2015 are not affected.
+          </p>
+          <h3 className="text-sm font-semibold text-primary">Your right to cancel</h3>
+          <p className="text-sm text-primary-muted leading-relaxed">
+            For most goods you have 14 days from the day you receive them to cancel your order
+            without giving a reason. Return the goods unused, and we will refund you within 14 days
+            of receiving them back. This right does not apply to goods that are liable to
+            deteriorate or expire rapidly, or to sealed goods that are not suitable for return for
+            health or hygiene reasons once unsealed (Consumer Contracts Regulations 2013).
+          </p>
+          <h3 className="text-sm font-semibold text-primary">How refunds are paid</h3>
+          <p className="text-sm text-primary-muted leading-relaxed">
+            Refunds go back to the card or payment method you paid with. Once we issue a refund, it
+            normally appears on your statement within 5 to 10 working days, depending on your bank.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-primary">
-            5. Platform Provision & Tax Responsibility
-          </h2>
+          <h2 className="text-lg font-semibold text-primary">5. Who You Are Buying From</h2>
           <p className="text-sm text-primary-muted leading-relaxed">
-            The ordering, catalogue, and inventory technology on this website is powered by Merqify
-            Ltd as a software platform provider. {vendorName} operates as an independent merchant
-            and is solely responsible for all product listings, descriptions, stock quantities, and
-            the accuracy of all Value Added Tax (VAT) rates and classifications under applicable UK
-            HM Revenue &amp; Customs (HMRC) regulations. Merqify Ltd provides software management
-            tools only and does not provide tax, legal, or accounting advice. Any automated VAT
-            suggestions, indicators, or system warnings provided through the platform are for
-            operational guidance only and do not replace the merchant&apos;s statutory
-            responsibility to verify and ensure compliant tax treatment.
+            You are buying from {vendorName}, which is responsible for the products, prices and your
+            order. This website runs on ordering software provided by Merqify Ltd.
           </p>
         </section>
 

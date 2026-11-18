@@ -537,63 +537,82 @@ const JOURNEYS: Record<UserJourneyRole, RoleJourneyData> = {
   },
 };
 
-export function RoleJourneyMaps({ detectedRole = "customer" }: { detectedRole?: UserJourneyRole }) {
-  const [activeRole, setActiveRole] = useState<UserJourneyRole>(detectedRole);
+/**
+ * #1652 — `roles` is the set of journeys this viewer may see, chosen by the page from the viewer's
+ * own role. An anonymous shopper gets the customer journey alone: the staff, admin and platform
+ * journeys are internal operating guidance, and showing them publicly made the shop look
+ * unfinished. With a single role there is nothing to switch between, so no tabs render.
+ */
+export function RoleJourneyMaps({
+  detectedRole = "customer",
+  roles = ["customer"],
+}: {
+  detectedRole?: UserJourneyRole;
+  roles?: readonly UserJourneyRole[];
+}) {
+  const visible = (Object.keys(JOURNEYS) as UserJourneyRole[]).filter((r) => roles.includes(r));
+  const [activeRole, setActiveRole] = useState<UserJourneyRole>(
+    visible.includes(detectedRole) ? detectedRole : (visible[0] ?? "customer"),
+  );
   const journey = JOURNEYS[activeRole];
+  const shopperOnly = visible.length <= 1;
 
   return (
     <section aria-labelledby="journey-maps-heading" className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 id="journey-maps-heading" className="text-2xl font-bold text-black/90">
-            Platform User Journey Maps
+            {shopperOnly ? "How shopping works" : "Platform User Journey Maps"}
           </h2>
           <p className="text-sm text-black/60 mt-1">
-            End-to-end guidance, steps, features, and checklists for every user role on the
-            platform.
+            {shopperOnly
+              ? "From finding your items to delivery or collection, step by step."
+              : "End-to-end guidance, steps, features, and checklists for every user role on the platform."}
           </p>
         </div>
       </div>
 
       {/* Role Switcher Tabs */}
-      <div
-        role="tablist"
-        aria-label="User Roles"
-        className="flex flex-wrap gap-2 p-1.5 bg-black/5 rounded-2xl border border-black/10"
-      >
-        {(Object.keys(JOURNEYS) as UserJourneyRole[]).map((roleKey) => {
-          const item = JOURNEYS[roleKey];
-          const isSelected = activeRole === roleKey;
-          const isDetected = detectedRole === roleKey;
+      {!shopperOnly && (
+        <div
+          role="tablist"
+          aria-label="User Roles"
+          className="flex flex-wrap gap-2 p-1.5 bg-black/5 rounded-2xl border border-black/10"
+        >
+          {visible.map((roleKey) => {
+            const item = JOURNEYS[roleKey];
+            const isSelected = activeRole === roleKey;
+            const isDetected = detectedRole === roleKey;
 
-          return (
-            <button
-              key={roleKey}
-              role="tab"
-              aria-selected={isSelected}
-              onClick={() => setActiveRole(roleKey)}
-              className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl font-medium text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                isSelected
-                  ? "bg-white text-primary shadow-sm font-semibold border border-black/10"
-                  : "text-black/70 hover:text-black hover:bg-black/5"
-              }`}
-            >
-              <IconMedallion
-                {...(item.icon3d ? { icon3d: item.icon3d } : { icon: item.icon })}
-                size={22}
-                tint={item.tint ?? "action"}
-                decorative
-              />
-              <span>{item.title}</span>
-              {isDetected && (
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                  Your Role
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={roleKey}
+                role="tab"
+                aria-selected={isSelected}
+                onClick={() => setActiveRole(roleKey)}
+                className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl font-medium text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  isSelected
+                    ? "bg-white text-primary shadow-sm font-semibold border border-black/10"
+                    : "text-black/70 hover:text-black hover:bg-black/5"
+                }`}
+              >
+                <IconMedallion
+                  {...(item.icon3d ? { icon3d: item.icon3d } : { icon: item.icon })}
+                  size={22}
+                  tint={item.tint ?? "action"}
+                  decorative
+                />
+                <span>{item.title}</span>
+                {isDetected && (
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                    Your Role
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Journey Detail Card */}
       <div className="bg-white rounded-2xl border border-black/10 p-6 sm:p-8 space-y-8 shadow-sm">

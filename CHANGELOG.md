@@ -19,6 +19,12 @@ every branch merges.
 
 ### Fixed
 
+- **Storefront trust fixes: staff content off the public Help page, shopper-facing refund policy and terms (#1652, 2026-11-18).**
+  - **Help page:** the "Staff & Store Email Setup" guide (Gmail App Password steps) and its jump link now render only for authenticated staff. `RoleJourneyMaps` takes a `roles` prop; an anonymous shopper sees the customer journey alone under "How shopping works", with no role tabs. Staff, store admins and platform admins see their own journey and those beneath it. The guide's hard-coded store-email fallback is gone.
+  - **Terms:** section 4 (`/terms#refunds`) now explains cancelling before preparation, how to report a damaged, missing or wrong item, the 14-day cancellation right and its statutory exemption for goods that deteriorate rapidly, and how refunds are paid. Section 5's platform/merchant VAT-liability clause is replaced by "Who You Are Buying From". Re-dated November 18, 2026. Vendor-neutral, since the page serves every vendor.
+  - **Not code:** the "Aheed Super Store" top banner is the vendor's Banner Headline in `/staff/storefront`; the trading name stays Aheed Food Centre until a planned rebrand.
+  - **Tests:** `tests/help-vendor-facts.test.tsx` (anonymous vs staff vs platform admin) and new `tests/terms-page.test.tsx`. No database migration.
+
 - **Essential Live Stock Export and Metadata Dropdowns in UI and Excel Workbooks (#1646, 2026-11-17).**
   - **Live Essential Stock Export:** Fixed `app/(admin)/staff/platform/stock-export/export/route.ts` where requesting `type=essential` previously returned the blank template header (`generateBlankEssentialCsv()`). It now calls `generateEssentialStockCsv(auth.vendorId, { status, category })`, streaming actual live product records in 10-column Essential format.
   - **Category-Aware Export Service:** Extended `fetchStockRecordsForExport` in `lib/product-templates/service.ts` with `category` filter support matching `categoryId`, `category.slug`, `category.name`, or parent categories.
