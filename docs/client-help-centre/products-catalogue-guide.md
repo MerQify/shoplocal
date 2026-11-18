@@ -4,8 +4,8 @@ title: "Products & Catalogue Management Guide"
 audience: [store-admin, staff]
 type: guide
 status: approved
-version: "2.0.0"
-updated: 2026-11-08
+version: "2.0.1"
+updated: 2026-11-18
 visibility: internal
 summary: "Complete guide to catalogue management, brand assignment, stock creation, mandatory fields, VAT compliance, publication criteria, and stock safeguards."
 tags: [catalogue, products, brands, stock-modes, publication-rules, inventory, bulk-import]
@@ -75,7 +75,7 @@ Navigate to `/staff/brands`:
 
 ## 4. How to Publish Stock & Control Storefront Visibility
 
-For a product to be publicly visible and purchasable on `https://aheed.merqify.com/`, it must satisfy all 5 publication criteria:
+For a product to be publicly visible and purchasable on `https://www.aheedfoodcentre.co.uk/`, it must satisfy all 5 publication criteria:
 
 ```mermaid
 flowchart TD

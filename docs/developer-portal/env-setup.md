@@ -122,6 +122,9 @@ environment.
    - Start from the "Edit Cloudflare Workers" template.
    - Set Account Resources to the Merqify account and Zone Resources to `merqify.com`.
    - Add Workers AI and R2 permissions.
+   - Add **Zone → Cache Purge → Purge** on `merqify.com`. The post-deploy purge (`#1644`, `#1664`)
+     needs it; without it every deploy shows a "Cloudflare cache purge" warning and serves stale
+     pages (added to both deploy tokens 2026-11-18).
    - On the **staging** token also add **Access: Apps and Policies Read**: the docs deploy runs with
      staging's secrets, and its `--pre` check reads the Access applications. Without it the check
      fails closed with a 403 and the docs never deploy.

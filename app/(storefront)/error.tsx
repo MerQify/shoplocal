@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorPanel } from "@/components/errors/ErrorPanel";
+import { reloadIfStaleDeployment } from "@/lib/stale-deployment";
 
 /**
  * The storefront's own boundary (#478) — the one a shopper actually hits.
@@ -25,19 +26,24 @@ import { ErrorPanel } from "@/components/errors/ErrorPanel";
 export default function StorefrontError({
   error,
   reset,
+  retry,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
+  /** Re-fetches and re-renders the segment (Next 16.2+); `reset` only re-renders (#1666). */
+  retry?: () => void;
 }) {
   useEffect(() => {
     console.error("Caught by storefront error boundary:", error);
+    // #1664 — a page left open across a deploy: reload once instead of showing the panel.
+    reloadIfStaleDeployment(error);
   }, [error]);
 
   return (
     <ErrorPanel
       title="Something went wrong"
       message="We couldn't load this page. Trying again may help, or use the menu above to keep shopping."
-      onRetry={reset}
+      onRetry={retry ?? reset}
       fullHeight={false}
     />
   );

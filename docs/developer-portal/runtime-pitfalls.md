@@ -4,8 +4,8 @@ title: "Runtime Pitfalls — code that passes every check and still fails on Wor
 audience: [dev]
 type: doc
 status: approved
-version: "1.5.0"
-updated: 2026-11-06
+version: "1.6.0"
+updated: 2026-11-18
 visibility: internal
 summary: The failure catalogue for this stack — Prisma and Neon on V8 isolates, storage credentials, edge caching, dependency traps, Workers AI and Better Auth. Everything here passes lint, typecheck, test and build, and fails at runtime anyway.
 tags: [runtime, workers, prisma, troubleshooting]
@@ -141,6 +141,21 @@ are in `local-dev-playbook.md`. Design intent — what was decided and why — s
   place. If a batch of independent writes genuinely needs the atomicity `$transaction([...])` buys,
   raise its `timeout` option or shrink the batch size — don't assume "batched" means "cheap".
   Full detail: `specs/2026-09-23-p877-generated-net-content/build-notes.md`.
+
+### Dropped connections: reads retry, writes never (`#1666`)
+
+A Neon HTTP query can fail mid-flight with the Workers runtime's `Error: Network connection lost.`, or
+with the driver's `Error connecting to database` / `Server error (HTTP status 5xx)`. `lib/db.ts`'s HTTP
+factories wrap the adapter with `withReadRetry` (`lib/db-read-retry.ts`): a plain `SELECT` that fails
+with one of those errors is retried up to twice (100 ms, 300 ms), and each retry logs
+`[db-retry] read retry n/2 after: <reason>`.
+
+- **Writes are never retried.** Prisma sends `INSERT … RETURNING` through the same `queryRaw` as reads,
+  so the guard is the SQL text, not the method. A dropped write has an unknown outcome.
+- **`getPrismaWs()` is not wrapped**: a statement inside an interactive transaction cannot be replayed.
+- A layout read that still fails reaches the **root** boundary (`app/error.tsx`, copy ending "please
+  contact support"). The boundaries' **Try again** calls Next's `retry()`, which re-fetches; `reset()`
+  only re-renders, so it can never recover from a server error.
 
 ## The second database (`uk-location-reference`)
 
