@@ -4,8 +4,8 @@ title: "Client & Role User Journey Maps"
 audience: [store-admin, staff, platform-admin]
 type: guide
 status: approved
-version: "1.2.0"
-updated: 2026-11-15
+version: "1.2.1"
+updated: 2026-11-18
 visibility: internal
 summary: "Comprehensive end-to-end user journey maps with Mermaid flowcharts, step-by-step guides, permissions, and checklists for Platform Admin, Store Admin, Staff, and Customer."
 tags: [journey-maps, user-journeys, onboarding, roles, platform-admin, store-admin, staff, customer]
@@ -74,7 +74,7 @@ flowchart TD
 
 ### 2.1 Goal & Starting Point
 - **Goal:** Autonomously configure a tenant store, establish delivery zones, import products, customize and manage storefront themes, invite staff, set up customer FAQs, and achieve 100% launch readiness.
-- **Starting Point:** Accessing the store URL (e.g., `aheed.merqify.com/staff` or `srimart.merqify.com/staff`) with store admin credentials.
+- **Starting Point:** Accessing the store URL (`www.aheedfoodcentre.co.uk/staff`) with store admin credentials.
 
 ### 2.2 Visual Flow Diagram
 
@@ -206,13 +206,13 @@ flowchart TD
 
 ### 4.1 Goal & Starting Point
 - **Goal:** Discover store, browse groceries, verify delivery eligibility, apply promotional discounts or loyalty points, complete secure checkout, and track delivery.
-- **Starting Point:** Visiting vendor storefront URL (e.g. `aheed.merqify.com`).
+- **Starting Point:** Visiting vendor storefront URL (`www.aheedfoodcentre.co.uk`).
 
 ### 4.2 Visual Flow Diagram
 
 ```mermaid
 flowchart TD
-    CU1["1. Store Discovery<br/>(Apex or Subdomain, e.g. aheed.merqify.com)"] --> CU2["2. Browse Catalogue<br/>(Home / Categories / Search)"]
+    CU1["1. Store Discovery<br/>(www.aheedfoodcentre.co.uk)"] --> CU2["2. Browse Catalogue<br/>(Home / Categories / Search)"]
     CU2 --> CU3["3. View Product Detail<br/>(Ingredients, Price, Halal/Organic Badges, Reviews)"]
     CU3 --> CU4["4. Add to Cart<br/>(Live Stock & Availability Verification)"]
     CU4 --> CU5["5. Cart Drawer & Threshold Check<br/>(Minimum Order & Free Delivery Progress Bar)"]

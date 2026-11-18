@@ -41,7 +41,8 @@ const JOURNEYS: Record<UserJourneyRole, RoleJourneyData> = {
     icon3d: "view-shopper",
     tint: "action",
     goal: "Discover products, verify local delivery eligibility, build baskets, apply discounts and promotions, checkout securely, and track orders.",
-    startingPoint: "Store homepage (e.g. aheed.merqify.com or srimart.merqify.com).",
+    // #1662 — replaced at render time by the store's own host; never another storefront's.
+    startingPoint: "This store's homepage.",
     features: [
       {
         name: "Catalogue & Search",
@@ -546,9 +547,12 @@ const JOURNEYS: Record<UserJourneyRole, RoleJourneyData> = {
 export function RoleJourneyMaps({
   detectedRole = "customer",
   roles = ["customer"],
+  storeHost = null,
 }: {
   detectedRole?: UserJourneyRole;
   roles?: readonly UserJourneyRole[];
+  /** #1662 — the store's own canonical host, shown as the shopper journey's starting point. */
+  storeHost?: string | null;
 }) {
   const visible = (Object.keys(JOURNEYS) as UserJourneyRole[]).filter((r) => roles.includes(r));
   const [activeRole, setActiveRole] = useState<UserJourneyRole>(
@@ -640,7 +644,11 @@ export function RoleJourneyMaps({
             </div>
             <div className="p-4 rounded-xl bg-surface-muted border border-black/5 text-sm space-y-1">
               <span className="font-bold text-black/80 block">Starting Point:</span>
-              <p className="text-black/70">{journey.startingPoint}</p>
+              <p className="text-black/70">
+                {journey.id === "customer" && storeHost
+                  ? `This store's homepage (${storeHost}).`
+                  : journey.startingPoint}
+              </p>
             </div>
           </div>
         </div>

@@ -4,8 +4,8 @@ title: "Client Onboarding & Store Launch Readiness"
 audience: [store-admin, platform-admin, staff]
 type: guide
 status: approved
-version: "2.1.0"
-updated: 2026-11-13
+version: "2.1.1"
+updated: 2026-11-18
 visibility: internal
 summary: "Step-by-step onboarding guide, practical operational workflows, brand management, visual asset curation, catalogue publishing rules, and pre-launch audit checklists for store operators and new staff."
 tags: [onboarding, store-setup, launch-readiness, checklist, store-admin, staff, brands, catalogue, publishing]
@@ -41,7 +41,7 @@ flowchart TD
 ## 2. Sequential Staff Operational Walkthrough
 
 ### Step 1: System Access & Navigation
-1. **Sign In:** Navigate to `/login`. Sign in using your store staff credentials (e.g. `staff@aheed.merqify.com`).
+1. **Sign In:** Navigate to `/login`. Sign in using your store staff credentials (the email address your store admin invited).
 2. **Role Switcher:** Use the role switcher in the header chrome to toggle between:
    - **Shopper View (`/`):** The public-facing customer storefront.
    - **Staff View (`/staff`):** The operational portal for order processing and inventory.
@@ -122,7 +122,7 @@ Add new items or edit existing catalogue rows:
 ---
 
 ### Step 6: Controlling Storefront Visibility & Publishing Items
-Before an item appears publicly on `https://aheed.merqify.com/`, it must satisfy all publication rules:
+Before an item appears publicly on `https://www.aheedfoodcentre.co.uk/`, it must satisfy all publication rules:
 
 | Publication Rule | Condition Required | Why It Matters |
 | :--- | :--- | :--- |

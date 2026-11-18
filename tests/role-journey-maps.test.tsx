@@ -18,6 +18,19 @@ describe("RoleJourneyMaps", () => {
     expect(screen.queryByText(/Store Staff/i)).toBeNull();
   });
 
+  // #1662 — the shopper starting point names this store's own host, never another storefront.
+  it("names the store's own host as the shopper starting point", () => {
+    render(<RoleJourneyMaps detectedRole="customer" storeHost="shop.example.test" />);
+    expect(screen.getByText("This store's homepage (shop.example.test).")).toBeDefined();
+    expect(screen.queryByText(/merqify\.com/)).toBeNull();
+  });
+
+  it("says only 'This store's homepage' when the store has no canonical host", () => {
+    render(<RoleJourneyMaps detectedRole="customer" />);
+    expect(screen.getByText("This store's homepage.")).toBeDefined();
+    expect(screen.queryByText(/merqify\.com/)).toBeNull();
+  });
+
   it("renders a tab only for each listed role", () => {
     render(<RoleJourneyMaps detectedRole="staff" roles={["customer", "staff"]} />);
     expect(screen.getByRole("heading", { name: "Platform User Journey Maps" })).toBeDefined();

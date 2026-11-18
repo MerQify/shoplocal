@@ -6,6 +6,14 @@ every branch merges.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Help content names the store's own website (#1662, 2026-11-18).**
+  - `/help` shopper journey: the starting point shows the store's own canonical host (`VendorProfile.canonicalHost`) instead of the `aheed.merqify.com` / `srimart.merqify.com` examples, or "This store's homepage." when none is set.
+  - Client help-centre docs (`getting-started-onboarding`, `products-catalogue-guide`, `user-journeys`) now reference `www.aheedfoodcentre.co.uk`; the staff sign-in example is neutral.
+  - Vendor readiness "Host Domain Mapping" reference value is now "The store's own domain" for every store.
+  - **Tests:** `tests/role-journey-maps.test.tsx` extended. No migration.
+
 ### Added
 
 - **Allergen notice stopgap (#1656, 2026-11-18).**

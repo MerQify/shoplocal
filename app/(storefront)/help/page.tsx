@@ -298,7 +298,11 @@ export default async function HelpPage() {
           {/* #1385 — Interactive role-based user journey maps with delivery anchor */}
           <div id="delivery" className="scroll-mt-24">
             <div id="journeys">
-              <RoleJourneyMaps detectedRole={detectedRole} roles={journeyRoles} />
+              <RoleJourneyMaps
+                detectedRole={detectedRole}
+                roles={journeyRoles}
+                storeHost={profile?.canonicalHost ?? null}
+              />
             </div>
           </div>
 
