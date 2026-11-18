@@ -657,7 +657,7 @@ export function evaluateVendorReadinessData(
       name: "Host Domain Mapping",
       category: "Platform Infrastructure & Governance",
       currentValue: data.domain?.host ? data.domain.host : "Unmapped",
-      referenceValue: "aheed.merqify.com",
+      referenceValue: "The store's own domain",
       status: hasDomain ? "CONFIGURED" : "MISSING",
       required: true,
       validationRule: "VendorDomain row mapped and custom domain routed in wrangler.toml",
