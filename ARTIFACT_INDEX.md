@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-17T23:06:40.338Z` · commit `e8ea1e94` · `372` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-18T07:23:12.955Z` · commit `21c2d0c3` · `373` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -356,6 +356,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Product Export Image Availability Indicator (plan)](specs/2026-11-17-product-export-image-available/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Add Image Available column to Universal and Essential product exports, static templates, Master Operational workbook, and native Excel in-cell dropdown rules. |
 | [Standardised Product Import/Export Templates and Platform Admin Stock Export (plan)](specs/2026-11-17-product-templates-and-stock-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Defines Universal and Essential product import/export schemas, exports existing stock into the Universal template, implements zero-decision bulk import/export processing, and provides a Platform Admin-only stock export page and API. |
 | [Product Template Brand Cleanup, Bundle & Promotion Export, and Protected Columns (plan)](specs/2026-11-17-template-brand-cleanup-and-bundle-promo-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Leaves Brand blank for unbranded products, supports CSV and Excel exports for Bundles and Promotions with two-way sync support, and marks system ID columns with explicit non-editable notices in templates and instructions. |
+| [Storefront trust fixes — staff content off /help, refund policy, consumer terms (plan)](specs/2026-11-18-storefront-trust-fixes/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes staff-only material from the public Help page and rewrites the terms' refund and platform clauses so a first-time shopper sees a finished, trustworthy shop before card payments go live (#1652). |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.49.0 | 2026-11-12 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
 | [ADR-002 — Authentication Library](specs/decisions/ADR-002-auth-library.md) | adr | 1.0.0 | 2026-08-06 | approved | internal | Decision to use Better Auth (self-hosted, bearer tokens, RBAC) for email/password and Google Sign-In, rejecting hosted IdPs like Clerk/Auth0 for the MVP. |
