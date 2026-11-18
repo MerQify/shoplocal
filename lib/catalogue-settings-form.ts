@@ -21,7 +21,7 @@ import { collapseWhitespace, STORE_DESCRIPTION_MAX_LENGTH } from "@/lib/store-de
 export const STORE_DESCRIPTION_FIELD = "storeDescription";
 export const SHOW_HMC_FIELD = "showHmcCertification";
 
-/** The seven `VendorConfig` columns the catalogue-settings form owns. */
+/** The eight `VendorConfig` columns the catalogue-settings form owns. */
 export interface CatalogueSettingsInput {
   showHalalLabel: boolean;
   showFreshLabel: boolean;
@@ -29,6 +29,8 @@ export interface CatalogueSettingsInput {
   showVegetarianLabel: boolean;
   showGlutenFreeLabel: boolean;
   showHmcCertification: boolean;
+  /** #1656 — the storefront allergen notice. Not a product label, but owned by this form. */
+  showAllergenNotice: boolean;
   storeDescription: string | null;
 }
 
@@ -56,6 +58,7 @@ export interface CatalogueSettingsRaw {
   showVegetarianLabel: string | null;
   showGlutenFreeLabel: string | null;
   showHmcCertification: string | null;
+  showAllergenNotice: string | null;
   storeDescription: string;
 }
 
@@ -96,6 +99,7 @@ export function parseCatalogueSettings(
       showVegetarianLabel: on(raw.showVegetarianLabel),
       showGlutenFreeLabel: on(raw.showGlutenFreeLabel),
       showHmcCertification,
+      showAllergenNotice: on(raw.showAllergenNotice),
       storeDescription: description === "" ? null : description,
     },
   };

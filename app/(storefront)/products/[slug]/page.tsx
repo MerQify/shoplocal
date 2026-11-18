@@ -6,6 +6,7 @@ import { getReviewRepository } from "@/lib/reviews-service";
 import { getAuth } from "@/lib/auth";
 import { getEnv } from "@/lib/config";
 import { getCurrentVendorProfile } from "@/lib/vendor-service";
+import { AllergenNotice } from "@/components/product/AllergenNotice";
 import { buildProductMetadata } from "@/lib/page-metadata";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/seo-schema";
 import { formatPrice } from "@/components/product/format-price";
@@ -262,6 +263,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               />
             </div>
 
+            {/* #1656 — "ask us about allergens", before the shopper commits to the order. */}
+            {profile?.showAllergenNotice && (
+              <AllergenNotice phone={profile.contactPhone} email={profile.contactEmail} />
+            )}
+
             {/* Trust Guarantees & Reassurance (Neuromarketing / Credibility) */}
             <div className="mt-2 rounded-2xl border border-black/10 bg-surface-muted/30 p-4 divide-y divide-black/5">
               <div className="flex items-center gap-3 pb-3">
@@ -290,8 +296,23 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     <Icon name="circle-check" className="h-4 w-4" />
                   </div>
                   <div className="text-xs">
-                    <p className="font-bold text-primary">100% Halal Verified</p>
-                    <p className="text-primary-muted">Certified halal supply chain and handling.</p>
+                    {/* #1658 — a certification claim only when this product carries one; the
+                        reference itself renders further down. */}
+                    {product.isHmcCertified ? (
+                      <>
+                        <p className="font-bold text-primary">HMC certified halal</p>
+                        <p className="text-primary-muted">
+                          Certified by the Halal Monitoring Committee.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-bold text-primary">Halal</p>
+                        <p className="text-primary-muted">
+                          Sold as halal. Ask us if you need certification details.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}

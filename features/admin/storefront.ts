@@ -530,6 +530,7 @@ export async function updateCatalogueSettings(
     showVegetarianLabel: checkbox("showVegetarianLabel"),
     showGlutenFreeLabel: checkbox("showGlutenFreeLabel"),
     showHmcCertification: checkbox("showHmcCertification"),
+    showAllergenNotice: checkbox("showAllergenNotice"),
     storeDescription: String(formData.get("storeDescription") ?? ""),
   });
 

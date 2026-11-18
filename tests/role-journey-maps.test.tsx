@@ -1,38 +1,55 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
-import { RoleJourneyMaps } from "@/components/help/RoleJourneyMaps";
+import { RoleJourneyMaps, type UserJourneyRole } from "@/components/help/RoleJourneyMaps";
 
 afterEach(cleanup);
 
+const ALL_ROLES: UserJourneyRole[] = ["customer", "staff", "store-admin", "platform-admin"];
+
 describe("RoleJourneyMaps", () => {
-  it("defaults to customer journey when detectedRole is customer", () => {
+  // #1652 — the default is the shopper view: customer journey only, no tabs, shopper heading.
+  it("shows only the customer journey, without tabs, when given no roles", () => {
     render(<RoleJourneyMaps detectedRole="customer" />);
-    expect(screen.getByRole("heading", { name: "Platform User Journey Maps" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "How shopping works" })).toBeDefined();
     expect(screen.getByRole("heading", { name: /Customer \(Shopper\) Journey/i })).toBeDefined();
     expect(screen.getByText(/Discover Storefront & Trust Badges/i)).toBeDefined();
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByText(/Store Staff/i)).toBeNull();
+  });
+
+  it("renders a tab only for each listed role", () => {
+    render(<RoleJourneyMaps detectedRole="staff" roles={["customer", "staff"]} />);
+    expect(screen.getByRole("heading", { name: "Platform User Journey Maps" })).toBeDefined();
+    expect(screen.getAllByRole("tab")).toHaveLength(2);
+    expect(screen.queryByRole("tab", { name: /Store Admin/i })).toBeNull();
+  });
+
+  it("falls back to the first listed role when the detected role is not listed", () => {
+    render(<RoleJourneyMaps detectedRole="platform-admin" roles={["customer"]} />);
+    expect(screen.getByRole("heading", { name: /Customer \(Shopper\) Journey/i })).toBeDefined();
   });
 
   it("defaults to store-admin journey when detectedRole is store-admin", () => {
-    render(<RoleJourneyMaps detectedRole="store-admin" />);
+    render(<RoleJourneyMaps detectedRole="store-admin" roles={ALL_ROLES} />);
     expect(screen.getByRole("heading", { name: /Store Admin Journey/i })).toBeDefined();
     expect(screen.getByText(/Brand Storefront & Manage Themes/i)).toBeDefined();
   });
 
   it("defaults to staff journey when detectedRole is staff", () => {
-    render(<RoleJourneyMaps detectedRole="staff" />);
+    render(<RoleJourneyMaps detectedRole="staff" roles={ALL_ROLES} />);
     expect(screen.getByRole("heading", { name: /Store Staff Journey/i })).toBeDefined();
     expect(screen.getByText(/Process Orders in the Queue/i)).toBeDefined();
   });
 
   it("defaults to platform-admin journey when detectedRole is platform-admin", () => {
-    render(<RoleJourneyMaps detectedRole="platform-admin" />);
+    render(<RoleJourneyMaps detectedRole="platform-admin" roles={ALL_ROLES} />);
     expect(screen.getByRole("heading", { name: /Platform Admin Journey/i })).toBeDefined();
     expect(screen.getByText(/Audit Tenant Directory & Readiness/i)).toBeDefined();
   });
 
   it("switches journey when user clicks on a different role tab", () => {
-    render(<RoleJourneyMaps detectedRole="customer" />);
+    render(<RoleJourneyMaps detectedRole="customer" roles={ALL_ROLES} />);
     expect(screen.getByRole("heading", { name: /Customer \(Shopper\) Journey/i })).toBeDefined();
 
     const staffTab = screen.getByRole("tab", { name: /Store Staff/i });

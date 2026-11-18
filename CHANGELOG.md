@@ -8,6 +8,12 @@ every branch merges.
 
 ### Added
 
+- **Allergen notice stopgap (#1656, 2026-11-18).**
+  - **New shop setting:** "Show allergen notice" in `/staff/storefront` (Product labels & store description form), stored as `VendorConfig.showAllergenNotice` (default off). Hand-authored migration `20261118120000_vendor_allergen_notice` (#895).
+  - **Storefront:** when on, product pages (under Add to cart), the basket and checkout show an "Allergy information" box asking shoppers with a food allergy or intolerance to ask the store before ordering, with the store's own footer phone and email. Copy is vendor-neutral; non-food vendors are unaffected.
+  - Stopgap until structured allergen data (#1653). Store-admin guide updated.
+  - **Tests:** new `tests/allergen-notice.test.tsx` (component and `/cart` gate); `tests/catalogue-settings-form.test.ts` extended.
+
 - **Product Export Image Availability Indicator (#1649, 2026-11-17).**
   - **Image Availability Column:** Added `Image Available` to `UNIVERSAL_COLUMNS` and `ESSENTIAL_COLUMNS` in `lib/product-templates/schema.ts` and `DatabaseProductForExport` in `lib/product-templates/export.ts`.
   - **Accurate Image Detection:** Derives `Image Available` as `TRUE` if a product possesses at least one real product image, and `FALSE` if the product has no images or only seeded placeholder images (`/main.svg`).
@@ -18,6 +24,17 @@ every branch merges.
   - No database migration.
 
 ### Fixed
+
+- **Halal claims no longer outrun the data (#1658, 2026-11-18).**
+  - **Homepage:** the hero's "100% Certified HMC Halal" pill was a literal shown for every vendor, including SriMart (electronics). It now renders only when the vendor has both Halal and HMC certification switched on, and reads "HMC certified halal".
+  - **Product page:** "100% Halal Verified — Certified halal supply chain" showed for every halal product. HMC-certified products now say "HMC certified halal"; other halal products say "Halal" with no certification claim.
+  - **Tests:** new `tests/halal-claims.test.tsx`.
+
+- **Storefront trust fixes: staff content off the public Help page, shopper-facing refund policy and terms (#1652, 2026-11-18).**
+  - **Help page:** the "Staff & Store Email Setup" guide (Gmail App Password steps) and its jump link now render only for authenticated staff. `RoleJourneyMaps` takes a `roles` prop; an anonymous shopper sees the customer journey alone under "How shopping works", with no role tabs. Staff, store admins and platform admins see their own journey and those beneath it. The guide's hard-coded store-email fallback is gone.
+  - **Terms:** section 4 (`/terms#refunds`) now explains cancelling before preparation, how to report a damaged, missing or wrong item, the 14-day cancellation right and its statutory exemption for goods that deteriorate rapidly, and how refunds are paid. Section 5's platform/merchant VAT-liability clause is replaced by "Who You Are Buying From". Re-dated November 18, 2026. Vendor-neutral, since the page serves every vendor.
+  - **Not code:** the "Aheed Super Store" top banner is the vendor's Banner Headline in `/staff/storefront`; the trading name stays Aheed Food Centre until a planned rebrand.
+  - **Tests:** `tests/help-vendor-facts.test.tsx` (anonymous vs staff vs platform admin) and new `tests/terms-page.test.tsx`. No database migration.
 
 - **Essential Live Stock Export and Metadata Dropdowns in UI and Excel Workbooks (#1646, 2026-11-17).**
   - **Live Essential Stock Export:** Fixed `app/(admin)/staff/platform/stock-export/export/route.ts` where requesting `type=essential` previously returned the blank template header (`generateBlankEssentialCsv()`). It now calls `generateEssentialStockCsv(auth.vendorId, { status, category })`, streaming actual live product records in 10-column Essential format.

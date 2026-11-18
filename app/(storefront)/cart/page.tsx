@@ -5,6 +5,7 @@ import { getCartIdentity, getUserId } from "@/lib/cart-identity";
 import { saveCartAsList } from "@/features/lists/save-cart-as-list";
 import { MAX_LIST_NAME_LENGTH, MAX_SAVED_LISTS } from "@/lib/saved-list";
 import { getCurrentVendorProfile } from "@/lib/vendor-service";
+import { AllergenNotice } from "@/components/product/AllergenNotice";
 import { getEnv } from "@/lib/config";
 import { CartContents } from "@/components/cart/CartContents";
 import { MergePrompt } from "@/components/cart/MergePrompt";
@@ -121,6 +122,11 @@ export default async function CartPage({
           continueShoppingHref="/categories"
         />
       </div>
+
+      {/* #1656 — "ask us about allergens", repeated before checkout. */}
+      {vendor?.showAllergenNotice && summary.lines.length > 0 && (
+        <AllergenNotice phone={vendor.contactPhone} email={vendor.contactEmail} className="mt-4" />
+      )}
 
       {/* P10 (#116) — turn this cart into a reusable list. We save the product NAMES, not ids, so
           next week the list matches whatever is in stock under those names. */}
