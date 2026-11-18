@@ -8,6 +8,15 @@ every branch merges.
 
 ### Fixed
 
+- **Deploy cache purge: per host, visible, verified; reload once on deployment skew (#1664, 2026-11-18).**
+  - `scripts/purge-cloudflare-cache.ts` now takes `--env` and purges only that environment's `wrangler.toml` hosts by hostname on `merqify.com` (no more `purge_everything`, so a staging deploy no longer empties production's cache). All four deploy steps pass their env.
+  - A failed purge is a GitHub `::warning::` annotation on the run summary (still exit 0). #1644's purge had failed on every deploy with `10000: Authentication error` because the deploy tokens lacked Zone → Cache Purge; the owner added it 2026-11-18 and `env-setup.md` now lists it.
+  - After purging, each host's `/help` is checked; an edge `HIT` older than the purge is a warning.
+  - Error boundaries (root, global, storefront, staff) reload the page once on a deployment-skew error (unrecognised server action, chunk load failure), guarded against loops; other errors unchanged.
+  - **Tests:** `tests/purge-cloudflare-cache.test.ts` rewritten; new `tests/stale-deployment.test.ts`. No migration.
+
+### Fixed
+
 - **Help content names the store's own website (#1662, 2026-11-18).**
   - `/help` shopper journey: the starting point shows the store's own canonical host (`VendorProfile.canonicalHost`) instead of the `aheed.merqify.com` / `srimart.merqify.com` examples, or "This store's homepage." when none is set.
   - Client help-centre docs (`getting-started-onboarding`, `products-catalogue-guide`, `user-journeys`) now reference `www.aheedfoodcentre.co.uk`; the staff sign-in example is neutral.
