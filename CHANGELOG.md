@@ -25,6 +25,11 @@ every branch merges.
 
 ### Fixed
 
+- **Halal claims no longer outrun the data (#1658, 2026-11-18).**
+  - **Homepage:** the hero's "100% Certified HMC Halal" pill was a literal shown for every vendor, including SriMart (electronics). It now renders only when the vendor has both Halal and HMC certification switched on, and reads "HMC certified halal".
+  - **Product page:** "100% Halal Verified — Certified halal supply chain" showed for every halal product. HMC-certified products now say "HMC certified halal"; other halal products say "Halal" with no certification claim.
+  - **Tests:** new `tests/halal-claims.test.tsx`.
+
 - **Storefront trust fixes: staff content off the public Help page, shopper-facing refund policy and terms (#1652, 2026-11-18).**
   - **Help page:** the "Staff & Store Email Setup" guide (Gmail App Password steps) and its jump link now render only for authenticated staff. `RoleJourneyMaps` takes a `roles` prop; an anonymous shopper sees the customer journey alone under "How shopping works", with no role tabs. Staff, store admins and platform admins see their own journey and those beneath it. The guide's hard-coded store-email fallback is gone.
   - **Terms:** section 4 (`/terms#refunds`) now explains cancelling before preparation, how to report a damaged, missing or wrong item, the 14-day cancellation right and its statutory exemption for goods that deteriorate rapidly, and how refunds are paid. Section 5's platform/merchant VAT-liability clause is replaced by "Who You Are Buying From". Re-dated November 18, 2026. Vendor-neutral, since the page serves every vendor.

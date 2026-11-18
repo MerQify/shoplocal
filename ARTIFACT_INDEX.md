@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-18T07:38:11.175Z` · commit `861ef8a9` · `374` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-18T09:19:58.378Z` · commit `07b38848` · `375` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -357,6 +357,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Standardised Product Import/Export Templates and Platform Admin Stock Export (plan)](specs/2026-11-17-product-templates-and-stock-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Defines Universal and Essential product import/export schemas, exports existing stock into the Universal template, implements zero-decision bulk import/export processing, and provides a Platform Admin-only stock export page and API. |
 | [Product Template Brand Cleanup, Bundle & Promotion Export, and Protected Columns (plan)](specs/2026-11-17-template-brand-cleanup-and-bundle-promo-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Leaves Brand blank for unbranded products, supports CSV and Excel exports for Bundles and Promotions with two-way sync support, and marks system ID columns with explicit non-editable notices in templates and instructions. |
 | [Allergen notice stopgap — per-vendor 'ask us about allergens' notice (plan)](specs/2026-11-18-allergen-notice-stopgap/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Adds a per-vendor "Show allergen notice" setting that signposts shoppers to ask the store about allergens on product, basket and checkout pages, as a go-live stopgap until structured allergen data lands (#1656, ahead of |
+| [Halal claim wording — gate the homepage HMC pill, stop the product-page overclaim (plan)](specs/2026-11-18-halal-claim-wording/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Stops the homepage claiming "100% Certified HMC Halal" for every vendor and stops product pages claiming certification for halal products that carry none (#1658). |
 | [Storefront trust fixes — staff content off /help, refund policy, consumer terms (plan)](specs/2026-11-18-storefront-trust-fixes/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes staff-only material from the public Help page and rewrites the terms' refund and platform clauses so a first-time shopper sees a finished, trustworthy shop before card payments go live (#1652). |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.49.0 | 2026-11-12 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
