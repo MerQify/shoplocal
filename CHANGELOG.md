@@ -8,6 +8,13 @@ every branch merges.
 
 ### Fixed
 
+- **Retry database reads on a dropped connection; "Try again" really retries (#1666, 2026-11-18).**
+  - `lib/db-read-retry.ts`: `getPrisma()` and `getPrismaUncached()` wrap the Neon HTTP adapter so a plain `SELECT` that fails with a connection-level error (`Network connection lost`, `fetch failed`, `Error connecting to database`, HTTP 5xx, SQLSTATE `08…`/`57P01`/`57P03`) is retried up to twice (100/300 ms), with one `[db-retry]` log line per retry. Writes (including `INSERT/UPDATE … RETURNING`) and locking reads are never retried; `getPrismaWs()` is unchanged.
+  - Error boundaries (root, global, storefront, staff) pass Next's `retry()` to **Try again**, which re-fetches the failed segment; `reset()` only re-rendered and could not recover from a server error.
+  - Evidence: the AFC staging Worker logged `Error: Network connection lost.`; the owner's `/staff` failure rendered the root boundary, i.e. the `(admin)` layout's reads failed.
+  - Verified with a real Prisma client on Neon HTTP (AFC staging, read-only): an injected drop was retried once and returned the vendor row; a real authentication error was not retried.
+  - **Tests:** new `tests/db-read-retry.test.ts`; `runtime-pitfalls.md` documents the rule. No migration.
+
 - **Deploy cache purge: per host, visible, verified; reload once on deployment skew (#1664, 2026-11-18).**
   - `scripts/purge-cloudflare-cache.ts` now takes `--env` and purges only that environment's `wrangler.toml` hosts by hostname on `merqify.com` (no more `purge_everything`, so a staging deploy no longer empties production's cache). All four deploy steps pass their env.
   - A failed purge is a GitHub `::warning::` annotation on the run summary (still exit 0). #1644's purge had failed on every deploy with `10000: Authentication error` because the deploy tokens lacked Zone → Cache Purge; the owner added it 2026-11-18 and `env-setup.md` now lists it.

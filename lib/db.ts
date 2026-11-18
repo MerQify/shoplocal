@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client/wasm";
 import { PrismaNeon, PrismaNeonHttp } from "@prisma/adapter-neon";
 import { cache } from "react";
 import { getEnv } from "./config";
+import { withReadRetry } from "./db-read-retry";
 
 /**
  * HTTP driver (fetch) for 99% of reads — prevents WebSocket exhaustion.
@@ -9,7 +10,8 @@ import { getEnv } from "./config";
  */
 export const getPrisma = cache(() => {
   const { DATABASE_URL } = getEnv();
-  const adapter = new PrismaNeonHttp(DATABASE_URL, {});
+  // #1666 — a plain SELECT whose connection drops is retried; writes never are.
+  const adapter = withReadRetry(new PrismaNeonHttp(DATABASE_URL, {}));
   return new PrismaClient({ adapter });
 });
 
@@ -37,6 +39,6 @@ export const getPrismaWs = cache(() => {
  */
 export function getPrismaUncached() {
   const { DATABASE_URL } = getEnv();
-  const adapter = new PrismaNeonHttp(DATABASE_URL, {});
+  const adapter = withReadRetry(new PrismaNeonHttp(DATABASE_URL, {}));
   return new PrismaClient({ adapter });
 }
