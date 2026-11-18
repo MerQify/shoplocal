@@ -6,6 +6,7 @@ import { getReviewRepository } from "@/lib/reviews-service";
 import { getAuth } from "@/lib/auth";
 import { getEnv } from "@/lib/config";
 import { getCurrentVendorProfile } from "@/lib/vendor-service";
+import { AllergenNotice } from "@/components/product/AllergenNotice";
 import { buildProductMetadata } from "@/lib/page-metadata";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/seo-schema";
 import { formatPrice } from "@/components/product/format-price";
@@ -261,6 +262,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 acceptsNote={product.acceptsNote}
               />
             </div>
+
+            {/* #1656 — "ask us about allergens", before the shopper commits to the order. */}
+            {profile?.showAllergenNotice && (
+              <AllergenNotice phone={profile.contactPhone} email={profile.contactEmail} />
+            )}
 
             {/* Trust Guarantees & Reassurance (Neuromarketing / Credibility) */}
             <div className="mt-2 rounded-2xl border border-black/10 bg-surface-muted/30 p-4 divide-y divide-black/5">

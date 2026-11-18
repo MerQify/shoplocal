@@ -8,6 +8,12 @@ every branch merges.
 
 ### Added
 
+- **Allergen notice stopgap (#1656, 2026-11-18).**
+  - **New shop setting:** "Show allergen notice" in `/staff/storefront` (Product labels & store description form), stored as `VendorConfig.showAllergenNotice` (default off). Hand-authored migration `20261118120000_vendor_allergen_notice` (#895).
+  - **Storefront:** when on, product pages (under Add to cart), the basket and checkout show an "Allergy information" box asking shoppers with a food allergy or intolerance to ask the store before ordering, with the store's own footer phone and email. Copy is vendor-neutral; non-food vendors are unaffected.
+  - Stopgap until structured allergen data (#1653). Store-admin guide updated.
+  - **Tests:** new `tests/allergen-notice.test.tsx` (component and `/cart` gate); `tests/catalogue-settings-form.test.ts` extended.
+
 - **Product Export Image Availability Indicator (#1649, 2026-11-17).**
   - **Image Availability Column:** Added `Image Available` to `UNIVERSAL_COLUMNS` and `ESSENTIAL_COLUMNS` in `lib/product-templates/schema.ts` and `DatabaseProductForExport` in `lib/product-templates/export.ts`.
   - **Accurate Image Detection:** Derives `Image Available` as `TRUE` if a product possesses at least one real product image, and `FALSE` if the product has no images or only seeded placeholder images (`/main.svg`).

@@ -100,6 +100,8 @@ export interface VendorProfile {
   showVegetarianLabel: boolean;
   showGlutenFreeLabel: boolean;
   showHmcCertification: boolean;
+  /** #1656 — show the "ask us about allergens" notice on product, basket and checkout pages. */
+  showAllergenNotice: boolean;
   /** #905 — what the store sells, in its own words; the AI prompts' context. `null` = neutral. */
   storeDescription: string | null;
   /**
@@ -251,6 +253,7 @@ export async function fetchVendorProfile(
           showVegetarianLabel: true,
           showGlutenFreeLabel: true,
           showHmcCertification: true,
+          showAllergenNotice: true,
           storeDescription: true,
           productGridDensity: true,
           deliveryFeePence: true,
@@ -360,6 +363,7 @@ export async function fetchVendorProfile(
     showVegetarianLabel: vendor?.config?.showVegetarianLabel ?? false,
     showGlutenFreeLabel: vendor?.config?.showGlutenFreeLabel ?? false,
     showHmcCertification: vendor?.config?.showHmcCertification ?? false,
+    showAllergenNotice: vendor?.config?.showAllergenNotice ?? false,
     storeDescription: vendor?.config?.storeDescription ?? null,
     productGridDensity: vendor?.config?.productGridDensity ?? DEFAULT_PRODUCT_GRID_DENSITY,
     deliveryPrefixes: (vendor?.deliveryAreas ?? []).map((a) => a.prefix),
@@ -532,6 +536,7 @@ export interface VendorStorefrontConfigInput {
   showVegetarianLabel?: boolean;
   showGlutenFreeLabel?: boolean;
   showHmcCertification?: boolean;
+  showAllergenNotice?: boolean;
   storeDescription?: string | null;
   /**
    * #962 — owned by the product-grid form alone. Same optionality rule: every other form omits it,
@@ -623,6 +628,7 @@ export async function updateVendorStorefrontConfig(
         showVegetarianLabel: data.showVegetarianLabel,
         showGlutenFreeLabel: data.showGlutenFreeLabel,
         showHmcCertification: data.showHmcCertification,
+        showAllergenNotice: data.showAllergenNotice,
         storeDescription: data.storeDescription,
         // #962 — same direct assignment: only the product-grid form supplies it.
         productGridDensity: data.productGridDensity,

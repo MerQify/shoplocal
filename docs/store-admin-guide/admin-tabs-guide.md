@@ -4,8 +4,8 @@ title: "Store Admin Management Guide"
 audience: [store-admin]
 type: runbook
 status: approved
-version: "2.28.0"
-updated: 2026-11-15
+version: "2.29.0"
+updated: 2026-11-18
 visibility: internal
 summary: "How to use every owner-only page in the Store Admin Panel: discounts, loyalty, storefront configuration, delivery areas, reports, customers, payment issues, and team access."
 tags: ["admin", "guide", "ui", "configuration", "vendor", "payments", "team"]
@@ -173,7 +173,7 @@ the search box text shown in the header's search box, set your delivery fee, you
 Facebook page address, your Instagram profile address, your WhatsApp number, your WhatsApp community group invite link, and your WhatsApp group QR code image. In the **Product
 labels & store description** form at the bottom of the page, choose which of the six product labels
 (Halal, Fresh, Organic, Vegetarian, Gluten free, HMC certification) your staff see on the product
-form, and write what your store sells. In the **Product grid layout** form below that, choose how
+form, switch the shopper allergen notice on or off, and write what your store sells. In the **Product grid layout** form below that, choose how
 many product cards sit side by side on your category, search and bundle pages. A shopper who hides the
 filter sidebar on a category or search page sees one more card per row on wide screens. Three footer forms
 follow: in **Footer contact & legal**, enter your phone number, email address (shown in the footer only
@@ -254,7 +254,11 @@ saving a product afterwards does not clear it — and your storefront is unchang
 shows on exactly the products that carry it. A shop that sells no food can switch all six off.
 **HMC certification needs Halal**: saving it switched on while Halal is off is refused with the
 field marked. When this page was first introduced, each label started switched on only if at least
-one of your products already carried it, so switch on any you need that are off. **What this store
+one of your products already carried it, so switch on any you need that are off. **Show allergen
+notice** is for shops that sell food: when ticked, every product page, the basket and checkout show an
+"Allergy information" box asking shoppers with a food allergy or intolerance to ask you before they
+order, followed by the phone number and email address from your **Footer contact & legal** form.
+It is off by default, and saved with the same **Save Product Labels & Description** button. **What this store
 sells** is one or two sentences, up to 200 characters, such as "Consumer electronics and
 accessories". It is given to the shop's AI features — shopping-list matching, search-word
 suggestions and pack-size suggestions — so they understand what you sell. Leave it blank and they
