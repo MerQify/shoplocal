@@ -118,9 +118,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      # #1644 — purge Cloudflare edge cache so freshly deployed assets and pages appear immediately
+      # #1644 — purge Cloudflare edge cache so freshly deployed assets and pages appear immediately.
+      # #1664 — only this env's routed hosts; a failure is a warning annotation, never a red deploy.
       - name: Purge Cloudflare edge cache
-        run: npx tsx scripts/purge-cloudflare-cache.ts
+        run: npx tsx scripts/purge-cloudflare-cache.ts --env production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -198,10 +199,10 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           AFC_DIRECT_URL: ${{ secrets.AFC_DIRECT_URL }}
 
-      # #1644 — purge Cloudflare edge cache for AFC cell
+      # #1644 — purge Cloudflare edge cache for AFC cell (#1664: its own hosts only)
       - name: Purge Cloudflare edge cache
         if: env.AFC_DIRECT_URL != ''
-        run: npx tsx scripts/purge-cloudflare-cache.ts
+        run: npx tsx scripts/purge-cloudflare-cache.ts --env afc-production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

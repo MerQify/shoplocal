@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorPanel } from "@/components/errors/ErrorPanel";
+import { reloadIfStaleDeployment } from "@/lib/stale-deployment";
 
 /**
  * The storefront's own boundary (#478) — the one a shopper actually hits.
@@ -31,6 +32,8 @@ export default function StorefrontError({
 }) {
   useEffect(() => {
     console.error("Caught by storefront error boundary:", error);
+    // #1664 — a page left open across a deploy: reload once instead of showing the panel.
+    reloadIfStaleDeployment(error);
   }, [error]);
 
   return (

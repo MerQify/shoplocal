@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorPanel } from "@/components/errors/ErrorPanel";
+import { reloadIfStaleDeployment } from "@/lib/stale-deployment";
 
 /**
  * The staff portal's boundary (#478), the `(admin)` counterpart to
@@ -27,6 +28,8 @@ export default function AdminError({
 }) {
   useEffect(() => {
     console.error("Caught by staff portal error boundary:", error);
+    // #1664 — a page left open across a deploy: reload once instead of showing the panel.
+    reloadIfStaleDeployment(error);
   }, [error]);
 
   return (

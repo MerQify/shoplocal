@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorPanel } from "@/components/errors/ErrorPanel";
+import { reloadIfStaleDeployment } from "@/lib/stale-deployment";
 
 /**
  * The outer in-layout fallback (#459, corrected in #478).
@@ -28,6 +29,8 @@ export default function RootError({
 }) {
   useEffect(() => {
     console.error("Caught by root error boundary:", error);
+    // #1664 — a page left open across a deploy: reload once instead of showing the panel.
+    reloadIfStaleDeployment(error);
   }, [error]);
 
   return (
