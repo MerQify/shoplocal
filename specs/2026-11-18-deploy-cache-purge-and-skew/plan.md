@@ -7,7 +7,7 @@ status: draft
 version: "1.0.0"
 updated: 2026-11-18
 visibility: internal
-summary: Fixes #1644's post-deploy purge (per host, GitHub warning on failure, freshness check) and makes the error boundaries reload once on deployment skew (#1664).
+summary: "Fixes #1644's post-deploy purge (per host, GitHub warning on failure, freshness check) and makes the error boundaries reload once on deployment skew (#1664)."
 tags: [ci, deploy, cloudflare, cache, error-boundary, p10]
 ---
 

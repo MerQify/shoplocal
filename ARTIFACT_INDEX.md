@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-18T16:01:49.121Z` · commit `665c6cf6` · `376` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-18T16:12:46.068Z` · commit `c512e79c` · `377` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -357,6 +357,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Standardised Product Import/Export Templates and Platform Admin Stock Export (plan)](specs/2026-11-17-product-templates-and-stock-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Defines Universal and Essential product import/export schemas, exports existing stock into the Universal template, implements zero-decision bulk import/export processing, and provides a Platform Admin-only stock export page and API. |
 | [Product Template Brand Cleanup, Bundle & Promotion Export, and Protected Columns (plan)](specs/2026-11-17-template-brand-cleanup-and-bundle-promo-export/plan.md) | spec | 1.0.0 | 2026-11-17 | approved | internal | Leaves Brand blank for unbranded products, supports CSV and Excel exports for Bundles and Promotions with two-way sync support, and marks system ID columns with explicit non-editable notices in templates and instructions. |
 | [Allergen notice stopgap — per-vendor 'ask us about allergens' notice (plan)](specs/2026-11-18-allergen-notice-stopgap/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Adds a per-vendor "Show allergen notice" setting that signposts shoppers to ask the store about allergens on product, basket and checkout pages, as a go-live stopgap until structured allergen data lands (#1656, ahead of |
+| [Deploy cache purge per host, visible and verified; reload once on deployment skew (plan)](specs/2026-11-18-deploy-cache-purge-and-skew/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Fixes #1644's post-deploy purge (per host, GitHub warning on failure, freshness check) and makes the error boundaries reload once on deployment skew (#1664). |
 | [Halal claim wording — gate the homepage HMC pill, stop the product-page overclaim (plan)](specs/2026-11-18-halal-claim-wording/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Stops the homepage claiming "100% Certified HMC Halal" for every vendor and stops product pages claiming certification for halal products that carry none (#1658). |
 | [Help content names the store's own website (plan)](specs/2026-11-18-help-own-website/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes aheed.merqify.com and srimart.merqify.com storefront examples from Aheed's help content; /help shows the store's own canonical host (#1662). |
 | [Storefront trust fixes — staff content off /help, refund policy, consumer terms (plan)](specs/2026-11-18-storefront-trust-fixes/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes staff-only material from the public Help page and rewrites the terms' refund and platform clauses so a first-time shopper sees a finished, trustworthy shop before card payments go live (#1652). |
