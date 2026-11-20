@@ -13,7 +13,7 @@
  */
 
 export interface HubConfig {
-  /** Base URL with no trailing slash, e.g. `https://merqify-image-hub-staging.….workers.dev`. */
+  /** The hub's base URL with no trailing slash, as configured in `IMAGE_HUB_URL`. */
   url: string;
   apiKey: string;
 }
