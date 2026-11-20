@@ -12,6 +12,8 @@ import {
   finalizeProductAssign,
   rejectImageLibraryAsset,
   requestCategoryImageUploadTicket,
+  searchDiscoveredImagesForStaff,
+  importDiscoveredImageToHub,
   searchImageLibrary,
   type AssignOutcome,
   type LibraryResult,
@@ -19,6 +21,11 @@ import {
 } from "@/lib/image-hub-service";
 import type { HubAsset, HubPage, HubSearchSort, HubStatus } from "@/lib/image-hub/client";
 import type { UploadTicket } from "@/lib/product-image";
+import type {
+  DiscoveredImage,
+  DiscoverySearchParams,
+  DiscoverySearchResult,
+} from "@/lib/image-discovery/types";
 
 /**
  * #1671 — server actions for `/staff/image-library`. Thin: every rule (who may, what qualifies, the
@@ -140,4 +147,20 @@ export async function listCategoriesForAssign(): Promise<Array<{ id: string; nam
   if (!auth.ok) return [];
   const rows = await listCategoriesForAdmin(auth.vendorId);
   return rows.map((c) => ({ id: c.id, name: c.name }));
+}
+
+/** #1697 — search open licensed image repositories (Openverse, Wikimedia Commons, Open Food Facts). */
+export async function searchDiscoveredImagesAction(
+  params: DiscoverySearchParams,
+): Promise<LibraryResult<DiscoverySearchResult>> {
+  return searchDiscoveredImagesForStaff(params);
+}
+
+/** #1697 — import an open-licensed discovered image into the Image Hub as PENDING_REVIEW. */
+export async function importDiscoveredImageAction(
+  image: DiscoveredImage,
+): Promise<LibraryResult<HubAsset>> {
+  const result = await importDiscoveredImageToHub(image);
+  if (result.ok) revalidatePath("/staff/image-library");
+  return result;
 }

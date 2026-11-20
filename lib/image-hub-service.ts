@@ -26,6 +26,7 @@ import {
   deleteUsage,
   getAsset,
   getAssetContent,
+  importAsset,
   recordUsage,
   rejectAsset,
   searchAssets,
@@ -41,6 +42,12 @@ import {
   type HubUsageKind,
 } from "@/lib/image-hub/client";
 import { storeSourceForHubSource } from "@/lib/image-hub/source";
+import { searchDiscoveredImages } from "@/lib/image-discovery/service";
+import type {
+  DiscoveredImage,
+  DiscoverySearchParams,
+  DiscoverySearchResult,
+} from "@/lib/image-discovery/types";
 
 /**
  * #1671 — request-scoped facade over the Merqify Image Hub client (`lib/image-hub/`).
@@ -617,4 +624,124 @@ export async function requestCategoryImageUploadTicket(
   const key = buildCategoryImageKey(auth.vendorId, category.slug);
   const url = await getStorage().presignPut(key, IMAGE_CONTENT_TYPE, 300);
   return { ok: true, value: { url, key } };
+}
+
+/**
+ * #1697 — search open licensed image repositories (Openverse, Wikimedia Commons, Open Food Facts).
+ * Staff and store admins may search.
+ */
+export async function searchDiscoveredImagesForStaff(
+  params: DiscoverySearchParams,
+): Promise<LibraryResult<DiscoverySearchResult>> {
+  const auth = await requireVendorRole("STAFF", "ADMIN");
+  if (!auth.ok) {
+    return {
+      ok: false,
+      code: auth.reason,
+      status: auth.status,
+      message:
+        auth.status === 401
+          ? "Please sign in to use the image library."
+          : "Only store staff and admins can search image discovery.",
+    };
+  }
+  const result = await searchDiscoveredImages(params);
+  return { ok: true, value: result };
+}
+
+/**
+ * #1697 — import an open-licensed discovered image into the Merqify Image Hub.
+ * Fetches the image bytes server-side, validates content-type and size, and preserves full provenance.
+ * The image lands in the hub as PENDING_REVIEW.
+ */
+export async function importDiscoveredImageToHub(
+  image: DiscoveredImage,
+): Promise<LibraryResult<HubAsset>> {
+  const auth = await requireVendorRole("STAFF", "ADMIN");
+  if (!auth.ok) {
+    return {
+      ok: false,
+      code: auth.reason,
+      status: auth.status,
+      message:
+        auth.status === 401
+          ? "Please sign in to use the image library."
+          : "Only store staff and admins can import images.",
+    };
+  }
+
+  const resolved = await resolveCaller(auth, STAFF_AND_ADMIN);
+  if (!resolved.ok) return resolved;
+
+  const downloadUrl = image.originalUrl || image.thumbnailUrl;
+  let res: Response;
+  try {
+    res = await fetch(downloadUrl, {
+      headers: {
+        "User-Agent":
+          "AheedFoodCentre/1.0 (https://aheedfoodcentre.co.uk; info@aheedfoodcentre.co.uk)",
+        Accept: "image/*",
+      },
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      code: "fetch_failed",
+      status: 502,
+      message: `Failed to download image from source: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    };
+  }
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      code: "download_failed",
+      status: 502,
+      message: `Source server returned HTTP ${res.status}`,
+    };
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.startsWith("image/")) {
+    return {
+      ok: false,
+      code: "invalid_content_type",
+      status: 400,
+      message: `Expected image content-type, received '${contentType || "none"}'`,
+    };
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  if (arrayBuffer.byteLength > MAX_IMAGE_BYTES) {
+    return {
+      ok: false,
+      code: "image_too_large",
+      status: 400,
+      message: `Image is too large (${Math.round(arrayBuffer.byteLength / 1024)} KB, max ${Math.round(
+        MAX_IMAGE_BYTES / (1024 * 1024),
+      )} MB)`,
+    };
+  }
+
+  const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+  const fileName = `${image.provider.toLowerCase()}-${Date.now()}.${ext}`;
+  const file = new Blob([arrayBuffer], { type: contentType });
+
+  const imported = await importAsset(resolved.value.caller, {
+    file,
+    fileName,
+    title: image.title,
+    source: image.provider,
+    licence: image.licence,
+    attribution: image.attribution,
+    originalUrl: image.originalUrl,
+    sourceSite: image.sourceSite,
+    rightsConfirmed: true,
+    status: "PENDING_REVIEW",
+  });
+
+  if (!imported.ok) return imported;
+  return { ok: true, value: imported.value.asset };
 }

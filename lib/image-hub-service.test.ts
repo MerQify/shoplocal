@@ -44,6 +44,8 @@ import {
   rejectImageLibraryAsset,
   releaseHubUsage,
   requestCategoryImageUploadTicket,
+  searchDiscoveredImagesForStaff,
+  importDiscoveredImageToHub,
   searchImageLibrary,
   uploadToImageLibrary,
 } from "./image-hub-service";
@@ -508,5 +510,79 @@ describe("R18 — releaseHubUsage", () => {
     await releaseHubUsage({ hubAssetId: "a1", hubUsageId: null });
     await releaseHubUsage(null);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("image discovery facade", () => {
+  it("enforces STAFF role for searchDiscoveredImagesForStaff", async () => {
+    mocks.requireVendorRole.mockResolvedValue({ ok: false, reason: "forbidden", status: 403 });
+    const res = await searchDiscoveredImagesForStaff({ query: "mango" });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.code).toBe("forbidden");
+    }
+  });
+
+  it("imports a discovered image and calls importAsset", async () => {
+    mocks.requireVendorRole.mockResolvedValue({
+      ok: true,
+      vendorId: VENDOR,
+      user: { id: "user-1" },
+      via: "STAFF",
+    });
+    mocks.getImageHubEnv.mockReturnValue({
+      configured: true,
+      url: "https://hub.test",
+      apiKey: "mih_key",
+    });
+    mocks.fetchVendorProfile.mockResolvedValue({ slug: "aheed" });
+
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "https://example.com/mango.jpg") {
+        return new Response(new Uint8Array([1, 2, 3]), {
+          status: 200,
+          headers: { "content-type": "image/jpeg" },
+        });
+      }
+      if (url.includes("/v1/assets/import")) {
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            asset: asset({ title: "Discovered Mango", status: "PENDING_REVIEW" }),
+            duplicate: false,
+          }),
+          { status: 201, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response("Not found", { status: 404 });
+    });
+    globalThis.fetch = fetchMock;
+
+    try {
+      const res = await importDiscoveredImageToHub({
+        id: "openverse-123",
+        provider: "OPENVERSE",
+        title: "Discovered Mango",
+        thumbnailUrl: "https://example.com/mango-thumb.jpg",
+        originalUrl: "https://example.com/mango.jpg",
+        sourceSite: "Openverse",
+        licence: "CC_BY",
+        attribution: "Photographer via Openverse",
+      });
+
+      expect(res.ok).toBe(true);
+      if (res.ok) {
+        expect(res.value.title).toBe("Discovered Mango");
+      }
+      expect(fetchMock).toHaveBeenCalledWith("https://example.com/mango.jpg", expect.any(Object));
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://hub.test/v1/assets/import",
+        expect.any(Object),
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });

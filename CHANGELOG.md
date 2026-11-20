@@ -30,6 +30,12 @@ every branch merges.
 
 ### Added
 
+- **Image Hub phase 3: licensed search & discovery (#1697, 2026-11-20).**
+  - Added open repository discovery adapters in `lib/image-discovery/` for Openverse, Wikimedia Commons, and Open Food Facts with automatic licensing and attribution extraction.
+  - Added `ImageDiscoveryPanel` to `/staff/image-library` enabling staff and store admins to search open image repositories and import candidates directly into the hub with one click.
+  - Added server actions `searchDiscoveredImagesAction` and `importDiscoveredImageAction` in `features/admin/image-library.ts` preserving full provenance (`source`, `licence`, `attribution`, `sourceSite`, `originalUrl`) and assigning `PENDING_REVIEW` status.
+  - Added batch discovery CLI `scripts/discover-product-images.ts` to discover and import open image candidates for unphotographed store products.
+
 - **Image Hub phase 1c: import store catalogue images (#1674, 2026-11-20).**
   - Added `importAsset` to `lib/image-hub/client.ts` wrapping the hub's `POST /v1/assets/import` endpoint, supporting full provenance (`source`, `licence`, `attribution`, `sourceSite`, `originalUrl`, `status`).
   - Added `scripts/import-images-to-hub.ts`: an idempotent migration CLI (`--env-file`, `--dry-run`, `--vendor`, `--limit`) that reads existing `ProductImage` and `CategoryAsset` rows, fetches bytes from store S3/R2 storage, imports them into the Image Hub with provenance, and updates `hubAssetId` (and `hubUsageId` for approved usages).
