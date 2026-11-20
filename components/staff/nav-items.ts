@@ -142,6 +142,14 @@ export const STAFF_NAV_GROUPS: readonly StaffNavGroup[] = [
         tone: "accent",
       },
       {
+        href: "/staff/image-library",
+        label: "Image library",
+        description: "Shared product and category images: upload, review, and assign.",
+        icon: "image-up",
+        tier: "staff",
+        tone: "accent",
+      },
+      {
         href: "/staff/brands",
         label: "Brands",
         description: "The brands shoppers can filter by, and which products carry them.",

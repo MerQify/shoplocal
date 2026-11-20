@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireVendorRole } from "@/lib/auth-rbac";
 import { getStorage } from "@/lib/storage";
+import { releaseHubUsage } from "@/lib/image-hub-service";
 import {
   IMAGE_CONTENT_TYPE,
   MAX_IMAGE_BYTES,
@@ -142,6 +143,8 @@ export async function attachProductImage(
 
   const result = await setPrimaryProductImage(auth.vendorId, product.id, storageKey, alt);
   if (!result.ok) return { ok: false, error: result.error };
+  // #1671 R18 — a primary that came from the Image Hub gives up its hub usage when replaced.
+  await releaseHubUsage(result.replacedHubRef);
 
   revalidatePath(`/staff/products/${product.id}`);
   revalidatePath("/staff/products");
@@ -238,6 +241,8 @@ export async function removeProductImage(
   if (!result.ok) return { ok: false, error: result.error };
 
   await getStorage().deleteObject(result.storageKey);
+  // #1671 R18 — an image copied from the Image Hub gives up its hub usage. Best effort.
+  await releaseHubUsage(result.hubRef);
 
   const product = await getProductForAdmin(auth.vendorId, productId);
   if (product) revalidateProductSurfaces(product.id, product.slug);

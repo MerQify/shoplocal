@@ -3111,13 +3111,37 @@ export async function updateProductForVendor(
  * here: ProductImage.alt is non-null, and an empty alt on a storefront image is
  * an accessibility defect rather than a tidy default.
  */
+/**
+ * #1671 — where an image came from when it was copied from the Merqify Image Hub. Absent for a
+ * staff upload, which keeps `source: "STAFF_UPLOAD"` and no hub reference.
+ */
+export interface ProductImageOrigin {
+  source: ProductImageSource;
+  hubAssetId: string;
+}
+
+/** A hub asset/usage pair a row carried before it was replaced or removed (#1671 R18). */
+export interface HubImageRef {
+  hubAssetId: string;
+  hubUsageId: string | null;
+}
+
+/**
+ * The write result for an image row: `CatalogueWriteResult` plus the row id (so a hub usage can be
+ * recorded against it) and, for a primary repoint, the hub reference the old row carried.
+ */
+export type ProductImageWriteResult =
+  | { ok: true; id: string; imageId: string; replacedHubRef: HubImageRef | null }
+  | { ok: false; error: string; field?: string };
+
 export async function setPrimaryProductImage(
   prismaWs: DbWs,
   vendorId: string,
   productId: string,
   storageKey: string,
   alt: string,
-): Promise<CatalogueWriteResult> {
+  origin?: ProductImageOrigin,
+): Promise<ProductImageWriteResult> {
   return await prismaWs.$transaction(async (tx) => {
     // Vendor-scoped: another vendor's product is indistinguishable from one that
     // never existed, exactly as updateProductForVendor treats it.
@@ -3130,30 +3154,31 @@ export async function setPrimaryProductImage(
     const altText = alt.trim() === "" ? product.name : alt.trim();
     const existing = await tx.productImage.findFirst({
       where: { productId, isPrimary: true },
-      select: { id: true },
+      select: { id: true, hubAssetId: true, hubUsageId: true },
     });
 
     // #900 — a staff upload, on both branches: replacing the primary's bytes replaces what the
-    // row depicts, so its old provenance (e.g. AI_GENERATED) must not survive the swap.
+    // row depicts, so its old provenance (e.g. AI_GENERATED) must not survive the swap. #1671 — the
+    // same goes for a hub reference: the new bytes either come from `origin` or from no hub asset.
+    const data = {
+      storageKey,
+      alt: altText,
+      source: origin?.source ?? ("STAFF_UPLOAD" as const),
+      hubAssetId: origin?.hubAssetId ?? null,
+      hubUsageId: null,
+    };
     if (existing) {
-      await tx.productImage.update({
-        where: { id: existing.id },
-        data: { storageKey, alt: altText, source: "STAFF_UPLOAD" },
-      });
-    } else {
-      await tx.productImage.create({
-        data: {
-          productId,
-          storageKey,
-          alt: altText,
-          isPrimary: true,
-          sortOrder: 0,
-          source: "STAFF_UPLOAD",
-        },
-      });
+      await tx.productImage.update({ where: { id: existing.id }, data });
+      const replacedHubRef = existing.hubAssetId
+        ? { hubAssetId: existing.hubAssetId, hubUsageId: existing.hubUsageId }
+        : null;
+      return { ok: true as const, id: productId, imageId: existing.id, replacedHubRef };
     }
-
-    return { ok: true as const, id: productId };
+    const created = await tx.productImage.create({
+      data: { productId, isPrimary: true, sortOrder: 0, ...data },
+      select: { id: true },
+    });
+    return { ok: true as const, id: productId, imageId: created.id, replacedHubRef: null };
   });
 }
 
@@ -3169,7 +3194,8 @@ export async function addProductImage(
   productId: string,
   storageKey: string,
   alt: string,
-): Promise<CatalogueWriteResult> {
+  origin?: ProductImageOrigin,
+): Promise<ProductImageWriteResult> {
   return await prismaWs.$transaction(async (tx) => {
     const product = await tx.product.findFirst({
       where: { id: productId, vendorId },
@@ -3186,18 +3212,20 @@ export async function addProductImage(
     const nextSortOrder = existing.length === 0 ? 0 : existing[0].sortOrder + 1;
     const altText = alt.trim() === "" ? product.name : alt.trim();
 
-    await tx.productImage.create({
+    const created = await tx.productImage.create({
       data: {
         productId,
         storageKey,
         alt: altText,
         isPrimary: existing.length === 0,
         sortOrder: nextSortOrder,
-        source: "STAFF_UPLOAD", // #900
+        source: origin?.source ?? "STAFF_UPLOAD", // #900; #1671 for a hub asset
+        hubAssetId: origin?.hubAssetId ?? null,
       },
+      select: { id: true },
     });
 
-    return { ok: true as const, id: productId };
+    return { ok: true as const, id: productId, imageId: created.id, replacedHubRef: null };
   });
 }
 
@@ -3233,7 +3261,8 @@ export async function promoteProductImage(
 }
 
 /** What removeProductImage deleted, so the caller (Service layer) can remove it from storage too. */
-export type RemoveImageResult = { ok: true; storageKey: string } | { ok: false; error: string };
+export type RemoveImageResult =
+  { ok: true; storageKey: string; hubRef: HubImageRef | null } | { ok: false; error: string };
 
 /**
  * Delete a ProductImage row (#211). Deliberately does NOT touch storage —
@@ -3258,7 +3287,7 @@ export async function removeProductImage(
 
     const target = await tx.productImage.findFirst({
       where: { id: imageId, productId },
-      select: { id: true, storageKey: true, isPrimary: true },
+      select: { id: true, storageKey: true, isPrimary: true, hubAssetId: true, hubUsageId: true },
     });
     if (!target) return { ok: false as const, error: "That image no longer exists." };
 
@@ -3275,8 +3304,31 @@ export async function removeProductImage(
       }
     }
 
-    return { ok: true as const, storageKey: target.storageKey };
+    // #1671 — the hub reference goes back to the Service layer, which removes the usage.
+    const hubRef = target.hubAssetId
+      ? { hubAssetId: target.hubAssetId, hubUsageId: target.hubUsageId }
+      : null;
+    return { ok: true as const, storageKey: target.storageKey, hubRef };
   });
+}
+
+/**
+ * #1671 R16 — store the hub usage id recorded for an image row. Vendor-scoped through the row's
+ * product; a singular update with no nested writes, so the HTTP client is fine (CLAUDE.md).
+ */
+export async function setProductImageHubUsage(
+  prisma: Db,
+  vendorId: string,
+  imageId: string,
+  hubUsageId: string,
+): Promise<boolean> {
+  const row = await prisma.productImage.findFirst({
+    where: { id: imageId, product: { vendorId } },
+    select: { id: true },
+  });
+  if (!row) return false;
+  await prisma.productImage.update({ where: { id: row.id }, data: { hubUsageId } });
+  return true;
 }
 
 /**

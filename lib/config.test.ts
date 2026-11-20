@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { getEnv, getEmailEnv, getPaymentEnv } from "./config";
+import { getEnv, getEmailEnv, getImageHubEnv, getPaymentEnv } from "./config";
 
 describe("config environments", () => {
   const originalEnv = process.env;
@@ -81,6 +81,42 @@ describe("config environments", () => {
       // Despite missing Stripe and Resend keys, it does not throw
       expect(() => getPaymentEnv()).not.toThrow();
       expect(() => getEmailEnv()).not.toThrow();
+    });
+  });
+
+  // #1671 R1 — configured only when BOTH hub keys are set.
+  describe("getImageHubEnv", () => {
+    beforeEach(() => {
+      delete process.env.IMAGE_HUB_URL;
+      delete process.env.IMAGE_HUB_API_KEY;
+    });
+
+    it("is not configured when both keys are unset", () => {
+      expect(getImageHubEnv()).toEqual({ configured: false });
+    });
+
+    it("is not configured when only one key is set", () => {
+      process.env.IMAGE_HUB_URL = "https://hub.example.com";
+      expect(getImageHubEnv()).toEqual({ configured: false });
+      delete process.env.IMAGE_HUB_URL;
+      process.env.IMAGE_HUB_API_KEY = "mih_stg_x";
+      expect(getImageHubEnv()).toEqual({ configured: false });
+    });
+
+    it("is configured when both are set, without a trailing slash", () => {
+      process.env.IMAGE_HUB_URL = "https://hub.example.com/";
+      process.env.IMAGE_HUB_API_KEY = "mih_stg_x";
+      expect(getImageHubEnv()).toEqual({
+        configured: true,
+        url: "https://hub.example.com",
+        apiKey: "mih_stg_x",
+      });
+    });
+
+    it("throws on a non-https URL", () => {
+      process.env.IMAGE_HUB_URL = "http://x";
+      process.env.IMAGE_HUB_API_KEY = "mih_stg_x";
+      expect(() => getImageHubEnv()).toThrow();
     });
   });
 });
