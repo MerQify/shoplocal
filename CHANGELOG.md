@@ -6,6 +6,10 @@ every branch merges.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Image library post-ship docs (#1671, 2026-11-20).** Corrected `env-setup.md`: `configure-env` re-pushes every secret in a vars file and refuses the AFC cell, so add only the two hub keys with `wrangler secret put`. Also added the image library sanity-check guide (Last run: staging, 2026-11-20); the handoff note that production store Workers do not yet carry the hub keys; the playbook note on driving a client-invoked server action with the `Next-Action` header; and the roadmap row for the staging merge.
+
 ### Added
 
 - **Image library: the Merqify Image Hub in the staff panel (#1671, phase 1b of #1669, 2026-11-20).**
