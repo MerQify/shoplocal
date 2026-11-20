@@ -4,7 +4,7 @@ title: "Order & Fulfilment Operations"
 audience: [staff, store-admin, dev, product, shopper]
 type: runbook
 status: approved
-version: "1.2.0"
+version: "1.3.0"
 updated: "2026-11-20"
 visibility: internal
 summary: "Canonical rules for order status transitions, fulfilment slots, cancellations, and payment exceptions."
@@ -98,3 +98,38 @@ Occasionally, a customer's payment may complete with the provider (e.g., Stripe)
 
 > **References / Related Artifacts:**
 > - Payment handling and webhooks: [specs/2026-08-10-p3c-stripe-payments/plan.md](../../specs/2026-08-10-p3c-stripe-payments/plan.md)
+
+## 5. Sanity check: checkout and cancellation (`#1690`, `#1691`, `#1693`)
+
+Run after any deploy that touches checkout, cancellation or order alerts. Steps 1-2 run from a dev
+machine. Steps 3-6 need a store admin sign-in, a Stripe **test** card on staging, and the staff
+Telegram chat.
+
+**Last run:** 2026-11-20, staging `85945d8` (PR #1698).
+- Steps 1-2 passed.
+- Steps 3-6 are owed to the owner (test-card payment, Telegram).
+
+1. **Health.** `curl -s https://afc-staging-origin.merqify.com/api/health`. Expect `commit` to be the
+   deployed merge, `db.ok: true`, and `reference.reachable: true` with at least one source. The same
+   on `aheed-staging.merqify.com`.
+2. **Cancel form.** As a store admin, open a `CONFIRMED` order at `/staff/orders/<number>`.
+   - Expect **Who asked for this?** (Customer asked / We couldn't fulfil it / Other) and **What
+     should we tell the customer?** (Refunded in full / Not refunded yet / Write my own message).
+   - Expect the note "this reason is not shown to the customer".
+   - Choosing **Write my own message** shows a **Message to the customer** box.
+3. **Under-minimum basket.** Put one item under 30p in the basket and check out.
+   - Expect "Card payments need a total of at least £0.30." on the checkout page.
+   - No new order appears under **Account → Orders**.
+4. **Cancelled checkout is closed.** Check out an item of 30p or more, then on Stripe's page use the
+   back link and confirm **Cancel**. In the Stripe **test** dashboard (Payments → that Checkout
+   session), expect status **Expired**, not Open.
+5. **Cancellation email.** Pay a test order with a test card. As an admin, cancel it with **Customer
+   asked** + **Refunded in full**.
+   - The email opens "Order <number> has been cancelled." and its "What happens next" box reads "As
+     you asked, we've cancelled this order. Your payment has been refunded in full…".
+   - The customer's `/account/orders/<number>` shows the same text.
+   - Neither shows the internal reason, and neither says "sorry".
+6. **Telegram.** The cancellation in step 5 posts to the staff Telegram chat as plain text with the
+   staff link, and **no preview card** under it.
+
+Any other result: note it on the issue and stop before promoting.

@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-20T21:41:35.911Z` · commit `a0f6cd84` · `386` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-20T22:05:43.732Z` · commit `85945d80` · `386` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -404,7 +404,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Notification matrix — which email or alert is sent when](docs/developer-portal/notification-matrix.md) | doc | 1.6.0 | 2026-11-20 | approved | internal | Every customer email, owner email and Telegram alert the platform sends — the event that triggers it, who receives it, what stops a duplicate, and the code that sends it. The one place to answer "will anyone be told when X happens?". |
 | [Merqify Platform Terms of Service — Merchant Schedule & Tax Disclaimer](docs/legal/merchant-platform-terms.md) | doc | 1.0.0 | 2026-11-06 | review | internal | Contractual terms governing Merqify Ltd (Platform Provider) and merchants (Vendors), defining responsibilities for catalogue, pricing, and HMRC VAT compliance. |
 | [Operations & Fulfillment Procedures](docs/operations-research/operations-guide.md) | guide | 1.0.0 | 2026-08-22 | approved | internal | A guide for operations teams detailing the fulfillment lifecycle, stock management, and exception handling. |
-| [Order & Fulfilment Operations](docs/operations-research/order-fulfilment-core.md) | runbook | 1.2.0 | 2026-11-20 | approved | internal | Canonical rules for order status transitions, fulfilment slots, cancellations, and payment exceptions. |
+| [Order & Fulfilment Operations](docs/operations-research/order-fulfilment-core.md) | runbook | 1.3.0 | 2026-11-20 | approved | internal | Canonical rules for order status transitions, fulfilment slots, cancellations, and payment exceptions. |
 | [Cloudflare for SaaS Client Onboarding Runbook](docs/platform-admin-guide/cloudflare-saas-onboarding-runbook.md) | runbook | 1.2.0 | 2026-11-10 | approved | internal | Standard operating procedure for SaaS client onboarding from Cloudflare account creation, zone configuration, custom hostnames, Neon database mapping, to edge validation. |
 | [Platform & Technical Admin Guide](docs/platform-admin-guide/platform-admin-guide.md) | guide | 1.17.0 | 2026-11-13 | approved | internal | A guide for Platform Administrators managing the multi-tenant infrastructure, onboarding new vendors, and configuring global platform settings. |
 | [SaaS Scaling, Cost Analysis & Resource Isolation Architecture](docs/platform-admin-guide/saas-scaling-cost-and-isolation-architecture.md) | doc | 1.0.0 | 2026-11-09 | approved | internal | Comprehensive technical and economic analysis of the multi-client SaaS platform: Cloudflare for SaaS custom hostnames, Workers compute scaling costs, noisy-neighbor isolation, R2 dedicated image storage segregation, and transactional email routing. |

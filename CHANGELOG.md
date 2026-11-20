@@ -6,6 +6,10 @@ every branch merges.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Checkout and cancellation sanity check (#1690, #1691, #1693, 2026-11-20).** Six numbered steps with expected results in `order-fulfilment-core.md` §5; the same steps are on the issues.
+
 ### Fixed
 
 - **Checkout and cancellation fixes from the live-payments go-live (#1690, #1691, #1693, 2026-11-20).**
