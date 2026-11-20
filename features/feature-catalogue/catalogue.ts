@@ -592,6 +592,14 @@ export const STAFF: RoleCatalogue = {
           route: "/staff/icons",
           status: "live",
         },
+        {
+          name: "Image library",
+          what: "A shared, rights-checked library of product and category images: upload, review, assign.",
+          value: "One approved image can be reused anywhere in the catalogue.",
+          demo: "Upload an image, approve it, and assign it to a product.",
+          route: "/staff/image-library",
+          status: "live",
+        },
       ],
     },
     {

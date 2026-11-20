@@ -1,0 +1,104 @@
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+
+/**
+ * #1671 R8/R12 — the library grid: thumbnails come from the same-origin content route, "Load more"
+ * follows the hub's cursor, and review controls render only for store admins.
+ */
+
+vi.mock("@/features/admin/image-library", () => ({
+  approveLibraryAction: vi.fn(),
+  assignToCategoryAction: vi.fn(),
+  assignToProductAction: vi.fn(),
+  finalizeCategoryAssignAction: vi.fn(),
+  finalizeProductAssignAction: vi.fn(),
+  listCategoriesForAssign: vi.fn(),
+  rejectLibraryAction: vi.fn(),
+  requestCategoryImageUpload: vi.fn(),
+  searchLibraryAction: vi.fn(),
+  searchProductsForAssign: vi.fn(),
+}));
+vi.mock("@/features/admin/product-image", () => ({ requestImageUpload: vi.fn() }));
+
+import { ImageLibraryClient } from "@/components/staff/ImageLibraryClient";
+import type { HubAsset } from "@/lib/image-hub/client";
+
+afterEach(cleanup);
+
+function asset(i: number, overrides: Partial<HubAsset> = {}): HubAsset {
+  return {
+    id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
+    title: `Image ${i}`,
+    alt: null,
+    status: "APPROVED",
+    source: "UPLOAD",
+    licence: "OWNER_SUPPLIED",
+    attribution: null,
+    originalUrl: null,
+    sourceSite: null,
+    contentType: "image/webp",
+    byteSize: 100,
+    width: 10,
+    height: 10,
+    storageKey: `tenants/t/${i}.webp`,
+    createdAt: "2026-11-20T00:00:00Z",
+    rejectionReason: null,
+    ...overrides,
+  };
+}
+
+const page = (items: HubAsset[], nextCursor: string | null) => ({ items, nextCursor });
+
+function renderClient(props: Partial<Parameters<typeof ImageLibraryClient>[0]> = {}) {
+  return render(
+    <ImageLibraryClient
+      initialPage={page([asset(1)], null)}
+      initialError={null}
+      q=""
+      status=""
+      canReview={false}
+      canAssignCategory={false}
+      {...props}
+    />,
+  );
+}
+
+describe("ImageLibraryClient", () => {
+  it("shows Load more for a full page with a cursor, and not when the cursor is null", () => {
+    const items = Array.from({ length: 24 }, (_, i) => asset(i));
+    renderClient({ initialPage: page(items, "next-cursor") });
+    expect(screen.getByRole("button", { name: "Load more" })).toBeTruthy();
+    cleanup();
+
+    renderClient({ initialPage: page(items, null) });
+    expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+  });
+
+  it("renders each thumbnail from the same-origin content route with title, status and licence", () => {
+    renderClient({
+      initialPage: page([asset(7, { attribution: "Photo: A. Person, CC BY" })], null),
+    });
+    const img = screen.getByRole("img") as HTMLImageElement;
+    expect(img.getAttribute("src")).toBe(
+      "/api/admin/image-library/00000000-0000-4000-8000-000000000007/content",
+    );
+    const card = within(screen.getByRole("listitem"));
+    expect(card.getByText("Image 7")).toBeTruthy();
+    expect(card.getByText("Approved")).toBeTruthy();
+    expect(card.getByText(/Our own image/)).toBeTruthy();
+    expect(card.getByText("Photo: A. Person, CC BY")).toBeTruthy();
+  });
+
+  it("hides approve and reject from staff, and shows them to admins on pending images", () => {
+    const pending = page([asset(1, { status: "PENDING_REVIEW" })], null);
+    renderClient({ initialPage: pending, canReview: false });
+    expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Reject" })).toBeNull();
+    cleanup();
+
+    renderClient({ initialPage: pending, canReview: true });
+    expect(screen.getByRole("button", { name: "Approve" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeTruthy();
+  });
+});

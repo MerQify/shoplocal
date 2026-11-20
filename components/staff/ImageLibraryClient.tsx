@@ -1,0 +1,545 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import {
+  approveLibraryAction,
+  assignToCategoryAction,
+  assignToProductAction,
+  finalizeCategoryAssignAction,
+  finalizeProductAssignAction,
+  listCategoriesForAssign,
+  rejectLibraryAction,
+  requestCategoryImageUpload,
+  searchLibraryAction,
+  searchProductsForAssign,
+} from "@/features/admin/image-library";
+import { requestImageUpload } from "@/features/admin/product-image";
+import type { HubAsset, HubPage, HubStatus } from "@/lib/image-hub/client";
+import { IMAGE_CONTENT_TYPE, STORAGE_CACHE_CONTROL_IMMUTABLE } from "@/lib/product-image";
+import { convertToWebp } from "@/lib/webp-convert";
+import { ImageLibraryUploader } from "@/components/staff/ImageLibraryUploader";
+
+/**
+ * #1671 — the interactive part of `/staff/image-library`.
+ *
+ * Imports only server actions, types and pure constants — never `lib/storage`, `lib/config` or the
+ * hub client's request path, which would ship the signer or a key to the browser. Thumbnails come
+ * from the same-origin content route, so the hub bucket's host never needs to be in the CSP.
+ */
+
+export interface ImageLibraryClientProps {
+  initialPage: HubPage;
+  initialError: string | null;
+  q: string;
+  status: HubStatus | "";
+  /** Store admins (and platform admins) approve and reject; staff never see those controls. */
+  canReview: boolean;
+  /** Category assignment is store-admin only, like every other category image write. */
+  canAssignCategory: boolean;
+}
+
+const STATUS_LABELS: Record<HubStatus, string> = {
+  PENDING_REVIEW: "Pending review",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
+const LICENCE_LABELS: Record<string, string> = {
+  OWNER_SUPPLIED: "Our own image",
+  SUPPLIER_PERMISSION: "Supplier permission",
+  CC0: "CC0",
+  PDM: "Public domain",
+  CC_BY: "CC BY",
+  CC_BY_SA: "CC BY-SA",
+  ODBL: "ODbL",
+  AI_GENERATED: "AI-generated",
+};
+
+function contentUrl(assetId: string): string {
+  return `/api/admin/image-library/${encodeURIComponent(assetId)}/content`;
+}
+
+export function ImageLibraryClient({
+  initialPage,
+  initialError,
+  q,
+  status,
+  canReview,
+  canAssignCategory,
+}: ImageLibraryClientProps) {
+  const [items, setItems] = useState<HubAsset[]>(initialPage.items);
+  const [cursor, setCursor] = useState<string | null>(initialPage.nextCursor);
+  const [error, setError] = useState<string | null>(initialError);
+  const [loading, startLoading] = useTransition();
+
+  function loadMore() {
+    if (!cursor) return;
+    startLoading(async () => {
+      const next = await searchLibraryAction({
+        q: q || undefined,
+        status: status || undefined,
+        cursor,
+      });
+      if (!next.ok) {
+        setError(next.message);
+        return;
+      }
+      setItems((current) => [...current, ...next.value.items]);
+      setCursor(next.value.nextCursor);
+    });
+  }
+
+  function replace(asset: HubAsset) {
+    setItems((current) => current.map((item) => (item.id === asset.id ? asset : item)));
+  }
+
+  return (
+    <div className="space-y-6">
+      <ImageLibraryUploader onUploaded={(asset) => setItems((current) => [asset, ...current])} />
+
+      <form method="GET" className="flex flex-wrap items-end gap-3" role="search">
+        <div>
+          <label
+            htmlFor="library-q"
+            className="mb-1 block text-xs font-semibold text-primary-muted"
+          >
+            Search
+          </label>
+          <input
+            id="library-q"
+            name="q"
+            defaultValue={q}
+            placeholder="Title, alt text or keyword"
+            className="w-64 rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-primary placeholder:text-primary-subtle focus:border-action focus:outline-none"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="library-status"
+            className="mb-1 block text-xs font-semibold text-primary-muted"
+          >
+            Status
+          </label>
+          <select
+            id="library-status"
+            name="status"
+            defaultValue={status}
+            className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-primary focus:border-action focus:outline-none"
+          >
+            <option value="">All</option>
+            <option value="PENDING_REVIEW">Pending review</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="rounded-lg bg-action px-4 py-2 text-sm font-semibold text-white hover:bg-action-hover"
+        >
+          Apply
+        </button>
+      </form>
+
+      {error && (
+        <p
+          role="alert"
+          className="rounded-lg border border-danger bg-danger-tint p-3 text-sm text-danger"
+        >
+          {error}
+        </p>
+      )}
+
+      {items.length === 0 && !error ? (
+        <p className="text-sm text-primary-muted">No images match.</p>
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {items.map((asset) => (
+            <LibraryCard
+              key={asset.id}
+              asset={asset}
+              canReview={canReview}
+              canAssignCategory={canAssignCategory}
+              onChange={replace}
+            />
+          ))}
+        </ul>
+      )}
+
+      {cursor && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loading}
+            className="rounded-lg border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-primary hover:bg-surface-muted disabled:opacity-50"
+          >
+            {loading ? "Loading…" : "Load more"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LibraryCard({
+  asset,
+  canReview,
+  canAssignCategory,
+  onChange,
+}: {
+  asset: HubAsset;
+  canReview: boolean;
+  canAssignCategory: boolean;
+  onChange: (asset: HubAsset) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function approve() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await approveLibraryAction(asset.id);
+      if (result.ok) onChange(result.value);
+      else setMessage(result.message);
+    });
+  }
+
+  function reject() {
+    setMessage(null);
+    if (!reason.trim()) {
+      setMessage("Give a reason for rejecting it.");
+      return;
+    }
+    startTransition(async () => {
+      const result = await rejectLibraryAction(asset.id, reason);
+      if (result.ok) onChange(result.value);
+      else setMessage(result.message);
+    });
+  }
+
+  return (
+    <li className="flex flex-col overflow-hidden rounded-xl border border-black/10 bg-white">
+      <img
+        src={contentUrl(asset.id)}
+        alt={asset.alt ?? asset.title}
+        loading="lazy"
+        className="aspect-square w-full bg-surface-muted object-contain"
+      />
+      <div className="flex flex-1 flex-col gap-1 p-3 text-xs">
+        <p className="truncate text-sm font-bold text-primary" title={asset.title}>
+          {asset.title}
+        </p>
+        <p className="text-primary-muted">
+          <span
+            className={
+              asset.status === "APPROVED"
+                ? "font-semibold text-action"
+                : asset.status === "REJECTED"
+                  ? "font-semibold text-danger"
+                  : "font-semibold text-accent"
+            }
+          >
+            {STATUS_LABELS[asset.status]}
+          </span>
+          {" · "}
+          {LICENCE_LABELS[asset.licence] ?? asset.licence}
+        </p>
+        {asset.attribution && <p className="text-primary-muted">{asset.attribution}</p>}
+        {asset.status === "REJECTED" && asset.rejectionReason && (
+          <p className="text-danger">Rejected: {asset.rejectionReason}</p>
+        )}
+
+        {canReview && asset.status === "PENDING_REVIEW" && (
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              onClick={approve}
+              disabled={pending}
+              className="w-full rounded-lg bg-action px-3 py-1.5 font-semibold text-white hover:bg-action-hover disabled:opacity-50"
+            >
+              Approve
+            </button>
+            <label className="sr-only" htmlFor={`reason-${asset.id}`}>
+              Reason for rejecting
+            </label>
+            <input
+              id={`reason-${asset.id}`}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Reason for rejecting"
+              className="w-full rounded-lg border border-black/15 px-2.5 py-1.5 text-primary placeholder:text-primary-subtle focus:border-action focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={reject}
+              disabled={pending}
+              className="w-full rounded-lg border border-danger px-3 py-1.5 font-semibold text-danger hover:bg-danger-tint disabled:opacity-50"
+            >
+              Reject
+            </button>
+          </div>
+        )}
+
+        {asset.status === "APPROVED" && !assigning && (
+          <button
+            type="button"
+            onClick={() => setAssigning(true)}
+            className="mt-2 w-full rounded-lg border border-action px-3 py-1.5 font-semibold text-action hover:bg-action-tint"
+          >
+            Assign…
+          </button>
+        )}
+        {asset.status === "APPROVED" && assigning && (
+          <AssignPanel
+            asset={asset}
+            canAssignCategory={canAssignCategory}
+            onClose={() => setAssigning(false)}
+          />
+        )}
+
+        {message && (
+          <p role="alert" className="text-danger">
+            {message}
+          </p>
+        )}
+      </div>
+    </li>
+  );
+}
+
+type Target =
+  { kind: "product"; id: string; name: string } | { kind: "category"; id: string; name: string };
+
+/**
+ * Converts the asset in this browser and uploads it with a store ticket (R15). Only used when the
+ * server answered `needs_conversion` — the asset is not a WebP, or is over the store's cap.
+ */
+async function convertAndUpload(
+  assetId: string,
+  target: Target,
+): Promise<{ ok: true; key: string } | { ok: false; error: string }> {
+  const response = await fetch(contentUrl(assetId));
+  if (!response.ok) return { ok: false, error: "The image couldn't be loaded from the library." };
+  let blob: Blob;
+  try {
+    blob = await convertToWebp(await response.blob());
+  } catch (cause) {
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message : "That image couldn't be read.",
+    };
+  }
+
+  const ticket =
+    target.kind === "product"
+      ? await requestImageUpload(target.id, blob.size)
+      : await requestCategoryImageUpload(target.id, blob.size);
+  if (!ticket.ok) return { ok: false, error: "error" in ticket ? ticket.error : ticket.message };
+
+  const put = await fetch(ticket.value.url, {
+    method: "PUT",
+    body: blob,
+    headers: {
+      "content-type": IMAGE_CONTENT_TYPE,
+      "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+    },
+  });
+  if (!put.ok) return { ok: false, error: `The upload was rejected by storage (${put.status}).` };
+  return { ok: true, key: ticket.value.key };
+}
+
+function AssignPanel({
+  asset,
+  canAssignCategory,
+  onClose,
+}: {
+  asset: HubAsset;
+  canAssignCategory: boolean;
+  onClose: () => void;
+}) {
+  const [kind, setKind] = useState<"product" | "category">("product");
+  const [query, setQuery] = useState("");
+  const [options, setOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [target, setTarget] = useState<Target | null>(null);
+  const [mode, setMode] = useState<"primary" | "additional">("primary");
+  const [status, setStatus] = useState<{ tone: "ok" | "warn" | "error"; text: string } | null>(
+    null,
+  );
+  const [pending, startTransition] = useTransition();
+
+  function chooseKind(next: "product" | "category") {
+    setKind(next);
+    setTarget(null);
+    setOptions([]);
+    setQuery("");
+    if (next === "category") {
+      startTransition(async () => setOptions(await listCategoriesForAssign()));
+    }
+  }
+
+  function searchProducts() {
+    startTransition(async () => setOptions(await searchProductsForAssign(query)));
+  }
+
+  function assign() {
+    if (!target) return;
+    setStatus(null);
+    startTransition(async () => {
+      const first =
+        target.kind === "product"
+          ? await assignToProductAction({ assetId: asset.id, productId: target.id, mode })
+          : await assignToCategoryAction({ assetId: asset.id, categoryId: target.id });
+      if (!first.ok) {
+        setStatus({ tone: "error", text: first.message });
+        return;
+      }
+      let outcome = first.value;
+      if (outcome.status === "needs_conversion") {
+        setStatus({ tone: "ok", text: "Converting the image to WebP in your browser…" });
+        const uploaded = await convertAndUpload(asset.id, target);
+        if (!uploaded.ok) {
+          setStatus({ tone: "error", text: uploaded.error });
+          return;
+        }
+        const finalized =
+          target.kind === "product"
+            ? await finalizeProductAssignAction({
+                assetId: asset.id,
+                productId: target.id,
+                mode,
+                storageKey: uploaded.key,
+              })
+            : await finalizeCategoryAssignAction({
+                assetId: asset.id,
+                categoryId: target.id,
+                storageKey: uploaded.key,
+              });
+        if (!finalized.ok) {
+          setStatus({ tone: "error", text: finalized.message });
+          return;
+        }
+        outcome = finalized.value;
+      }
+      if (outcome.status === "assigned") {
+        setStatus(
+          outcome.warning
+            ? { tone: "warn", text: outcome.warning }
+            : { tone: "ok", text: `Assigned to ${target.name}.` },
+        );
+      }
+    });
+  }
+
+  return (
+    <div className="mt-2 space-y-2 rounded-lg border border-black/10 bg-surface-muted p-2">
+      {canAssignCategory && (
+        <div className="flex gap-2" role="radiogroup" aria-label="Assign to">
+          {(["product", "category"] as const).map((option) => (
+            <label key={option} className="flex items-center gap-1 text-primary">
+              <input
+                type="radio"
+                name={`kind-${asset.id}`}
+                checked={kind === option}
+                onChange={() => chooseKind(option)}
+              />
+              {option === "product" ? "Product" : "Category"}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {kind === "product" && (
+        <div className="flex gap-1">
+          <label className="sr-only" htmlFor={`product-q-${asset.id}`}>
+            Find a product
+          </label>
+          <input
+            id={`product-q-${asset.id}`}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Find a product"
+            className="min-w-0 flex-1 rounded-lg border border-black/15 bg-white px-2 py-1 text-primary placeholder:text-primary-subtle focus:border-action focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={searchProducts}
+            disabled={pending || query.trim().length < 2}
+            className="rounded-lg bg-primary px-2 py-1 font-semibold text-white disabled:opacity-50"
+          >
+            Find
+          </button>
+        </div>
+      )}
+
+      {options.length > 0 && (
+        <select
+          aria-label={kind === "product" ? "Product" : "Category"}
+          value={target?.id ?? ""}
+          onChange={(event) => {
+            const chosen = options.find((option) => option.id === event.target.value);
+            setTarget(chosen ? { kind, id: chosen.id, name: chosen.name } : null);
+          }}
+          className="w-full rounded-lg border border-black/15 bg-white px-2 py-1 text-primary"
+        >
+          <option value="">Choose…</option>
+          {options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {kind === "product" && target && (
+        <div className="flex gap-2" role="radiogroup" aria-label="Use as">
+          {(["primary", "additional"] as const).map((option) => (
+            <label key={option} className="flex items-center gap-1 text-primary">
+              <input
+                type="radio"
+                name={`mode-${asset.id}`}
+                checked={mode === option}
+                onChange={() => setMode(option)}
+              />
+              {option === "primary" ? "Main image" : "Extra image"}
+            </label>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={assign}
+          disabled={pending || !target}
+          className="flex-1 rounded-lg bg-action px-3 py-1.5 font-semibold text-white hover:bg-action-hover disabled:opacity-50"
+        >
+          {pending ? "Working…" : "Assign"}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg border border-black/15 bg-white px-3 py-1.5 font-semibold text-primary"
+        >
+          Close
+        </button>
+      </div>
+
+      {status && (
+        <p
+          role={status.tone === "error" ? "alert" : "status"}
+          className={
+            status.tone === "error"
+              ? "text-danger"
+              : status.tone === "warn"
+                ? "text-accent"
+                : "text-action"
+          }
+        >
+          {status.text}
+        </p>
+      )}
+    </div>
+  );
+}

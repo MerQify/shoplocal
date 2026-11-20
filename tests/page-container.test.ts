@@ -50,6 +50,7 @@ const EXPECTED: Record<string, { width: string; padY: string }> = {
   "app/(admin)/staff/feature-catalogue/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/categories/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/icons/page.tsx": { width: "wide", padY: "default" },
+  "app/(admin)/staff/image-library/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/promotions/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/promotions/[id]/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/promotions/new/page.tsx": { width: "wide", padY: "default" },

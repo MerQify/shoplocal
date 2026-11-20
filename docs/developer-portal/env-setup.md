@@ -710,6 +710,30 @@ Until the object exists (or where `CDN_BASE_URL` is unset, e.g. local `preview`)
 back to the Aheed wordmark — never a broken image. SriMart has no logo yet (`logoStorageKey` null →
 wordmark); setting a real one later is data-only, no deploy.
 
+### Merqify Image Hub consumer keys (`#1671`)
+
+The store's image library (`/staff/image-library`) talks to the **Merqify Image Hub**, a separate
+service (`sriahead/merqify-image-hub`). The store needs only two optional Worker secrets:
+
+| Variable | Value |
+|---|---|
+| `IMAGE_HUB_URL` | `https://merqify-image-hub-staging.merqify-image-hub.workers.dev` (staging) or `https://merqify-image-hub-production.merqify-image-hub.workers.dev` (production) |
+| `IMAGE_HUB_API_KEY` | This Worker's own key: `mih_stg_…` or `mih_prd_…`. The other environment's key is refused. |
+
+- **Where keys come from:** the hub operator runs `npm run keys -- create --env <env> --app
+  shoplocal --tenant <vendor-slug> … --scopes read,write,review` in the hub repo. The key prints
+  once; paste it into the matching `secrets/<file>.vars`. One key per store Worker per
+  environment, so each can be revoked alone. The tenant is the store's `Vendor.slug`.
+- **Pushing:** both are in `configure-env`'s optional list. An empty value is skipped, and an
+  environment without them shows "The image library isn't set up yet" and nothing else changes.
+- **`secrets/image-hub-{staging,production}.vars` are NOT store config.** They hold the hub's own
+  Neon, R2 and Cloudflare credentials for the hub operator (`npm run keys`, `secrets:push` in the
+  hub repo). Never copy a value from them into a store vars file, `.env`, `.dev.vars` or a store
+  Worker.
+- **Check a key without printing it:** `npx tsx scripts/verify-image-hub.ts --env-file
+  secrets/merqify-staging.vars` prints `health ok (staging)` and `search ok`. It is read-only, so
+  it proves read access only.
+
 ## Local development (`dev`)
 
 A third environment tier, alongside staging and production — but **local-only**: no `wrangler.toml`

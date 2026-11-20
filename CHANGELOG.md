@@ -6,6 +6,18 @@ every branch merges.
 
 ## [Unreleased]
 
+### Added
+
+- **Image library: the Merqify Image Hub in the staff panel (#1671, phase 1b of #1669, 2026-11-20).**
+  - New `/staff/image-library` (Catalogue). Staff and store admins search, preview and upload. **Store admins only** approve or reject. Staff and admins assign an approved image to a product (main or extra image); store admins assign to a category.
+  - Assigning copies the image into the store's own bucket under a store key and records the usage in the hub. Removing or replacing that image releases the usage. A WebP under 2 MB is copied on the server; anything else is converted to WebP in the staff browser first.
+  - `lib/config` `getImageHubEnv()`: optional `IMAGE_HUB_URL` + `IMAGE_HUB_API_KEY`, both in `configure-env`'s optional list; unset means the page says it is not set up. Hub credentials never enter the store.
+  - `lib/image-hub/` (pure client) and `lib/image-hub-service.ts` (request-scoped facade); routes `/api/admin/image-library/upload` and `/api/admin/image-library/[id]/content`; WebP conversion extracted to `lib/webp-convert.ts`, shared with `ProductImageUploader`.
+  - **Migration** `20261120120000_image_hub_asset_refs`: nullable `hubAssetId`, `hubUsageId` on `ProductImage` and `CategoryAsset` (hand-authored, #895).
+  - `scripts/verify-image-hub.ts`: read-only check that an env file's key reaches the hub.
+  - Docs: staff guide section, env-setup, model-handoff, architecture §3.3, local-dev-playbook (curl error 43; migrate is not a status check); roadmap backfilled with 24 slice and 12 promotion rows.
+  - **Tests:** `lib/image-hub/client.test.ts`, `lib/image-hub-service.test.ts`, `tests/image-hub-unassign.test.ts`, `tests/image-library-routes.test.ts`, `tests/image-library-client.test.tsx`; config tests extended.
+
 ### Fixed
 
 - **Retry database reads on a dropped connection; "Try again" really retries (#1666, 2026-11-18).**

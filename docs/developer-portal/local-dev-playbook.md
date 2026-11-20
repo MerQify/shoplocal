@@ -30,6 +30,14 @@ the evidence and the recipe.
   front-matter on `architecture.md`, `tech-stack.md` and ADR-003; caught only because the diff
   size was implausible, and fixed by `git checkout --` on all three and redoing the edits with the
   Edit tool. **Use the Edit/Write tools for file content; keep PowerShell for git, npm and gh.**
+- **Git Bash's `curl` rejects `-w '%{http_code}'` with error 43 on this machine** (`#1670`, 2026-11-19).
+  The write-out format is mangled before curl sees it, so the call fails as `curl: (43)` and reads
+  like a dead endpoint. Read the status from `curl -sS -i` headers, or the JSON body, instead.
+- **A migrate command is never a status check.** `prisma migrate deploy` / `migrate dev` and
+  `drizzle-kit migrate` APPLY pending migrations; none of them only reports. Running one "to see
+  where we are" migrated the Image Hub's production database during phase 1a's validation
+  (2026-11-19). Check migration state with a read-only query against the migrations table, for
+  example `select count(*) from "_prisma_migrations"`, with the target's `DIRECT_URL`.
 - **Check `git diff --numstat` after any scripted file rewrite.** A line count far larger than the
   edit is the cheapest possible signal that an encoding or line-ending rewrite happened.
 - **A `curl` read of a deployed `/api/health` intermittently fails on this machine, and the failure
