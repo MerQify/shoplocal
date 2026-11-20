@@ -3,21 +3,19 @@
 import { useState, useTransition } from "react";
 import {
   approveLibraryAction,
-  assignToCategoryAction,
-  assignToProductAction,
-  finalizeCategoryAssignAction,
-  finalizeProductAssignAction,
   listCategoriesForAssign,
   rejectLibraryAction,
-  requestCategoryImageUpload,
   searchLibraryAction,
   searchProductsForAssign,
 } from "@/features/admin/image-library";
-import { requestImageUpload } from "@/features/admin/product-image";
 import type { HubAsset, HubPage, HubStatus } from "@/lib/image-hub/client";
-import { IMAGE_CONTENT_TYPE, STORAGE_CACHE_CONTROL_IMMUTABLE } from "@/lib/product-image";
-import { convertToWebp } from "@/lib/webp-convert";
+import { librarySearchSort } from "@/lib/image-hub/search-sort";
 import { ImageLibraryUploader } from "@/components/staff/ImageLibraryUploader";
+import {
+  assignLibraryAsset,
+  libraryContentUrl,
+  type AssignTarget,
+} from "@/components/staff/library-assign";
 
 /**
  * #1671 — the interactive part of `/staff/image-library`.
@@ -55,10 +53,6 @@ const LICENCE_LABELS: Record<string, string> = {
   AI_GENERATED: "AI-generated",
 };
 
-function contentUrl(assetId: string): string {
-  return `/api/admin/image-library/${encodeURIComponent(assetId)}/content`;
-}
-
 export function ImageLibraryClient({
   initialPage,
   initialError,
@@ -78,6 +72,7 @@ export function ImageLibraryClient({
       const next = await searchLibraryAction({
         q: q || undefined,
         status: status || undefined,
+        sort: librarySearchSort(q),
         cursor,
       });
       if (!next.ok) {
@@ -222,7 +217,7 @@ function LibraryCard({
   return (
     <li className="flex flex-col overflow-hidden rounded-xl border border-black/10 bg-white">
       <img
-        src={contentUrl(asset.id)}
+        src={libraryContentUrl(asset.id)}
         alt={asset.alt ?? asset.title}
         loading="lazy"
         className="aspect-square w-full bg-surface-muted object-contain"
@@ -309,47 +304,6 @@ function LibraryCard({
   );
 }
 
-type Target =
-  { kind: "product"; id: string; name: string } | { kind: "category"; id: string; name: string };
-
-/**
- * Converts the asset in this browser and uploads it with a store ticket (R15). Only used when the
- * server answered `needs_conversion` — the asset is not a WebP, or is over the store's cap.
- */
-async function convertAndUpload(
-  assetId: string,
-  target: Target,
-): Promise<{ ok: true; key: string } | { ok: false; error: string }> {
-  const response = await fetch(contentUrl(assetId));
-  if (!response.ok) return { ok: false, error: "The image couldn't be loaded from the library." };
-  let blob: Blob;
-  try {
-    blob = await convertToWebp(await response.blob());
-  } catch (cause) {
-    return {
-      ok: false,
-      error: cause instanceof Error ? cause.message : "That image couldn't be read.",
-    };
-  }
-
-  const ticket =
-    target.kind === "product"
-      ? await requestImageUpload(target.id, blob.size)
-      : await requestCategoryImageUpload(target.id, blob.size);
-  if (!ticket.ok) return { ok: false, error: "error" in ticket ? ticket.error : ticket.message };
-
-  const put = await fetch(ticket.value.url, {
-    method: "PUT",
-    body: blob,
-    headers: {
-      "content-type": IMAGE_CONTENT_TYPE,
-      "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
-    },
-  });
-  if (!put.ok) return { ok: false, error: `The upload was rejected by storage (${put.status}).` };
-  return { ok: true, key: ticket.value.key };
-}
-
 function AssignPanel({
   asset,
   canAssignCategory,
@@ -362,7 +316,7 @@ function AssignPanel({
   const [kind, setKind] = useState<"product" | "category">("product");
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<Array<{ id: string; name: string }>>([]);
-  const [target, setTarget] = useState<Target | null>(null);
+  const [target, setTarget] = useState<AssignTarget | null>(null);
   const [mode, setMode] = useState<"primary" | "additional">("primary");
   const [status, setStatus] = useState<{ tone: "ok" | "warn" | "error"; text: string } | null>(
     null,
@@ -387,48 +341,18 @@ function AssignPanel({
     if (!target) return;
     setStatus(null);
     startTransition(async () => {
-      const first =
-        target.kind === "product"
-          ? await assignToProductAction({ assetId: asset.id, productId: target.id, mode })
-          : await assignToCategoryAction({ assetId: asset.id, categoryId: target.id });
-      if (!first.ok) {
-        setStatus({ tone: "error", text: first.message });
+      const result = await assignLibraryAsset(asset.id, target, mode, (text) =>
+        setStatus({ tone: "ok", text }),
+      );
+      if (!result.ok) {
+        setStatus({ tone: "error", text: result.error });
         return;
       }
-      let outcome = first.value;
-      if (outcome.status === "needs_conversion") {
-        setStatus({ tone: "ok", text: "Converting the image to WebP in your browser…" });
-        const uploaded = await convertAndUpload(asset.id, target);
-        if (!uploaded.ok) {
-          setStatus({ tone: "error", text: uploaded.error });
-          return;
-        }
-        const finalized =
-          target.kind === "product"
-            ? await finalizeProductAssignAction({
-                assetId: asset.id,
-                productId: target.id,
-                mode,
-                storageKey: uploaded.key,
-              })
-            : await finalizeCategoryAssignAction({
-                assetId: asset.id,
-                categoryId: target.id,
-                storageKey: uploaded.key,
-              });
-        if (!finalized.ok) {
-          setStatus({ tone: "error", text: finalized.message });
-          return;
-        }
-        outcome = finalized.value;
-      }
-      if (outcome.status === "assigned") {
-        setStatus(
-          outcome.warning
-            ? { tone: "warn", text: outcome.warning }
-            : { tone: "ok", text: `Assigned to ${target.name}.` },
-        );
-      }
+      setStatus(
+        result.warning
+          ? { tone: "warn", text: result.warning }
+          : { tone: "ok", text: `Assigned to ${target.name}.` },
+      );
     });
   }
 

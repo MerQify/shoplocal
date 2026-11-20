@@ -6,7 +6,16 @@ every branch merges.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Image library post-ship docs (#1671, 2026-11-20).** Corrected `env-setup.md`: `configure-env` re-pushes every secret in a vars file and refuses the AFC cell, so add only the two hub keys with `wrangler secret put`. Also added the image library sanity-check guide (Last run: staging, 2026-11-20); the handoff note that production store Workers do not yet carry the hub keys; the playbook note on driving a client-invoked server action with the `Next-Action` header; and the roadmap row for the staging merge.
+
 ### Added
+
+- **Pick a library image on the product page, ranked by fit (#1678, part of #1669, 2026-11-20).**
+  - `/staff/products/<id>` gains **Choose from library** (staff and store admins; only where the hub is configured). It lists approved library images ranked by relevance to the product's name, brand and category (`lib/image-hub/product-context.ts`), with a prefilled, editable search, **Load more**, and a show-all fallback. Assigning uses the same sequence as the library page, now shared in `components/staff/library-assign.ts`.
+  - `/staff/image-library`'s search ranks by relevance whenever the search box has text.
+  - Needs the hub's `sort=relevance` (merqify-image-hub, #1677). An older hub ignores it and answers newest first.
 
 - **Image library: the Merqify Image Hub in the staff panel (#1671, phase 1b of #1669, 2026-11-20).**
   - New `/staff/image-library` (Catalogue). Staff and store admins search, preview and upload. **Store admins only** approve or reject. Staff and admins assign an approved image to a product (main or extra image); store admins assign to a category.

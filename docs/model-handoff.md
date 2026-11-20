@@ -1265,9 +1265,17 @@ became untracked when that issue closed.
 - **Hub credentials never enter the store.** `secrets/image-hub-{staging,production}.vars` in this
   repo's ignored `secrets/` folder are the hub OPERATOR's files (Neon, R2, Cloudflare for the
   hub). They are never copied into a store vars file or Worker.
+- **Where it stands (2026-11-20):** 1b is merged to `staging` (PR #1676) and validated there.
+  Both staging store Workers carry `IMAGE_HUB_URL` / `IMAGE_HUB_API_KEY`. **The production store
+  Workers do not.** Promotion needs those two secrets set on `aheed-store-production` and
+  `afc-store-production` (owner command; method in env-setup, "Merqify Image Hub consumer keys").
 - **Phases:**
   - 1a: hub service, in hub production.
   - 1b `#1671`: store gallery client, `/staff/image-library`, `specs/2026-11-20-image-hub-gallery/`.
+  - `#1677` (hub `sort=relevance`, `merqify-image-hub` `specs/2026-11-20-ranked-search/`) and
+    `#1678` (product-page "Choose from library", `specs/2026-11-20-product-library-picker/`):
+    built together 2026-11-20. Ship the hub to staging first. Production order: #1671, then the
+    hub, then #1678.
   - 1c `#1674`: import existing store images with provenance.
   - 2–5: AI, licensed search, discovery, WebP sizes. All on `#1669`.
 

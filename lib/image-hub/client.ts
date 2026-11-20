@@ -72,6 +72,8 @@ export interface HubAsset {
   createdAt: string;
   rejectionReason: string | null;
   usages?: HubUsage[];
+  /** Present only on a `sort: "relevance"` search (#1677): the hub's weighted match score. */
+  relevance?: number;
 }
 
 export interface HubPage {
@@ -82,9 +84,16 @@ export interface HubPage {
 export type HubResult<T> =
   { ok: true; value: T } | { ok: false; code: string; message: string; status?: number };
 
+/**
+ * `newest` (the hub's default) matches `q` as one phrase; `relevance` (#1677) matches each word and
+ * orders by score. A hub older than #1677 ignores `sort` and answers newest first.
+ */
+export type HubSearchSort = "newest" | "relevance";
+
 export interface SearchParams {
   q?: string;
   status?: HubStatus;
+  sort?: HubSearchSort;
   cursor?: string;
   limit?: number;
 }
@@ -151,7 +160,7 @@ function assetPath(id: string): string {
   return `/v1/assets/${encodeURIComponent(id)}`;
 }
 
-/** `GET /v1/assets` — newest first, keyset paged by `nextCursor`. */
+/** `GET /v1/assets` — newest first, or by relevance with `sort`; keyset paged by `nextCursor`. */
 export function searchAssets(
   caller: HubCaller,
   params: SearchParams = {},
@@ -159,6 +168,7 @@ export function searchAssets(
   const query = new URLSearchParams();
   if (params.q) query.set("q", params.q);
   if (params.status) query.set("status", params.status);
+  if (params.sort) query.set("sort", params.sort);
   if (params.cursor) query.set("cursor", params.cursor);
   if (params.limit) query.set("limit", String(params.limit));
   const qs = query.toString();

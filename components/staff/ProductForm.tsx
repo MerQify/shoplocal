@@ -6,6 +6,7 @@ import Link from "next/link";
 import { saveProduct } from "@/features/admin/catalogue";
 import { initialCatalogueState, toCategoryOptionGroups } from "@/lib/catalogue-form";
 import { ProductImageUploader } from "@/components/staff/ProductImageUploader";
+import { ProductLibraryPicker } from "@/components/staff/ProductLibraryPicker";
 import {
   ProductImageManager,
   type ProductImageManagerImage,
@@ -70,6 +71,12 @@ export interface ProductFormProps {
    * product shows its own number. Optional: absent means the schema default (3).
    */
   defaultLowStockThreshold?: number;
+  /**
+   * #1678 — the Image Hub picker. Rendered only when `configured`; `contextQuery` (the product's
+   * name, brand and category, from `productContextQuery`) prefills its relevance search. Absent on
+   * the new-product page, which has no Images section.
+   */
+  imageLibrary?: { configured: boolean; contextQuery: string };
 }
 
 export function ProductForm({
@@ -80,6 +87,7 @@ export function ProductForm({
   labels,
   attributes,
   defaultLowStockThreshold = DEFAULT_LOW_STOCK_THRESHOLD,
+  imageLibrary,
 }: ProductFormProps) {
   const anyLabel =
     labels.halal || labels.fresh || labels.organic || labels.vegetarian || labels.glutenFree;
@@ -707,6 +715,18 @@ export function ProductForm({
             </p>
             <ProductImageUploader productId={product.id} productName={product.name} />
           </div>
+          {imageLibrary?.configured && (
+            <div className="border-t border-black/10 pt-4">
+              <p className="mb-1 text-xs font-medium text-primary-muted">
+                Or pick an approved image from the library (closest matches first)
+              </p>
+              <ProductLibraryPicker
+                productId={product.id}
+                productName={product.name}
+                contextQuery={imageLibrary.contextQuery}
+              />
+            </div>
+          )}
         </section>
       )}
     </>
