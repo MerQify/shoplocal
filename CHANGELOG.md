@@ -12,6 +12,11 @@ every branch merges.
 
 ### Added
 
+- **Pick a library image on the product page, ranked by fit (#1678, part of #1669, 2026-11-20).**
+  - `/staff/products/<id>` gains **Choose from library** (staff and store admins; only where the hub is configured). It lists approved library images ranked by relevance to the product's name, brand and category (`lib/image-hub/product-context.ts`), with a prefilled, editable search, **Load more**, and a show-all fallback. Assigning uses the same sequence as the library page, now shared in `components/staff/library-assign.ts`.
+  - `/staff/image-library`'s search ranks by relevance whenever the search box has text.
+  - Needs the hub's `sort=relevance` (merqify-image-hub, #1677). An older hub ignores it and answers newest first.
+
 - **Image library: the Merqify Image Hub in the staff panel (#1671, phase 1b of #1669, 2026-11-20).**
   - New `/staff/image-library` (Catalogue). Staff and store admins search, preview and upload. **Store admins only** approve or reject. Staff and admins assign an approved image to a product (main or extra image); store admins assign to a category.
   - Assigning copies the image into the store's own bucket under a store key and records the usage in the hub. Removing or replacing that image releases the usage. A WebP under 2 MB is copied on the server; anything else is converted to WebP in the staff browser first.

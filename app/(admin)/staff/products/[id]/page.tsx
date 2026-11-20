@@ -8,6 +8,8 @@ import { listCategoriesForAdmin } from "@/lib/categories-service";
 import { getBrandRepository } from "@/lib/brands-service";
 import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { ProductForm } from "@/components/staff/ProductForm";
+import { isImageLibraryConfigured } from "@/lib/image-hub-service";
+import { productContextQuery } from "@/lib/image-hub/product-context";
 import { fetchVendorProfile } from "@/lib/vendor-service";
 import { labelSettingsFromProfile } from "@/lib/product-label-settings";
 import { listAttributeDefinitions } from "@/lib/attributes-service";
@@ -60,6 +62,16 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   ]);
   if (!product) notFound();
 
+  // #1678 — the library picker's starting search, from data this page already holds.
+  const imageLibrary = {
+    configured: await isImageLibraryConfigured(),
+    contextQuery: productContextQuery({
+      name: product.name,
+      brandName: brands.find((brand) => brand.id === product.brandId)?.name,
+      categoryName: categories.find((category) => category.id === product.categoryId)?.name,
+    }),
+  };
+
   const cdnBaseUrl = getEnv().CDN_BASE_URL ?? "";
   const imageUrls = product.images.map((image) => ({
     id: image.id,
@@ -82,6 +94,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         labels={labelSettingsFromProfile(profile)}
         attributes={attributes}
         imageUrls={imageUrls}
+        imageLibrary={imageLibrary}
       />
       <ProductRestrictionPanel
         productId={product.id}
