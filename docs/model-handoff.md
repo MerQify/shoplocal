@@ -53,11 +53,12 @@ reconciliation. If overall project state did not materially change, leave this f
       after-sign-in once `#1689` is fixed, to save Neon compute.
     - Evidence and the leading suspect (Prisma's module-level WASM loader) are on the issue. The
       `ErrorEvent` table holds the stack.
-  - **In flight:** `#1690`/`#1691`/`#1693` checkout and cancellation fixes.
-    - Branch `feature/1690-checkout-cancellation`, worktree `E:\GitRepositories\aheed-wt-1690` (real
-      `node_modules`).
-    - Built; validation next. State: `specs/2026-11-20-checkout-cancellation-fixes/build-notes.md`.
-    - Carries an additive migration.
+  - **`#1690`/`#1691`/`#1693` checkout and cancellation fixes are MERGED TO STAGING** (PR #1698,
+    `85945d8`, board `In Review`). The additive migration is applied on both staging cells.
+    - Validated in the building session, so not independent.
+    - **Owed before promotion:** the owner's live steps 3-6 in `docs/operations-research/order-fulfilment-core.md`
+      §5 (on branch `docs/1690-post-ship` until the next slice merges): test-card payment, a
+      cancellation email, and Telegram.
 - **2026-11-15: AFC go-live staging check, and `#1605` in flight.**
   - **Owner goal: go live ASAP.**
     - **Go-live path:** `#1344` checklist → `#1332` demo accounts deleted last.
