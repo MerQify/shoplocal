@@ -14,6 +14,7 @@ import {
   type DeliveryRules,
 } from "@/lib/order-totals";
 import { CHECKOUT_SESSION_TTL_MS, getPaymentService } from "@/lib/payments";
+import { normalizeCaughtError, recordErrorEvent } from "@/lib/repositories/error-events";
 import { PURCHASABILITY_SELECT, purchasableQuantity } from "@/lib/cart-rules";
 import {
   buildStaffTimeline,
@@ -27,6 +28,8 @@ import {
   type TimelineEntry,
 } from "@/lib/order-status";
 import { Prisma } from "@prisma/client";
+import type { CancellationMessage, CancellationReason } from "@prisma/client/wasm";
+import type { CancellationNotice } from "@/lib/order-notifications/next-step";
 import {
   awardReferralBonusPoints,
   earnPoints,
@@ -79,7 +82,8 @@ export class CheckoutError extends Error {
       | "DISCOUNT_CODE"
       | "SLOT_FULL"
       | "SLOT_CLOSED"
-      | "STORE_CLOSED",
+      | "STORE_CLOSED"
+      | "BELOW_PAYMENT_MINIMUM",
     message: string,
     /**
      * #988 — why a `DISCOUNT_CODE` refusal happened, so the caller can tell an unknown code (which
@@ -164,6 +168,24 @@ const ORDER_NUMBER_ATTEMPTS = 5;
 /** Written before the provider is contacted; overwritten once a session exists. */
 const PENDING_PROVIDER = "pending";
 const CURRENCY = "GBP";
+
+/**
+ * #1691 — a staff cancellation's customer-facing choices, stored on its CANCELLED status event.
+ * `customerMessage` is non-null only for `CUSTOM` with text (the action trims and nulls it).
+ */
+export interface CancellationChoices {
+  reason: CancellationReason;
+  message: CancellationMessage;
+  customerMessage: string | null;
+}
+
+/** #1690 R2 — the refusal for a total the payment provider will not charge. */
+export function belowPaymentMinimumMessage(minimumMinor: number, currency: string): string {
+  const amount = new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(
+    minimumMinor / 100,
+  );
+  return `Card payments need a total of at least ${amount}.`;
+}
 
 /**
  * Creates an order from a cart, atomically.
@@ -497,6 +519,18 @@ export async function placeOrder(
         input.fulfilmentMethod,
       );
 
+      // #1690 R2 — the provider refuses a session below its minimum (Stripe: 30p in GBP), and
+      // before this every such attempt created an order only to cancel it with a misleading
+      // "couldn't reach our payment provider". Thrown inside the transaction, so the stock,
+      // points and code claims above roll back with it and no row survives.
+      const paymentMinimum = payments.minimumAmount?.(CURRENCY) ?? null;
+      if (paymentMinimum !== null && totals.totalPence < paymentMinimum) {
+        throw new CheckoutError(
+          "BELOW_PAYMENT_MINIMUM",
+          belowPaymentMinimumMessage(paymentMinimum, CURRENCY),
+        );
+      }
+
       const vatBreakdown = computeVatBreakdown(
         lines.map((l) => ({
           unitPricePence: l.unitPricePence,
@@ -708,6 +742,27 @@ export async function placeOrder(
       confirmationToken: created.confirmationToken,
     };
   } catch (error) {
+    // #1690 R5/R6 — say WHY. The shopper still gets the safe message below, but Stripe's own
+    // status and body (no secret in either) were thrown away here, so a refusal such as
+    // `amount_too_small` was invisible in the logs and in ErrorEvent. Recording can never change
+    // the outcome: a failed write is swallowed, and the compensation below runs regardless.
+    const { message, stack } = normalizeCaughtError(error);
+    const logged = `[payments] createPayment failed for order ${created.orderNumber}: ${message}`;
+    console.error(logged);
+    try {
+      await recordErrorEvent(prisma, {
+        message: logged,
+        stack,
+        digest: null,
+        path: "/checkout",
+        method: "POST",
+        routerKind: "App Router",
+        routeType: "action",
+      });
+    } catch {
+      // Logged above already; an ErrorEvent outage must not replace PAYMENT_PROVIDER_FAILED.
+    }
+
     const cancelled = await releaseOrder(
       prisma,
       vendorId,
@@ -902,7 +957,16 @@ async function restoreCartFromOrder(
 const ORDER_TRACKER_SELECT = {
   fulfilmentDate: true,
   fulfilmentSlot: { select: { startTime: true, endTime: true } },
-  statusEvents: { select: { status: true, createdAt: true } },
+  // #1691 — the cancellation choices ride along for the CANCELLED wording; `note` still never does.
+  statusEvents: {
+    select: {
+      status: true,
+      createdAt: true,
+      cancellationReason: true,
+      cancellationMessage: true,
+      customerMessage: true,
+    },
+  },
 } as const;
 
 const ORDER_PROVENANCE_SELECT = {
@@ -1022,6 +1086,8 @@ export interface OrderListPage {
 /** An owned order plus its customer-facing timeline (P4a, #122). */
 export interface OrderDetail extends OrderSummary {
   timeline: TimelineEntry[];
+  /** #1691 — the latest staff cancellation's choices, or null; picks the CANCELLED wording. */
+  cancellation: CancellationNotice | null;
   /** #1435 — `Friday 6 November, 10:00–12:00`, or null without a slot. */
   slotLabel: string | null;
 }
@@ -1315,6 +1381,7 @@ export async function findOrderForViewer(
     hasAccount: ownerId !== null,
     customerEmail: guestEmail ?? user?.email ?? null,
     timeline: buildTimeline(statusEvents),
+    cancellation: latestCancellationNotice(statusEvents),
     slotLabel: slotLabel(fulfilmentDate, fulfilmentSlot),
   };
 }
@@ -1415,6 +1482,7 @@ export async function findOrderForUser(
     hasAccount: true,
     customerEmail: user?.email ?? null,
     timeline: buildTimeline(statusEvents),
+    cancellation: latestCancellationNotice(statusEvents),
     slotLabel: slotLabel(fulfilmentDate, fulfilmentSlot),
   };
 }
@@ -1853,6 +1921,57 @@ export interface WebhookOrder {
    * to staff, never put in an owner message.
    */
   confirmationToken: string | null;
+  /**
+   * #1691 — the latest CANCELLED event's staff choices, for the cancellation email's wording. Null
+   * when the order has no such event or it predates #1691. Optional only so hand-built doubles
+   * that predate it still type-check; `findOrderForWebhook` always sets it.
+   */
+  cancellation?: CancellationNotice | null;
+}
+
+/** #1691 — the select both order readers use for the latest CANCELLED event's choices. */
+const LATEST_CANCELLATION_SELECT = {
+  where: { status: "CANCELLED" as const },
+  orderBy: { createdAt: "desc" as const },
+  take: 1,
+  select: { cancellationReason: true, cancellationMessage: true, customerMessage: true },
+};
+
+/** #1691 — the newest CANCELLED event's choices out of a whole timeline's events. */
+function latestCancellationNotice(
+  events:
+    | readonly {
+        status: string;
+        createdAt: Date;
+        cancellationReason: CancellationReason | null;
+        cancellationMessage: CancellationMessage | null;
+        customerMessage: string | null;
+      }[]
+    | undefined,
+): CancellationNotice | null {
+  const cancelled = (events ?? [])
+    .filter((event) => event.status === "CANCELLED")
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  return toCancellationNotice(cancelled);
+}
+
+function toCancellationNotice(
+  events:
+    | readonly {
+        cancellationReason: CancellationReason | null;
+        cancellationMessage: CancellationMessage | null;
+        customerMessage: string | null;
+      }[]
+    | undefined,
+): CancellationNotice | null {
+  // `?.`: hand-built client doubles in older tests return orders without the relation.
+  const latest = events?.[0];
+  if (!latest || latest.cancellationMessage === null) return null;
+  return {
+    reason: latest.cancellationReason,
+    message: latest.cancellationMessage,
+    customerMessage: latest.customerMessage,
+  };
 }
 
 /**
@@ -1897,15 +2016,18 @@ export async function findOrderForWebhook(
           vatPence: true,
         },
       },
+      statusEvents: LATEST_CANCELLATION_SELECT,
       ...ORDER_PROVENANCE_SELECT,
     },
   });
 
   if (!order) return null;
 
-  const { guestEmail, user, discountUse, loyaltyEntries, fulfilmentMethod, ...rest } = order;
+  const { guestEmail, user, discountUse, loyaltyEntries, fulfilmentMethod, statusEvents, ...rest } =
+    order;
   return {
     ...rest,
+    cancellation: toCancellationNotice(statusEvents),
     fulfilmentMethod: fulfilmentMethod as "DELIVERY" | "COLLECTION",
     ...toProvenance({ discountUse, loyaltyEntries }),
     buyerEmail: guestEmail ?? user?.email ?? null,
@@ -2227,6 +2349,7 @@ export async function cancelConfirmedOrder(
   orderId: string,
   reason: string,
   actorUserId: string | null,
+  choices: CancellationChoices | null = null,
 ): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
     const { count } = await tx.order.updateMany({
@@ -2292,6 +2415,10 @@ export async function cancelConfirmedOrder(
         status: "CANCELLED",
         note: reason,
         createdByUserId: actorUserId,
+        // #1691 — what the customer is told; null leaves the original wording.
+        cancellationReason: choices?.reason ?? null,
+        cancellationMessage: choices?.message ?? null,
+        customerMessage: choices?.customerMessage ?? null,
       },
     });
 
@@ -2336,6 +2463,8 @@ export interface GuestLookupOrder {
   fulfilmentMethod: "DELIVERY" | "COLLECTION";
   slotLabel: string | null;
   timeline: TimelineEntry[];
+  /** #1691 — as `OrderDetail.cancellation`. */
+  cancellation: CancellationNotice | null;
 }
 
 /**
@@ -2375,6 +2504,7 @@ export async function findOrderForGuestLookup(
     fulfilmentMethod: fulfilmentMethod as "DELIVERY" | "COLLECTION",
     slotLabel: slotLabel(fulfilmentDate, fulfilmentSlot),
     timeline: buildTimeline(statusEvents),
+    cancellation: latestCancellationNotice(statusEvents),
   };
 }
 

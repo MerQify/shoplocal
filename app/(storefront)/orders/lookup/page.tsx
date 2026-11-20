@@ -189,6 +189,7 @@ export default async function OrderLookupPage({ searchParams }: LookupPageProps)
               fulfilmentMethod={orderResult.fulfilmentMethod}
               timeline={orderResult.timeline}
               slotLabel={orderResult.slotLabel}
+              cancellation={orderResult.cancellation}
             />
 
             {/* Items Summary */}

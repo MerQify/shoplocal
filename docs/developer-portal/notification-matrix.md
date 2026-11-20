@@ -4,8 +4,8 @@ title: "Notification matrix — which email or alert is sent when"
 audience: [dev, platform-admin, store-admin, staff]
 type: doc
 status: approved
-version: "1.5.1"
-updated: 2026-11-14
+version: "1.6.0"
+updated: 2026-11-20
 visibility: internal
 summary: Every customer email, owner email and Telegram alert the platform sends — the event that triggers it, who receives it, what stops a duplicate, and the code that sends it. The one place to answer "will anyone be told when X happens?".
 tags: [notifications, email, telegram, operations]
@@ -25,7 +25,7 @@ need, and link here for the rest. When you add or change a notification, update 
 | 2 | **Out for delivery** (staff status change) | Yes | Yes | Yes | Transactional |
 | 3 | **Ready for collection** | Yes | Yes | Yes | Transactional |
 | 4 | **Delivered** / **Collected** | Yes, with points earned | Yes | Yes | Transactional |
-| 5 | **Cancelled by staff** | Yes: points and code returned; charge not yet refunded | Yes | Yes | Transactional |
+| 5 | **Cancelled by staff** | Yes: wording follows the admin's choices (who asked; refunded, not yet, or their own message — `#1691`) | Yes | Yes | Transactional |
 | 6 | **Bulk status change** (several orders at once) | One per order | One digest per status | One digest per status | Transactional |
 | 7 | **Payment failed** (asynchronous method, e.g. bank debit) | Yes: "no money has been taken" | Yes: "Payment failed" | Yes | Transactional |
 | 8 | **Checkout expired** (abandoned, never paid) | **No** automatic email | No | No | — (listed in `/staff/abandoned-checkouts`) |

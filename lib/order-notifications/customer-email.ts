@@ -89,7 +89,7 @@ export function buildCustomerEmail(input: CustomerEmailInput): RenderedEmail {
     input.overrides,
   );
   const label = slotLabel(order.fulfilmentDate, order.fulfilmentSlot);
-  const next = nextStepText(event, order.fulfilmentMethod, order.orderNumber);
+  const next = nextStepText(event, order.fulfilmentMethod, order.orderNumber, order.cancellation);
   const slot = slotSentence(event, order.fulfilmentMethod, label);
 
   const facts = [{ label: "Order number", value: order.orderNumber }];
@@ -106,6 +106,11 @@ export function buildCustomerEmail(input: CustomerEmailInput): RenderedEmail {
       kind: "callout",
       title: "What happens next",
       text: slot ? `${next} ${slot}` : next,
+      // #1691 R15 — a staff-written message is rendered exactly as typed, never as markup.
+      verbatim:
+        event === "CANCELLED" &&
+        order.cancellation?.message === "CUSTOM" &&
+        (order.cancellation.customerMessage?.trim() ?? "") !== "",
     });
   }
   blocks.push(itemBlock(order, event));

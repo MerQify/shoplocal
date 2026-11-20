@@ -1,5 +1,9 @@
 import { formatOrderDateTime, type TimelineEntry } from "@/lib/order-status";
-import { nextStepText, slotSentence } from "@/lib/order-notifications/next-step";
+import {
+  nextStepText,
+  slotSentence,
+  type CancellationNotice,
+} from "@/lib/order-notifications/next-step";
 
 /**
  * The order's progress, every step of its own path shown — including the ones still to come
@@ -36,6 +40,11 @@ export interface OrderProgressTrackerProps {
   fulfilmentMethod: Method;
   timeline: TimelineEntry[];
   slotLabel: string | null;
+  /**
+   * #1691 — a staff cancellation's choices, for the CANCELLED wording (the email reads the same
+   * table). A custom message renders as a text node, so it can never become markup.
+   */
+  cancellation?: CancellationNotice | null;
 }
 
 function latestAt(timeline: TimelineEntry[], status: string): Date | null {
@@ -49,8 +58,9 @@ export function OrderProgressTracker({
   fulfilmentMethod,
   timeline,
   slotLabel,
+  cancellation = null,
 }: OrderProgressTrackerProps) {
-  const next = nextStepText(status, fulfilmentMethod, orderNumber);
+  const next = nextStepText(status, fulfilmentMethod, orderNumber, cancellation);
   const slot = slotSentence(status, fulfilmentMethod, slotLabel);
 
   if (status === "CANCELLED") {
@@ -64,7 +74,7 @@ export function OrderProgressTracker({
           </p>
         </div>
         {at && <p className="text-xs text-primary-muted">{formatOrderDateTime(at)}</p>}
-        {next && <p className="mt-3 text-sm text-primary-muted">{next}</p>}
+        {next && <p className="mt-3 whitespace-pre-line text-sm text-primary-muted">{next}</p>}
       </section>
     );
   }

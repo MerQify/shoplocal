@@ -121,7 +121,9 @@ describe("telegramAdapter (R6)", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it("(b, c) posts chat_id and text only, with a timeout signal, and reports sent", async () => {
+  // #1693 R16 — link_preview_options is the one addition; still no parse_mode, so the text stays
+  // plain and a customer-typed `*` or `<` cannot reformat an alert.
+  it("(b, c) posts chat_id, text and a disabled link preview, with a timeout signal, and reports sent", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse(200, { ok: true, result: {} }));
     const result = await telegramAdapter(SET, fetchImpl as unknown as typeof fetch).send(
       "-1001234",
@@ -131,8 +133,16 @@ describe("telegramAdapter (R6)", () => {
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.telegram.org/bot123:SECRET/sendMessage");
     expect(init.method).toBe("POST");
-    expect(Object.keys(JSON.parse(String(init.body))).sort()).toEqual(["chat_id", "text"]);
-    expect(JSON.parse(String(init.body))).toEqual({ chat_id: "-1001234", text: "hello" });
+    expect(Object.keys(JSON.parse(String(init.body))).sort()).toEqual([
+      "chat_id",
+      "link_preview_options",
+      "text",
+    ]);
+    expect(JSON.parse(String(init.body))).toEqual({
+      chat_id: "-1001234",
+      text: "hello",
+      link_preview_options: { is_disabled: true },
+    });
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 

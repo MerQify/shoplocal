@@ -1853,7 +1853,30 @@ model OrderStatusEvent {
   createdByUserId String?
   createdBy       User?   @relation("OrderStatusEventActor", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
+  // #1691 — set only on a STAFF cancellation (`cancelOrderStaff`): who asked, and what the
+  // customer is told about the money. They pick the customer-facing "what happens next" wording
+  // (`lib/order-notifications/next-step.ts`). `customerMessage` is the staff-written text shown to
+  // the customer when the choice is CUSTOM; `note` stays the internal reason, never shown. Null on
+  // every other event, and on cancellations made before #1691, which keep the original wording.
+  cancellationReason  CancellationReason?
+  cancellationMessage CancellationMessage?
+  customerMessage     String?
+
   @@index([orderId])
+}
+
+/// #1691 — who asked for a staff cancellation.
+enum CancellationReason {
+  CUSTOMER_REQUEST
+  STORE_UNABLE
+  OTHER
+}
+
+/// #1691 — what a staff cancellation tells the customer about their money.
+enum CancellationMessage {
+  REFUNDED
+  NOT_REFUNDED
+  CUSTOM
 }
 
 // ---- P5a — loyalty points (#135, specs/2026-08-11-p5a-loyalty-points/) --------

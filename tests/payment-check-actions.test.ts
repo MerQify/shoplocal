@@ -70,7 +70,7 @@ describe("checkMyPayment (R23)", () => {
       { kind: "not-pending" },
       { kind: "no-session" },
       { kind: "provider-error" },
-      { kind: "not-paid", sessionStatus: "open", paymentStatus: "unpaid" },
+      { kind: "not-paid", sessionId: "cs_test_1", sessionStatus: "open", paymentStatus: "unpaid" },
       { kind: "refused", reason: "binding-mismatch" },
     ];
     for (const outcome of outcomes) {
@@ -101,7 +101,12 @@ describe("checkPaymentNow (R28)", () => {
       { kind: "not-pending" },
       { kind: "no-session" },
       { kind: "provider-error" },
-      { kind: "not-paid", sessionStatus: "expired", paymentStatus: "unpaid" },
+      {
+        kind: "not-paid",
+        sessionId: "cs_test_1",
+        sessionStatus: "expired",
+        paymentStatus: "unpaid",
+      },
       { kind: "confirmed" },
       { kind: "refused", reason: "binding-mismatch" },
     ];

@@ -438,3 +438,56 @@ describe("isPastCheckoutSessionTtl (#1589 R2)", () => {
     expect(isPastCheckoutSessionTtl(createdAt, at(CHECKOUT_SESSION_TTL_MS + 1))).toBe(true);
   });
 });
+
+describe("provider minimum (#1690 R1)", () => {
+  it("Stripe returns its published minimum for GBP, EUR and USD in minor units, any case", () => {
+    const stripe = createStripePaymentService("sk_test_123");
+    expect(stripe.minimumAmount?.("GBP")).toBe(30);
+    expect(stripe.minimumAmount?.("gbp")).toBe(30);
+    expect(stripe.minimumAmount?.("eur")).toBe(50);
+    expect(stripe.minimumAmount?.("usd")).toBe(50);
+  });
+
+  it("Stripe has no minimum for a currency outside its table", () => {
+    expect(createStripePaymentService("sk_test_123").minimumAmount?.("jpy")).toBeNull();
+  });
+
+  it("the stub has no minimum", () => {
+    expect(createStubPaymentService().minimumAmount?.("gbp")).toBeNull();
+  });
+});
+
+describe("expireSession (#1690 R7)", () => {
+  it("POSTs to the session's /expire path, id URL-encoded, with the key and pinned version", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ id: "cs_test_a/b", status: "expired" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createStripePaymentService("sk_test_123").expireSession?.("cs_test_a/b");
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.stripe.com/v1/checkout/sessions/cs_test_a%2Fb/expire");
+    expect(init.method).toBe("POST");
+    expect(init.headers).toMatchObject({
+      Authorization: "Bearer sk_test_123",
+      "Stripe-Version": "2025-09-30.clover",
+    });
+  });
+
+  it("rejects with PaymentProviderError carrying the status on a non-2xx response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("no such session", { status: 404 })),
+    );
+
+    const attempt = createStripePaymentService("sk_test_123").expireSession?.("cs_x");
+    await expect(attempt).rejects.toBeInstanceOf(PaymentProviderError);
+    await expect(attempt).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("the stub resolves and calls nothing", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(createStubPaymentService().expireSession?.("cs_x")).resolves.toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
