@@ -83,8 +83,11 @@ R9. `GET /api/admin/image-library/[id]/content`:
 ## Upload
 
 R10. `components/staff/ProductImageUploader.tsx` and the library's uploader import the same
-     WebP-conversion function from one module. No second `canvas.toBlob(` call exists under
-     `components/` or `lib/` outside that module.
+     WebP-conversion function from one module, and neither file contains its own `canvas.toBlob(`
+     call. (Amended at Build: seven other uploaders, `BundleImageUploader`,
+     `CampaignBannerUploader`, `ProductImageManager`, `PromotionForm`, `VendorLogoUploader`,
+     `VendorMarkUploader` and `WhatsappQrUploader`, each keep their own copy. Consolidating them
+     is outside this slice.)
 R11. `POST /api/admin/image-library/upload` (multipart):
      - **Auth:** 401 without a session, 403 for a customer.
      - **Refused with 400** when the file is not `image/webp`, exceeds `MAX_IMAGE_BYTES`
