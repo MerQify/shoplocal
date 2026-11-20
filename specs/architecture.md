@@ -4,8 +4,8 @@ title: System Architecture — Merqify Platform
 audience: [dev]
 type: doc
 status: approved
-version: "1.49.0"
-updated: 2026-11-12
+version: "1.50.0"
+updated: 2026-11-20
 visibility: internal
 summary: The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design.
 tags: [architecture, cloudflare, neon, clean-architecture, multi-tenancy]
@@ -559,6 +559,23 @@ be the first cron trigger in `wrangler.toml`).
 
 Because the key is relative and the base URL is env-resolved, moving buckets or CDNs is a config
 change, not a data migration of DB rows (see §4.2).
+
+**Images from the Merqify Image Hub are copied, never served from the hub (`#1671`, 2026-11-20).**
+The hub (`sriahead/merqify-image-hub`, its own Cloudflare account and Neon project) is a shared,
+reviewed image library that stores consume over its `/v1` API. Its client is `lib/image-hub/` and
+its only request-scoped caller is `lib/image-hub-service.ts`. The store holds only
+`IMAGE_HUB_URL` and its own `IMAGE_HUB_API_KEY`, never a hub credential.
+- **Assigning an approved hub image** writes its bytes into the store's own bucket under a store
+  key (`buildProductImageKey` / `buildCategoryImageKey`), then writes the row. The hub's key is
+  never stored, so the storefront never depends on the hub being up. A WebP within
+  `MAX_IMAGE_BYTES` is copied on the server; anything else is converted in the staff browser
+  (`lib/webp-convert.ts`) and uploaded through the usual presigned PUT.
+- **Provenance:** `ProductImage` and `CategoryAsset` carry nullable `hubAssetId` / `hubUsageId`
+  (plain text, no foreign key: separate service). Removing or replacing such an image deletes its
+  hub usage, best effort.
+- **Previews:** staff previews stream through the same-origin
+  `/api/admin/image-library/[id]/content`, so the hub bucket needs neither CSP `img-src` nor
+  CORS.
 
 ### 3.4 Performance strategy (target: ~1,000 orders/day, mobile-first)
 
