@@ -59,7 +59,10 @@ export async function isRegisteredForwardTo(prisma: Db, address: string): Promis
     select: { forwardTo: true },
   });
   return rows.some((row) =>
-    row.forwardTo.split(",").map((s) => s.trim().toLowerCase()).includes(target),
+    row.forwardTo
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .includes(target),
   );
 }
 

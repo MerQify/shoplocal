@@ -156,7 +156,12 @@ function ForwardToSelect({
   const [initial] = useState(() => initialForwardChoice(defaultForward, verified));
   const [choice, setChoice] = useState(initial.choice);
   const [selectedMultiple, setSelectedMultiple] = useState<string[]>(() =>
-    initial.other ? initial.other.split(",").map((s) => s.trim()).filter(Boolean) : [],
+    initial.other
+      ? initial.other
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [],
   );
   const customInputRef = useRef<HTMLInputElement>(null);
   const isOther = choice === OTHER;

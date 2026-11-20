@@ -134,7 +134,9 @@ export async function createDestinationAddress(
       ok: true,
       address: {
         email:
-          typeof body.result?.email === "string" ? body.result.email.trim().toLowerCase() : normalized,
+          typeof body.result?.email === "string"
+            ? body.result.email.trim().toLowerCase()
+            : normalized,
         verified: typeof body.result?.verified === "string" && body.result.verified.length > 0,
       },
     };
@@ -144,4 +146,3 @@ export async function createDestinationAddress(
     clearTimeout(timer);
   }
 }
-

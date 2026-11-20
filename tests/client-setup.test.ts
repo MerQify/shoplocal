@@ -323,9 +323,7 @@ describe("forwardTargetsVerified (#1392 R11)", () => {
       { email: "hub@inbox.test", verified: true },
       { email: "shop@inbox.test", verified: true },
     ]);
-    expect(
-      forwardTargetsVerified(rows("hub@inbox.test, shop@inbox.test"), dest),
-    ).toBe(true);
+    expect(forwardTargetsVerified(rows("hub@inbox.test, shop@inbox.test"), dest)).toBe(true);
   });
 
   it("is false when a comma-separated forward-to contains an unverified target", () => {
@@ -333,9 +331,7 @@ describe("forwardTargetsVerified (#1392 R11)", () => {
       { email: "hub@inbox.test", verified: true },
       { email: "shop@inbox.test", verified: false },
     ]);
-    expect(
-      forwardTargetsVerified(rows("hub@inbox.test, shop@inbox.test"), dest),
-    ).toBe(false);
+    expect(forwardTargetsVerified(rows("hub@inbox.test, shop@inbox.test"), dest)).toBe(false);
   });
 
   it("is false when one forward-to is verified and another is not", () => {

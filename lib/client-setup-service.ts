@@ -192,9 +192,7 @@ export async function saveVendorSender(
   return updateVendorSender(getPrisma(), vendorId, data);
 }
 
-export async function sendDestinationVerification(
-  email: string,
-): Promise<CreateDestinationResult> {
+export async function sendDestinationVerification(email: string): Promise<CreateDestinationResult> {
   const ai = readOptional(getAiEnv);
   return createDestinationAddress(
     { accountId: ai?.CLOUDFLARE_ACCOUNT_ID, token: ai?.CLOUDFLARE_API_TOKEN },

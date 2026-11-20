@@ -208,7 +208,9 @@ describe("createDestinationAddress", () => {
     });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     const [url, init] = fetchImpl.mock.calls[0];
-    expect(url).toBe("https://api.cloudflare.com/client/v4/accounts/acct123/email/routing/addresses");
+    expect(url).toBe(
+      "https://api.cloudflare.com/client/v4/accounts/acct123/email/routing/addresses",
+    );
     expect(init.method).toBe("POST");
     expect(init.headers).toEqual({
       Authorization: `Bearer ${TOKEN}`,
@@ -243,4 +245,3 @@ describe("createDestinationAddress", () => {
     expect(result).toEqual({ ok: false, reason: "error" });
   });
 });
-
