@@ -125,7 +125,7 @@ Telegram chat.
    session), expect status **Expired**, not Open.
 5. **Cancellation email.** Pay a test order with a test card. As an admin, cancel it with **Customer
    asked** + **Refunded in full**.
-   - The email opens "Order <number> has been cancelled." and its "What happens next" box reads "As
+   - The email opens "Order `<number>` has been cancelled." and its "What happens next" box reads "As
      you asked, we've cancelled this order. Your payment has been refunded in full…".
    - The customer's `/account/orders/<number>` shows the same text.
    - Neither shows the internal reason, and neither says "sorry".
