@@ -5,9 +5,13 @@ import { fetchVendorProfile } from "@/lib/vendor-service";
 import {
   addProductImage,
   getProductForAdmin,
+  listProductsForAdmin,
   setPrimaryProductImage,
   setProductImageHubUsage,
 } from "@/lib/products-service";
+import { getVendorAiMeter } from "@/lib/ai-meter-service";
+import { describeAiBudgetRefusal } from "@/lib/ai-meter";
+import { getImageGenerationService, IMAGE_GENERATION_MODEL } from "@/lib/image-generation";
 import { getCategoryForAdmin } from "@/lib/categories-service";
 import {
   createCategoryAssetForVendor,
@@ -738,6 +742,129 @@ export async function importDiscoveredImageToHub(
     attribution: image.attribution,
     originalUrl: image.originalUrl,
     sourceSite: image.sourceSite,
+    rightsConfirmed: true,
+    status: "PENDING_REVIEW",
+  });
+
+  if (!imported.ok) return imported;
+  return { ok: true, value: imported.value.asset };
+}
+
+export interface AiPromptProductCandidate {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  categoryName?: string | null;
+}
+
+/**
+ * #1701 — List up to 15 products for prompt crafting, including both active and inactive products.
+ */
+export async function listProductsForAiPrompt(
+  vendorId: string,
+  q: string,
+): Promise<AiPromptProductCandidate[]> {
+  const term = q.trim();
+  const page = await listProductsForAdmin(vendorId, {
+    take: 15,
+    ...(term ? { search: term } : {}),
+  });
+  return page.items.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    isActive: p.isActive,
+    categoryName: p.categoryName ?? null,
+  }));
+}
+
+export interface GenerateAiImageInput {
+  prompt: string;
+  productId?: string;
+  title?: string;
+}
+
+/**
+ * #1701 — Generate commercial product photography via Workers AI and import into the Image Hub as PENDING_REVIEW.
+ * Requires STAFF or ADMIN role, verifies and debits daily AI meter, and preserves full AI provenance.
+ */
+export async function generateAiImageForLibrary(
+  input: GenerateAiImageInput,
+): Promise<LibraryResult<HubAsset>> {
+  const auth = await requireVendorRole(...STAFF_AND_ADMIN);
+  if (!auth.ok) {
+    return {
+      ok: false,
+      code: auth.reason,
+      status: auth.status,
+      message:
+        auth.status === 401
+          ? "Please sign in to use the image library."
+          : "Only store staff and admins can generate images.",
+    };
+  }
+
+  const resolved = await resolveCaller(auth, STAFF_AND_ADMIN);
+  if (!resolved.ok) return resolved;
+
+  const trimmedPrompt = input.prompt.trim();
+  if (!trimmedPrompt) {
+    return {
+      ok: false,
+      code: "validation",
+      status: 400,
+      message: "A prompt is required to generate an image.",
+    };
+  }
+
+  const meter = getVendorAiMeter(auth.vendorId, "PRODUCT_IMAGE");
+  const budget = await meter.check();
+  if (!budget.allowed) {
+    return {
+      ok: false,
+      code: "budget_exceeded",
+      status: 429,
+      message: describeAiBudgetRefusal(budget),
+    };
+  }
+
+  const ai = getImageGenerationService();
+  let imageBuffer: ArrayBuffer | null;
+  try {
+    imageBuffer = await ai.generateImage(trimmedPrompt);
+  } catch (err) {
+    return {
+      ok: false,
+      code: "generation_failed",
+      status: 502,
+      message: err instanceof Error ? err.message : "AI image generation failed.",
+    };
+  }
+
+  if (!imageBuffer) {
+    return {
+      ok: false,
+      code: "not_configured",
+      status: 503,
+      message: "Workers AI is not configured for image generation.",
+    };
+  }
+
+  await meter.recordImage({ model: IMAGE_GENERATION_MODEL });
+
+  const fileName = `ai-${Date.now()}.png`;
+  const file = new Blob([imageBuffer], { type: "image/png" });
+  const title =
+    input.title?.trim() ||
+    (trimmedPrompt.length > 80 ? trimmedPrompt.slice(0, 77) + "..." : trimmedPrompt);
+
+  const imported = await importAsset(resolved.value.caller, {
+    file,
+    fileName,
+    title,
+    source: "AI_GENERATED",
+    licence: "AI_GENERATED",
     rightsConfirmed: true,
     status: "PENDING_REVIEW",
   });

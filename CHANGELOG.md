@@ -6,6 +6,16 @@ every branch merges.
 
 ## [Unreleased]
 
+### Added
+
+- **Merqify Image Hub — phase 2: AI image generation in the gallery for active and inactive products (#1701, 2026-11-20).**
+  - Interactive photo generator panel in `/staff/image-library` (`ImageAiGeneratorPanel.tsx`) powered by Cloudflare Workers AI (`@cf/black-forest-labs/flux-1-schnell`).
+  - Supports searching and drafting prompts for **both active and inactive products**, allowing store operators to generate, review, and approve studio photos ahead of product activation.
+  - Selecting a product automatically formulates an optimized studio commercial lighting prompt with product and category names.
+  - Enforces daily AI metering via `getVendorAiMeter(auth.vendorId, "PRODUCT_IMAGE")` with graceful refusal before Workers AI calls.
+  - Generated photos land in the Image Hub as `PENDING_REVIEW` with `source: "AI_GENERATED"`, `licence: "AI_GENERATED"`, and `rightsConfirmed: true`.
+  - Batch generation CLI script `scripts/generate-product-images-ai.ts` with `--status <all|active|inactive>`, `--limit`, `--vendor`, `--dry-run`, `--apply`.
+
 ### Fixed
 
 - **Checkout and cancellation fixes from the live-payments go-live (#1690, #1691, #1693, 2026-11-20).**

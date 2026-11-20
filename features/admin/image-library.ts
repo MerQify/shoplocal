@@ -14,8 +14,12 @@ import {
   requestCategoryImageUploadTicket,
   searchDiscoveredImagesForStaff,
   importDiscoveredImageToHub,
+  generateAiImageForLibrary,
+  listProductsForAiPrompt,
   searchImageLibrary,
+  type AiPromptProductCandidate,
   type AssignOutcome,
+  type GenerateAiImageInput,
   type LibraryResult,
   type ProductAssignMode,
 } from "@/lib/image-hub-service";
@@ -163,4 +167,27 @@ export async function importDiscoveredImageAction(
   const result = await importDiscoveredImageToHub(image);
   if (result.ok) revalidatePath("/staff/image-library");
   return result;
+}
+
+/** #1701 — generate commercial studio photo via Workers AI and import to Image Hub. */
+export async function generateAiImageAction(
+  input: GenerateAiImageInput,
+): Promise<LibraryResult<HubAsset>> {
+  const result = await generateAiImageForLibrary(input);
+  if (result.ok) {
+    revalidatePath("/staff/image-library");
+    if (input.productId) {
+      await revalidateProduct(input.productId);
+    }
+  }
+  return result;
+}
+
+/** #1701 — search vendor products (active and inactive) for AI prompt drafting. */
+export async function listProductsForAiPromptAction(
+  query: string,
+): Promise<AiPromptProductCandidate[]> {
+  const auth = await requireVendorRole("STAFF", "ADMIN");
+  if (!auth.ok) return [];
+  return listProductsForAiPrompt(auth.vendorId, query);
 }
