@@ -44,6 +44,8 @@ every branch merges.
 
 ### Documentation
 
+- **Roadmap row for Image Hub phase 2 AI image generation (#1701).** Added roadmap change-log row for PR #1702 in `specs/roadmap.md`, keeping `sdd:audit` clean with 0 gaps.
+
 - **Roadmap rows for checkout cancellation fixes (#1698) and Image Hub phase 3 (#1699).** Added roadmap change-log rows for PR #1698 and PR #1699 in `specs/roadmap.md`, keeping `sdd:audit` clean with 0 gaps.
 
 - **Roadmap row for Image Hub phase 1c (#1674).** Added roadmap change-log row for PR #1695 in `specs/roadmap.md`, keeping `sdd:audit` clean.
