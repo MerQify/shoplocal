@@ -106,6 +106,27 @@ export interface UploadInput {
   licence: HubUploadLicence;
 }
 
+export interface ImportInput {
+  file: Blob;
+  fileName: string;
+  title: string;
+  source: HubSource;
+  licence: HubLicence;
+  attribution?: string | null;
+  originalUrl?: string | null;
+  sourceSite?: string | null;
+  alt?: string | null;
+  keywords?: string | null;
+  status?: HubStatus;
+  rightsConfirmed?: boolean;
+}
+
+export interface ImportResult {
+  ok: boolean;
+  asset: HubAsset;
+  duplicate: boolean;
+}
+
 function headers(caller: HubCaller, extra?: Record<string, string>): Record<string, string> {
   return {
     authorization: `Bearer ${caller.config.apiKey}`,
@@ -210,6 +231,36 @@ export function uploadAsset(caller: HubCaller, input: UploadInput): Promise<HubR
     headers: headers(caller),
     body: form,
   });
+}
+
+/** `POST /v1/assets/import` (multipart, scope import). Preserves full provenance. */
+export async function importAsset(
+  caller: HubCaller,
+  input: ImportInput,
+): Promise<HubResult<ImportResult>> {
+  const form = new FormData();
+  form.set("file", input.file, input.fileName);
+  form.set("title", input.title);
+  form.set("source", input.source);
+  form.set("licence", input.licence);
+  if (input.attribution) form.set("attribution", input.attribution);
+  if (input.originalUrl) form.set("originalUrl", input.originalUrl);
+  if (input.sourceSite) form.set("sourceSite", input.sourceSite);
+  if (input.alt) form.set("alt", input.alt);
+  if (input.keywords) form.set("keywords", input.keywords);
+  if (input.rightsConfirmed !== undefined)
+    form.set("rightsConfirmed", input.rightsConfirmed ? "true" : "false");
+  if (input.status) form.set("status", input.status);
+
+  const sent = await send(caller, "/v1/assets/import", {
+    method: "POST",
+    headers: headers(caller),
+    body: form,
+  });
+  if (!sent.ok) return sent;
+  if (!sent.value.ok) return failure(sent.value);
+  const data = (await sent.value.json()) as ImportResult;
+  return { ok: true, value: data };
 }
 
 /** `POST /v1/assets/{id}/approve` (scope review). */

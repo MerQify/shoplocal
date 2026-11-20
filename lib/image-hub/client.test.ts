@@ -4,6 +4,7 @@ import {
   deleteUsage,
   getAsset,
   getAssetContent,
+  importAsset,
   recordUsage,
   rejectAsset,
   searchAssets,
@@ -118,6 +119,36 @@ const cases: Array<{
     method: "POST",
     path: "/v1/assets",
     success: () => jsonResponse(201, { ...ASSET, status: "PENDING_REVIEW" }),
+  },
+  {
+    name: "importAsset (new, #1674)",
+    call: (c) =>
+      importAsset(c, {
+        file: new Blob(["x"], { type: "image/webp" }),
+        fileName: "x.webp",
+        title: "Rice",
+        source: "AI_GENERATED",
+        licence: "AI_GENERATED",
+        attribution: "Test attribution",
+        status: "APPROVED",
+      }),
+    method: "POST",
+    path: "/v1/assets/import",
+    success: () => jsonResponse(201, { ok: true, asset: ASSET, duplicate: false }),
+  },
+  {
+    name: "importAsset (duplicate, #1674)",
+    call: (c) =>
+      importAsset(c, {
+        file: new Blob(["x"], { type: "image/webp" }),
+        fileName: "x.webp",
+        title: "Rice",
+        source: "AI_GENERATED",
+        licence: "AI_GENERATED",
+      }),
+    method: "POST",
+    path: "/v1/assets/import",
+    success: () => jsonResponse(200, { ok: true, asset: ASSET, duplicate: true }),
   },
   {
     name: "approveAsset",

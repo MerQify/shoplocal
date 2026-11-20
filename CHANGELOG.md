@@ -24,7 +24,19 @@ every branch merges.
     cancelled."), so they no longer apologise for a cancellation the customer asked for.
   - **Telegram alerts** no longer carry a large link-preview card.
 
+### Changed
+
+- **Consolidate browser WebP converters onto `lib/webp-convert.ts` (#1675, 2026-11-20).**
+  - Parameterized `convertToWebp(source: Blob, maxEdgePx?: number)` with default `MAX_IMAGE_EDGE_PX` (1200px) from `lib/product-image.ts`.
+  - Consolidated duplicate `toWebp` canvas routines in `BundleImageUploader`, `CampaignBannerUploader`, `ProductImageManager`, `PromotionForm`, `VendorLogoUploader`, and `WhatsappQrUploader` onto `lib/webp-convert.ts`.
+  - Retained `VendorMarkUploader` as the sole documented exception (renders 5 square PNG mark files via `MARK_CONTENT_TYPE`).
+  - Added architectural guard test in `tests/webp-converters.test.ts` scanning `app/`, `components/`, `features/`, `lib/` to enforce that `canvas.toBlob(` and `createImageBitmap(` are isolated to `lib/webp-convert.ts` and `VendorMarkUploader`.
+
 ### Documentation
+
+- **Roadmap row for Image Hub phase 1c (#1674).** Added roadmap change-log row for PR #1695 in `specs/roadmap.md`, keeping `sdd:audit` clean.
+
+- **Roadmap rows for #1688 promotion and #1675 staging merge.** Added roadmap change-log rows for PR #1688 and PR #1692 in `specs/roadmap.md`, keeping `sdd:audit` clean with 0 gaps.
 
 - **Roadmap rows for the 2026-11-20 promotion (PR #1685).** Production row for Image Hub 1b, the picker, reject-approved and Client Setup multi-forward; backfilled staging rows, plan front-matter, and ARTIFACT_INDEX.md entries for the two Client Setup slices so sdd:audit passes with 0 gaps.
 
@@ -35,6 +47,11 @@ every branch merges.
 - **Image library post-ship docs (#1671, 2026-11-20).** Corrected `env-setup.md`: `configure-env` re-pushes every secret in a vars file and refuses the AFC cell, so add only the two hub keys with `wrangler secret put`. Also added the image library sanity-check guide (Last run: staging, 2026-11-20); the handoff note that production store Workers do not yet carry the hub keys; the playbook note on driving a client-invoked server action with the `Next-Action` header; and the roadmap row for the staging merge.
 
 ### Added
+
+- **Image Hub phase 1c: import store catalogue images (#1674, 2026-11-20).**
+  - Added `importAsset` to `lib/image-hub/client.ts` wrapping the hub's `POST /v1/assets/import` endpoint, supporting full provenance (`source`, `licence`, `attribution`, `sourceSite`, `originalUrl`, `status`).
+  - Added `scripts/import-images-to-hub.ts`: an idempotent migration CLI (`--env-file`, `--dry-run`, `--vendor`, `--limit`) that reads existing `ProductImage` and `CategoryAsset` rows, fetches bytes from store S3/R2 storage, imports them into the Image Hub with provenance, and updates `hubAssetId` (and `hubUsageId` for approved usages).
+  - Tested live on staging: successfully imported existing store product images into the Merqify Image Hub.
 
 - **Client Setup: Dual Listbox Transfer Picker & Inline Edit for Receiving Addresses (#1684, 2026-11-20).**
   - Upgraded forward-to recipient selection in `/staff/platform/client-setup` to a Dual Listbox Transfer Picker (`DualListboxTransferPicker`) featuring native HTML5 drag-and-drop between Available and Selected mailboxes, click-to-transfer buttons (`Add →`, `← Remove`, `Add all →`, `← Clear all`), and direct custom mailbox input.
