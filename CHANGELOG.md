@@ -8,7 +8,7 @@ every branch merges.
 
 ### Documentation
 
-- **Roadmap rows for the 2026-11-20 promotion (PR #1685).** Production row for Image Hub 1b, the picker, reject-approved and Client Setup multi-forward; backfilled staging rows for the two Client Setup slices that `sdd:audit` reported missing.
+- **Roadmap rows for the 2026-11-20 promotion (PR #1685).** Production row for Image Hub 1b, the picker, reject-approved and Client Setup multi-forward; backfilled staging rows, plan front-matter, and ARTIFACT_INDEX.md entries for the two Client Setup slices so sdd:audit passes with 0 gaps.
 
 - **Reject-approved post-ship docs (#1682, 2026-11-20).** The image-library sanity guide in `env-setup.md` gains step 8, rejecting an approved image (Last run: staging, 2026-11-20). Added the roadmap row for the staging merge.
 

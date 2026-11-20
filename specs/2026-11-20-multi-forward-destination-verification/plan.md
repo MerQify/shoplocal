@@ -1,3 +1,17 @@
+---
+id: multi-forward-destination-verification-plan
+title: "Client Setup — multi-forward receiving addresses & in-dashboard destination verification (plan)"
+audience: [dev]
+type: spec
+status: draft
+version: "1.0.0"
+updated: 2026-11-20
+visibility: internal
+summary: "Enables stores to forward incoming customer enquiries to multiple team members simultaneously without Google Groups, and lets platform admins send Cloudflare Email Routing destination verification emails directly from /staff/platform/client-setup."
+tags: [email, client-setup, inbound-email, platform-admin, p10]
+related: [architecture]
+---
+
 # Implementation Plan: Multi-Forward & Destination Verification
 
 **Issue:** #1680  
