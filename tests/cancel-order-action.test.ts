@@ -56,6 +56,10 @@ const check = vi.hoisted(() =>
 );
 vi.mock("@/lib/payment-check-service", () => ({ getPaymentCheckService: () => ({ check }) }));
 
+// #1690 R8 — the shopper's own cancel expires the Stripe session.
+const expireSession = vi.hoisted(() => vi.fn(async (_id: string) => {}));
+vi.mock("@/lib/payments", () => ({ getPaymentService: () => ({ expireSession }) }));
+
 const { cancelOrder } = await import("@/features/checkout/cancel-order");
 
 afterEach(() => {
@@ -135,7 +139,7 @@ describe("cancelOrder — the payment check decides (#1589 R10)", () => {
 
   it.each<PaymentCheckResult>([
     { kind: "no-session" },
-    { kind: "not-paid", sessionStatus: "open", paymentStatus: "unpaid" },
+    { kind: "not-paid", sessionId: "cs_test_1", sessionStatus: "open", paymentStatus: "unpaid" },
   ])("%o: cancels once, then restores once with a notice", async (result) => {
     viewer.order = pendingOrder;
     check.mockResolvedValue(result);
@@ -152,7 +156,12 @@ describe("cancelOrder — the payment check decides (#1589 R10)", () => {
 
   it("a repeat whose cancelUnpaid lost the compare-and-set restores nothing", async () => {
     viewer.order = pendingOrder;
-    check.mockResolvedValue({ kind: "not-paid", sessionStatus: "open", paymentStatus: "unpaid" });
+    check.mockResolvedValue({
+      kind: "not-paid",
+      sessionId: "cs_test_1",
+      sessionStatus: "open",
+      paymentStatus: "unpaid",
+    });
     cancelUnpaid.mockResolvedValue(false);
 
     await expect(redirectedTo(form("tok-1"))).resolves.toBe("/cart");
@@ -162,7 +171,12 @@ describe("cancelOrder — the payment check decides (#1589 R10)", () => {
 
   it("two submits, the second losing the compare-and-set, restore the basket once", async () => {
     viewer.order = pendingOrder;
-    check.mockResolvedValue({ kind: "not-paid", sessionStatus: "open", paymentStatus: "unpaid" });
+    check.mockResolvedValue({
+      kind: "not-paid",
+      sessionId: "cs_test_1",
+      sessionStatus: "open",
+      paymentStatus: "unpaid",
+    });
     cancelUnpaid.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
     await redirectedTo(form("tok-1"));
@@ -183,5 +197,56 @@ describe("cancelOrder — what goes back in the basket (#1589 R11)", () => {
       { productId: "p-1", quantity: 3, customNote: "ripe ones" },
       { productId: "p-2", quantity: 2 },
     ]);
+  });
+});
+
+describe("cancelOrder — expires the Stripe session (#1690 R8)", () => {
+  const notPaid: PaymentCheckResult = {
+    kind: "not-paid",
+    sessionId: "cs_1",
+    sessionStatus: "open",
+    paymentStatus: "unpaid",
+  };
+
+  it("expires the order's own session once after its own cancel", async () => {
+    viewer.order = pendingOrder;
+    check.mockResolvedValue(notPaid);
+
+    const url = await redirectedTo(form("tok-1"));
+    expect(url.startsWith(RESTORED)).toBe(true);
+    expect(expireSession).toHaveBeenCalledTimes(1);
+    expect(expireSession).toHaveBeenCalledWith("cs_1");
+  });
+
+  it("a failed expiry changes neither the redirect nor the basket restore", async () => {
+    viewer.order = pendingOrder;
+    check.mockResolvedValue(notPaid);
+    const okUrl = await redirectedTo(form("tok-1"));
+    addItems.mockClear();
+
+    expireSession.mockRejectedValueOnce(new Error("Stripe session expiry failed: 500 boom"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const failedUrl = await redirectedTo(form("tok-1"));
+
+    expect(failedUrl).toBe(okUrl);
+    expect(addItems).toHaveBeenCalledTimes(1);
+    expect(String(errorSpy.mock.calls[0]?.[0])).toMatch(
+      /^\[payments\] expireSession failed for order AHE-1:/,
+    );
+    errorSpy.mockRestore();
+  });
+
+  it.each<[string, PaymentCheckResult, boolean]>([
+    ["confirmed", { kind: "confirmed" }, true],
+    ["provider-error", { kind: "provider-error" }, true],
+    ["no-session", { kind: "no-session" }, true],
+    ["not-paid but the cancel lost the compare-and-set", notPaid, false],
+  ])("%s: no expiry", async (_label, result, cancelWins) => {
+    viewer.order = pendingOrder;
+    check.mockResolvedValue(result);
+    cancelUnpaid.mockResolvedValue(cancelWins);
+
+    await redirectedTo(form("tok-1"));
+    expect(expireSession).not.toHaveBeenCalled();
   });
 });

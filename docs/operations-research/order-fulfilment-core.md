@@ -4,8 +4,8 @@ title: "Order & Fulfilment Operations"
 audience: [staff, store-admin, dev, product, shopper]
 type: runbook
 status: approved
-version: "1.1.0"
-updated: "2026-11-06"
+version: "1.2.0"
+updated: "2026-11-20"
 visibility: internal
 summary: "Canonical rules for order status transitions, fulfilment slots, cancellations, and payment exceptions."
 tags: ["orders", "fulfilment", "payments", "cancellation", "staff", "admin"]
@@ -67,6 +67,11 @@ When an order is cancelled:
 2. **Loyalty is reversed:** Earned points are revoked, and spent points are returned to the customer's balance.
 3. **Discounts are restored:** The redemption count for the used discount code is returned, preserving the customer's concurrency limit without losing the audit trail.
 4. **Capacity is freed:** The fulfilment slot capacity is released.
+
+**What the customer is told** (`#1691`): the admin cancelling chooses who asked (customer,
+store unable to fulfil, other) and what to say about the money (refunded in full, not refunded
+yet, or a message they write). The cancellation email and the customer's order page use the
+matching wording; a blank custom message gives a neutral one. The typed reason stays internal.
 
 ### Refunds
 **Cancelling an order does not automatically refund the customer.** 

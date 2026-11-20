@@ -8,6 +8,7 @@ import { scopedToUser } from "@/features/cart/shared";
 import { restoredLines } from "@/lib/restore-lines";
 import { buildRestoreNoticeUrl } from "@/lib/restore-notice";
 import { getPaymentCheckService } from "@/lib/payment-check-service";
+import { getPaymentService } from "@/lib/payments";
 import { orderConfirmationPath, unfinishedPaymentPath } from "@/lib/unfinished-payment";
 
 /**
@@ -90,6 +91,17 @@ export async function cancelOrder(formData: FormData): Promise<void> {
         // or stock taken by someone else after the release above), rather than handing back a
         // short basket with no message. Only after this call's own cancel (#1589).
         if (cancelled) {
+          // #1690 R8 — close the hosted page too, or the cancelled order stays payable until
+          // Stripe's own expiry. Best-effort: the cancel already happened, and a failure here
+          // must change neither the redirect nor the basket restore below.
+          if (check.kind === "not-paid") {
+            try {
+              await getPaymentService().expireSession?.(check.sessionId);
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
+              console.error(`[payments] expireSession failed for order ${orderNumber}: ${message}`);
+            }
+          }
           const lines = await restoredLines(order.items, (toAdd) =>
             getCartRepository().addItems(scoped, toAdd),
           );

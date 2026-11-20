@@ -17,6 +17,7 @@ import { OrderAddressCard } from "@/components/orders/OrderAddressCard";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { StaffOrderTimeline } from "@/components/staff/StaffOrderTimeline";
+import { CancelOrderForm } from "@/components/staff/CancelOrderForm";
 import { advanceStatus } from "@/features/orders/advance-status";
 import { cancelOrderStaff } from "@/features/orders/cancel-order-staff";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -152,33 +153,7 @@ export default async function StaffOrderDetailPage({
           deliberate act and the OrderStatusEvent note that becomes the only
           durable record of why. */}
       {canCancel(order.status) && (
-        <form action={cancelOrderStaff} className="mt-8 rounded-2xl border border-danger/30 p-4">
-          <h2 className="text-sm font-bold text-primary">Cancel this order</h2>
-          <p className="mt-1 text-xs leading-relaxed text-primary-muted">
-            Returns the items to stock, reverses any points earned or spent, and gives back a
-            discount code use. <strong className="text-primary">No refund is issued</strong> — the
-            customer keeps being charged until you refund them directly.
-          </p>
-          <input type="hidden" name="orderNumber" value={order.orderNumber} />
-          <label htmlFor="cancel-reason" className="mt-3 block text-xs font-bold text-primary">
-            Reason
-          </label>
-          <input
-            id="cancel-reason"
-            name="reason"
-            type="text"
-            required
-            maxLength={200}
-            placeholder="Why is this order being cancelled?"
-            className="mt-1 w-full rounded-xl border border-black/10 bg-surface px-3 py-2 text-sm text-primary"
-          />
-          <button
-            type="submit"
-            className="mt-3 w-full rounded-2xl bg-danger px-5 py-3 text-sm font-bold text-white transition-colors hover:opacity-90"
-          >
-            Cancel order {order.orderNumber}
-          </button>
-        </form>
+        <CancelOrderForm orderNumber={order.orderNumber} action={cancelOrderStaff} />
       )}
     </PageContainer>
   );

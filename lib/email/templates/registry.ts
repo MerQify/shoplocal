@@ -131,9 +131,11 @@ const DEFINITIONS: readonly TemplateDefinition[] = [
   }),
   order("order.cancelled", "Order cancelled", "Sent when staff cancel an order.", {
     subject: "Order {{orderNumber}} has been cancelled",
-    preheader: "We're sorry. Here's what this means for your payment.",
+    // #1691 R14a — neutral on purpose: the "What happens next" text below carries the apology or
+    // the "as you asked", chosen by staff when cancelling, so these two never contradict it.
+    preheader: "Here's what this means for your order and payment.",
     heading: "Your order has been cancelled",
-    intro: "We're sorry, we've had to cancel order **{{orderNumber}}**.",
+    intro: "Order **{{orderNumber}}** has been cancelled.",
     reassurance: "Please reply to this email and a member of our team will help.",
   }),
   order(

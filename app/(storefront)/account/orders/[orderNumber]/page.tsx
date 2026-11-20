@@ -130,6 +130,7 @@ export default async function AccountOrderPage({
         fulfilmentMethod={order.fulfilmentMethod}
         timeline={order.timeline}
         slotLabel={order.slotLabel}
+        cancellation={order.cancellation}
       />
       <LiveRefresh active={!isFinalStatus(order.status)} />
 
