@@ -9,6 +9,7 @@ import {
   savePlatformBranding,
   saveVendorSender,
   sendClientSetupTestEmail,
+  sendDestinationVerification,
 } from "@/lib/client-setup-service";
 import {
   addOrderAlertRecipient,
@@ -22,6 +23,7 @@ import {
   orderAlertRecipientSchema,
   platformBrandingFormSchema,
   removeInboundAddressSchema,
+  sendDestinationVerificationSchema,
   senderSchema,
   testEmailSchema,
   type ClientSetupFormState,
@@ -78,6 +80,36 @@ export async function saveSenderAction(
   }
   revalidatePath(PAGE);
   return { ok: true, message: "Sender saved." };
+}
+
+export async function sendDestinationVerificationAction(
+  _prev: ClientSetupFormState,
+  formData: FormData,
+): Promise<ClientSetupFormState> {
+  if (!(await platformAdminEmail())) return refusal("Platform admin only.");
+  const parsed = sendDestinationVerificationSchema.safeParse({
+    email: formData.get("email"),
+  });
+  if (!parsed.success) return refusal(firstIssue(parsed.error));
+  try {
+    const outcome = await sendDestinationVerification(parsed.data.email);
+    if (!outcome.ok) {
+      if (outcome.reason === "already-exists") {
+        return refusal("That email address is already added in Cloudflare Email Routing.");
+      }
+      if (outcome.reason === "forbidden") {
+        return refusal("Cloudflare API token lacks Email Routing Addresses edit permission.");
+      }
+      return refusal("Failed to request verification from Cloudflare. Try again in a moment.");
+    }
+  } catch {
+    return refusal("Sending verification email failed. Try again in a moment.");
+  }
+  revalidatePath(PAGE);
+  return {
+    ok: true,
+    message: `Verification email sent to ${parsed.data.email}. Ask them to click the link in their inbox.`,
+  };
 }
 
 export async function addInboundAddressAction(

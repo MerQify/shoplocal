@@ -30,6 +30,14 @@ export function normaliseAddress(address: string): string {
   return address.trim().toLowerCase();
 }
 
+export function normaliseForwardToList(forwardTo: string): string {
+  const parts = forwardTo
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s) => s.length > 0);
+  return [...new Set(parts)].join(", ");
+}
+
 /** The address row, matched case-insensitively (rows are stored lower-case), or null. */
 export async function findInboundAddress(
   prisma: Db,
@@ -46,11 +54,13 @@ export async function findInboundAddress(
  * not a vendor.
  */
 export async function isRegisteredForwardTo(prisma: Db, address: string): Promise<boolean> {
-  const row = await prisma.vendorInboundAddress.findFirst({
-    where: { forwardTo: normaliseAddress(address) },
-    select: { id: true },
+  const target = normaliseAddress(address);
+  const rows = await prisma.vendorInboundAddress.findMany({
+    select: { forwardTo: true },
   });
-  return row !== null;
+  return rows.some((row) =>
+    row.forwardTo.split(",").map((s) => s.trim().toLowerCase()).includes(target),
+  );
 }
 
 export async function listInboundAddresses(
@@ -82,7 +92,7 @@ export async function createInboundAddress(
         vendorId,
         address: normaliseAddress(input.address),
         purpose: input.purpose,
-        forwardTo: normaliseAddress(input.forwardTo),
+        forwardTo: normaliseForwardToList(input.forwardTo),
       },
     });
     return { ok: true, row };

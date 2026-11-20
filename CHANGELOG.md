@@ -8,6 +8,13 @@ every branch merges.
 
 ### Added
 
+- **Client Setup: Multi-forward receiving addresses & in-dashboard destination verification (#1680, 2026-11-20).**
+  - In-dashboard destination verification: Platform admins can dispatch a 1-click Cloudflare Email Routing destination verification email to any new team member mailbox directly from `/staff/platform/client-setup` via `createDestinationAddress()` and `POST /email/routing/addresses`.
+  - Multi-forward receiving addresses: Stores can forward incoming customer emails to multiple verified team mailboxes simultaneously without using Google Groups.
+  - `ForwardToSelect` in `components/staff/client-setup/EmailSetupForms.tsx` offers quick selection of multiple verified destination mailboxes and comma-separated custom inputs.
+  - `workers/inbound-email/src/index.ts` loops across all forward targets and forwards to each recipient individually, isolating errors so delivery to one does not impede delivery to others.
+  - **Tests:** `tests/email-destinations.test.ts`, `tests/client-setup.test.ts`, `tests/client-setup-inbound-groups.test.ts`, `tests/inbound-email-worker.test.ts`.
+
 - **Image library: the Merqify Image Hub in the staff panel (#1671, phase 1b of #1669, 2026-11-20).**
   - New `/staff/image-library` (Catalogue). Staff and store admins search, preview and upload. **Store admins only** approve or reject. Staff and admins assign an approved image to a product (main or extra image); store admins assign to a category.
   - Assigning copies the image into the store's own bucket under a store key and records the usage in the hub. Removing or replacing that image releases the usage. A WebP under 2 MB is copied on the server; anything else is converted to WebP in the staff browser first.

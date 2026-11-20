@@ -5,6 +5,7 @@ import {
   addInboundAddressAction,
   removeInboundAddressAction,
   saveSenderAction,
+  sendDestinationVerificationAction,
   sendTestEmailAction,
 } from "@/app/(admin)/staff/platform/client-setup/actions";
 import {
@@ -154,6 +155,10 @@ function ForwardToSelect({
   const pending = addresses.filter((a) => !a.verified).map((a) => a.email);
   const [initial] = useState(() => initialForwardChoice(defaultForward, verified));
   const [choice, setChoice] = useState(initial.choice);
+  const [selectedMultiple, setSelectedMultiple] = useState<string[]>(() =>
+    initial.other ? initial.other.split(",").map((s) => s.trim()).filter(Boolean) : [],
+  );
+  const customInputRef = useRef<HTMLInputElement>(null);
   const isOther = choice === OTHER;
   return (
     <>
@@ -181,16 +186,44 @@ function ForwardToSelect({
         <option value={OTHER}>Other…</option>
       </select>
       {isOther && (
-        <div className="mt-2">
+        <div className="mt-2 space-y-2">
+          {verified.length > 1 && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs">
+              <p className="mb-1 font-semibold text-primary">Quick select verified mailboxes:</p>
+              <div className="space-y-1">
+                {verified.map((vEmail) => (
+                  <label key={vEmail} className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedMultiple.includes(vEmail)}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...selectedMultiple, vEmail]
+                          : selectedMultiple.filter((x) => x !== vEmail);
+                        setSelectedMultiple(next);
+                        if (customInputRef.current) {
+                          customInputRef.current.value = next.join(", ");
+                        }
+                      }}
+                      className="rounded border-slate-300 text-action focus:ring-action"
+                    />
+                    <span>{vEmail}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <label className="sr-only" htmlFor="forwardToOther">
             Other mailbox
           </label>
           <input
+            ref={customInputRef}
             id="forwardToOther"
             name="forwardTo"
-            type="email"
+            type="text"
             required
             defaultValue={initial.other}
+            placeholder="e.g. team1@gmail.com, team2@gmail.com"
             aria-describedby="forwardToOther-warning"
             className={inputClass}
           />
@@ -205,6 +238,41 @@ function ForwardToSelect({
         </div>
       )}
     </>
+  );
+}
+
+export function AddDestinationAddressForm() {
+  const [state, action, saving] = useActionState(
+    sendDestinationVerificationAction,
+    initialClientSetupFormState,
+  );
+  return (
+    <form action={action} className="space-y-3" data-client-setup-form="add-destination">
+      <FormMessage state={state} />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <label className={labelClass} htmlFor="destinationEmail">
+            Verify a team mailbox
+          </label>
+          <input
+            id="destinationEmail"
+            name="email"
+            type="email"
+            required
+            placeholder="e.g. colleague@gmail.com"
+            className={inputClass}
+          />
+        </div>
+        <button type="submit" disabled={saving} className={buttonClass}>
+          <Icon name="mail" className="h-4 w-4" />
+          {saving ? "Sending…" : "Send verification email"}
+        </button>
+      </div>
+      <p className="text-xs text-primary-muted">
+        Sends a 1-click verification email from Cloudflare. Once verified, this mailbox can receive
+        forwarded customer emails.
+      </p>
+    </form>
   );
 }
 
