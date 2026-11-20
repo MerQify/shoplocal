@@ -1274,8 +1274,11 @@ became untracked when that issue closed.
   - 1b `#1671`: store gallery client, `/staff/image-library`, `specs/2026-11-20-image-hub-gallery/`.
   - `#1677` (hub `sort=relevance`, `merqify-image-hub` `specs/2026-11-20-ranked-search/`) and
     `#1678` (product-page "Choose from library", `specs/2026-11-20-product-library-picker/`):
-    built together 2026-11-20. Ship the hub to staging first. Production order: #1671, then the
-    hub, then #1678.
+    on staging (store PR #1679, hub PR #6), validated live via server actions on 2026-11-20.
+    Production order: #1671 (needs the hub keys on the production store Workers first), then the
+    hub (`staging → main` in `merqify-image-hub`), then #1678. Before promoting #1678, click through
+    the picker once in a real browser with a non-WebP image: neither the click-through nor the
+    browser WebP conversion has been seen yet.
   - 1c `#1674`: import existing store images with provenance.
   - 2–5: AI, licensed search, discovery, WebP sizes. All on `#1669`.
 
