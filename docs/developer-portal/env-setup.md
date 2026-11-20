@@ -724,8 +724,15 @@ service (`sriahead/merqify-image-hub`). The store needs only two optional Worker
   shoplocal --tenant <vendor-slug> … --scopes read,write,review` in the hub repo. The key prints
   once; paste it into the matching `secrets/<file>.vars`. One key per store Worker per
   environment, so each can be revoked alone. The tenant is the store's `Vendor.slug`.
-- **Pushing:** both are in `configure-env`'s optional list. An empty value is skipped, and an
-  environment without them shows "The image library isn't set up yet" and nothing else changes.
+- **Pushing:** both are in `configure-env`'s optional list, and an empty value is skipped. But
+  `configure-env` re-pushes **every** secret in the file, and it accepts only `staging` or
+  `production`, not the AFC cell's `afc-staging` / `afc-production`. To add just these two keys
+  to a running Worker, set them alone. Take `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+  from that Worker's own vars file, then pipe each value into
+  `npx wrangler secret put IMAGE_HUB_URL --env <env>` (and the same for `IMAGE_HUB_API_KEY`).
+  Check with `npx wrangler secret list --env <env>`. This is how staging was set on 2026-11-20
+  (`aheed-store-staging`, `afc-store-staging`). An environment without the keys shows "The image
+  library isn't set up yet" and nothing else changes.
 - **`secrets/image-hub-{staging,production}.vars` are NOT store config.** They hold the hub's own
   Neon, R2 and Cloudflare credentials for the hub operator (`npm run keys`, `secrets:push` in the
   hub repo). Never copy a value from them into a store vars file, `.env`, `.dev.vars` or a store
@@ -734,7 +741,33 @@ service (`sriahead/merqify-image-hub`). The store needs only two optional Worker
   secrets/merqify-staging.vars` prints `health ok (staging)` and `search ok`. It is read-only, so
   it proves read access only.
 
-## Local development (`dev`)
+### Sanity check: image library (`#1671`)
+
+Last run: 2026-11-20 on staging (all passed). Production: not yet promoted; its store Workers do not
+yet carry the hub keys.
+
+Quick checks (no credentials, read-only). Use `<host>` = a store host such as `aheed-staging.merqify.com`:
+
+| # | Command | Expected |
+|---|---|---|
+| 1 | `curl -sS https://<host>/api/health` | `commit` is the deploy, `db.ok: true` |
+| 2 | `curl -sS -i https://<host>/api/admin/image-library/00000000-0000-4000-8000-000000000000/content` | `401`, `"code":"unauthenticated"` |
+| 3 | `curl -sS -i https://<host>/staff/image-library` | `307` to `/login` |
+| 4 | `npx tsx scripts/verify-image-hub.ts --env-file secrets/<env-file>.vars` | `health ok (<env>)`, `search ok`, exit 0 |
+
+Live checks (**staging only**, signed in as the demo store admin):
+
+1. Upload a small WebP on `/staff/image-library` → its card shows "Pending review".
+2. Approve it → "Approved".
+3. Assign it as the main image of a product **that has no image** → the storefront product page's
+   image URL starts with the store's `CDN_BASE_URL` and contains `products/`.
+4. Remove that image on `/staff/products/<id>` → the hub asset's `usages` is `[]`
+   (`GET /v1/assets/<id>` with the staging key and `X-Image-Hub-Tenant: aheed-food-centre`).
+
+Choose test targets the storefront actually shows: an **inactive** category is never rendered, so
+assigning to one proves nothing on the storefront (hit at `#1671`'s staging validation).
+
+
 
 A third environment tier, alongside staging and production — but **local-only**: no `wrangler.toml`
 `[env.dev]` block, no Cloudflare Worker deploy, no custom domain, no CI workflow, and no GitHub

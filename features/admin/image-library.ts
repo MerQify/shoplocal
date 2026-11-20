@@ -17,7 +17,7 @@ import {
   type LibraryResult,
   type ProductAssignMode,
 } from "@/lib/image-hub-service";
-import type { HubAsset, HubPage, HubStatus } from "@/lib/image-hub/client";
+import type { HubAsset, HubPage, HubSearchSort, HubStatus } from "@/lib/image-hub/client";
 import type { UploadTicket } from "@/lib/product-image";
 
 /**
@@ -32,6 +32,7 @@ import type { UploadTicket } from "@/lib/product-image";
 export async function searchLibraryAction(params: {
   q?: string;
   status?: HubStatus;
+  sort?: HubSearchSort;
   cursor?: string;
 }): Promise<LibraryResult<HubPage>> {
   return searchImageLibrary(params);

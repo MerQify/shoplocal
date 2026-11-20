@@ -85,6 +85,13 @@ const cases: Array<{
     success: () => jsonResponse(200, { items: [ASSET], nextCursor: null }),
   },
   {
+    name: "searchAssets (sort, #1678 R1)",
+    call: (c) => searchAssets(c, { q: "basmati rice", status: "APPROVED", sort: "relevance" }),
+    method: "GET",
+    path: "/v1/assets?q=basmati+rice&status=APPROVED&sort=relevance",
+    success: () => jsonResponse(200, { items: [{ ...ASSET, relevance: 5 }], nextCursor: null }),
+  },
+  {
     name: "getAsset",
     call: (c) => getAsset(c, ASSET.id),
     method: "GET",

@@ -150,6 +150,14 @@ describe("R5 — unconfigured hub", () => {
     expect(headers["x-image-hub-actor"]).toBe("user-1");
     expect(String(fetchMock.mock.calls[0]![0])).toContain("limit=24");
   });
+
+  it("passes sort through to the hub (#1678 R2)", async () => {
+    const fetchMock = hub({ "GET /v1/assets": () => json(200, { items: [], nextCursor: null }) });
+    await searchImageLibrary({ q: "rice", status: "APPROVED", sort: "relevance" });
+    expect(String(fetchMock.mock.calls[0]![0])).toContain("sort=relevance");
+    await searchImageLibrary({ q: "rice" });
+    expect(String(fetchMock.mock.calls[1]![0])).not.toContain("sort=");
+  });
 });
 
 describe("R12 — review is store-admin only", () => {

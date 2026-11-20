@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireVendorRole } from "@/lib/auth-rbac";
 import { isImageLibraryConfigured, searchImageLibrary } from "@/lib/image-hub-service";
+import { librarySearchSort } from "@/lib/image-hub/search-sort";
 import type { HubStatus } from "@/lib/image-hub/client";
 import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -64,7 +65,7 @@ export default async function StaffImageLibraryPage(props: {
   const status = STATUSES.includes(searchParams.status as HubStatus)
     ? (searchParams.status as HubStatus)
     : undefined;
-  const firstPage = await searchImageLibrary({ q, status });
+  const firstPage = await searchImageLibrary({ q, status, sort: librarySearchSort(q) });
 
   return (
     <PageContainer width="wide">

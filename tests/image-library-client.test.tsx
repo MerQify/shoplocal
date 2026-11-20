@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 /**
  * #1671 R8/R12 — the library grid: thumbnails come from the same-origin content route, "Load more"
@@ -22,6 +22,7 @@ vi.mock("@/features/admin/image-library", () => ({
 vi.mock("@/features/admin/product-image", () => ({ requestImageUpload: vi.fn() }));
 
 import { ImageLibraryClient } from "@/components/staff/ImageLibraryClient";
+import { searchLibraryAction } from "@/features/admin/image-library";
 import type { HubAsset } from "@/lib/image-hub/client";
 
 afterEach(cleanup);
@@ -100,5 +101,38 @@ describe("ImageLibraryClient", () => {
     renderClient({ initialPage: pending, canReview: true });
     expect(screen.getByRole("button", { name: "Approve" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Reject" })).toBeTruthy();
+  });
+});
+
+describe("library search sort (#1678 R10)", () => {
+  const items = Array.from({ length: 24 }, (_, i) => asset(i));
+  const search = vi.mocked(searchLibraryAction);
+
+  it("pages a typed search by relevance", async () => {
+    search.mockResolvedValue({ ok: true, value: page([], null) });
+    renderClient({ initialPage: page(items, "c1"), q: "basmati rice" });
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+    await waitFor(() =>
+      expect(search).toHaveBeenLastCalledWith({
+        q: "basmati rice",
+        status: undefined,
+        sort: "relevance",
+        cursor: "c1",
+      }),
+    );
+  });
+
+  it("pages an empty search newest first, with no sort", async () => {
+    search.mockResolvedValue({ ok: true, value: page([], null) });
+    renderClient({ initialPage: page(items, "c2"), q: "" });
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+    await waitFor(() =>
+      expect(search).toHaveBeenLastCalledWith({
+        q: undefined,
+        status: undefined,
+        sort: undefined,
+        cursor: "c2",
+      }),
+    );
   });
 });

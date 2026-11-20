@@ -35,6 +35,7 @@ import {
   type HubCaller,
   type HubPage,
   type HubResult,
+  type HubSearchSort,
   type HubStatus,
   type HubUploadLicence,
   type HubUsageKind,
@@ -127,6 +128,7 @@ export async function isImageLibraryConfigured(): Promise<boolean> {
 export async function searchImageLibrary(params: {
   q?: string;
   status?: HubStatus;
+  sort?: HubSearchSort;
   cursor?: string;
 }): Promise<LibraryResult<HubPage>> {
   const resolved = await resolveCaller(
