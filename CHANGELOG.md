@@ -14,6 +14,8 @@ every branch merges.
 
 ### Added
 
+- **Image library: reject an approved image (#1682, 2026-11-20).** Approved cards on `/staff/image-library` give store admins **Reject…** (reason required, through the existing `rejectLibraryAction`). The hub's `in_use` refusal for an image still on a product or category is shown in plain words: remove it there first. Staff never see it.
+
 - **Client Setup: Multi-forward receiving addresses & in-dashboard destination verification (#1680, 2026-11-20).**
   - In-dashboard destination verification: Platform admins can dispatch a 1-click Cloudflare Email Routing destination verification email to any new team member mailbox directly from `/staff/platform/client-setup` via `createDestinationAddress()` and `POST /email/routing/addresses`.
   - Multi-forward receiving addresses: Stores can forward incoming customer emails to multiple verified team mailboxes simultaneously without using Google Groups.
