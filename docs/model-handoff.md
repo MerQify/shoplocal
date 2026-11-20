@@ -1272,6 +1272,10 @@ became untracked when that issue closed.
 - **Phases:**
   - 1a: hub service, in hub production.
   - 1b `#1671`: store gallery client, `/staff/image-library`, `specs/2026-11-20-image-hub-gallery/`.
+  - `#1677` (hub `sort=relevance`, `merqify-image-hub` `specs/2026-11-20-ranked-search/`) and
+    `#1678` (product-page "Choose from library", `specs/2026-11-20-product-library-picker/`):
+    built together 2026-11-20. Ship the hub to staging first. Production order: #1671, then the
+    hub, then #1678.
   - 1c `#1674`: import existing store images with provenance.
   - 2–5: AI, licensed search, discovery, WebP sizes. All on `#1669`.
 
