@@ -1251,6 +1251,26 @@ this exposed. `docs/developer-portal/env-setup.md` now carries both halves (move
 `#783` — staging and production still share one Cloudflare API token, which was `#219` step 3 and
 became untracked when that issue closed.
 
+## The Merqify Image Hub is a separate service the store consumes (`#1669`; phase 1a in production 2026-11-20)
+
+- **It is not part of this repo.** `sriahead/merqify-image-hub` is its own repository, Cloudflare
+  account (**Merqify Image Hub**, `ba15695d24d8a84ea3a833270432d97a`), Neon project
+  (`merqify-image-hub`) and Worker. It holds a central image library with licence, attribution,
+  review status and usage records, behind a `/v1` API (`openapi.yaml` in that repo).
+- **The store is a consumer and holds exactly two values:** `IMAGE_HUB_URL` and
+  `IMAGE_HUB_API_KEY` (`lib/config.ts` `getImageHubEnv()`). Keys are issued per Worker by the hub
+  operator with `npm run keys` in the hub repo. All four (Merqify and AFC cells, staging and
+  production) were issued 2026-11-20 under application `shoplocal`, so Aheed has one library
+  across both cells.
+- **Hub credentials never enter the store.** `secrets/image-hub-{staging,production}.vars` in this
+  repo's ignored `secrets/` folder are the hub OPERATOR's files (Neon, R2, Cloudflare for the
+  hub). They are never copied into a store vars file or Worker.
+- **Phases:**
+  - 1a: hub service, in hub production.
+  - 1b `#1671`: store gallery client, `/staff/image-library`, `specs/2026-11-20-image-hub-gallery/`.
+  - 1c `#1674`: import existing store images with provenance.
+  - 2–5: AI, licensed search, discovery, WebP sizes. All on `#1669`.
+
 ## A second database now exists: `uk-location-reference` (#764, in production; one shared endpoint since 2026-10-16)
 
 **This is the fact a fresh session is most likely to be missing.** The application now reads from

@@ -844,6 +844,13 @@ evidence would close it is a placeholder, and placeholders in a milestone are wh
 - **Analytics and reporting evolution** â€” keep transactional workloads separate from future analytics
   workloads as volume grows.
 
+**Merqify Image Hub (`#1669`).** A separate service and repo (`sriahead/merqify-image-hub`) holding one
+central, licensed, reviewed image library for every store. Phases:
+- **1a `#1670`:** hub service, in hub production 2026-11-20.
+- **1b `#1671`:** store gallery client, `specs/2026-11-20-image-hub-gallery/`.
+- **1c `#1674`:** import existing store images with provenance.
+- **2–5:** AI generation, licensed search, scheduled discovery, pre-generated WebP sizes.
+
 ## P11 — Repeatable Vendor Onboarding
 
 Added 2026-10-21, after `/discover` on an external brief to provision a new inventory and
@@ -1479,3 +1486,6 @@ is unrelated guest-cart retention, and no correctly-numbered issue for this exis
 | 2026-11-18 | **Storefront trust fixes — staff content off /help, refund policy, consumer terms** (`#1652`, PR #1655, squash `861ef8a9`, `staging`; `specs/2026-11-18-storefront-trust-fixes/`): merged to staging; promoted to production in PR #1661. Row backfilled from git history at #1671's Orient (2026-11-20), where `sdd:audit` reported it missing. | Backfilled closure row |
 | 2026-11-18 | **Promotion `staging -> main`** (PR #1661, merge `fe26793a`) carried #1659, #1657, #1655. Row backfilled from git history at #1671's Orient (2026-11-20), where `sdd:audit` reported it pending carry-forward. | Backfilled promotion row |
 | 2026-11-18 | **Promotion `staging -> main`** (PR #1668, merge `3fece451`) carried #1667, #1665, #1663. Row backfilled from git history at #1671's Orient (2026-11-20), where `sdd:audit` reported it pending carry-forward. | Backfilled promotion row |
+| 2026-11-20 | **Image Hub phase 1a (`#1670`) in hub production**: the standalone hub service (`sriahead/merqify-image-hub`, own Cloudflare account and Neon project) promoted in hub PR #4 (merge `c73362a4`). The first deploy of the new Worker failed after upload with code 10007 and passed on a re-run of the deploy job. Runtime secrets pushed and quick checks passed. Store consumer keys issued for all four store Workers (application `shoplocal`). | Hub phase 1a shipped; unblocks `#1671` |
+| 2026-11-20 | **Image Hub phase 1b (`#1671`), store gallery client, built** (`specs/2026-11-20-image-hub-gallery/`, branch `feature/1671-image-hub-gallery`): `/staff/image-library` searches, previews, uploads, reviews (store admins) and assigns hub images to products and categories, copying bytes into the store's bucket and recording hub usages. Not yet merged; this row is updated at Ship. | Slice in flight |
+| 2026-11-20 | **Image Hub phase 1c (`#1674`) split out of 1b** at `#1671`'s Orient: the hub's public upload cannot carry `AI_GENERATED`/`OPEN_FOOD_FACTS` provenance, so importing existing store images needs a hub import route first. | Scope split, owner-approved |
