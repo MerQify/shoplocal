@@ -28,6 +28,11 @@ every branch merges.
 
 ### Added
 
+- **Image Hub phase 1c: import store catalogue images (#1674, 2026-11-20).**
+  - Added `importAsset` to `lib/image-hub/client.ts` wrapping the hub's `POST /v1/assets/import` endpoint, supporting full provenance (`source`, `licence`, `attribution`, `sourceSite`, `originalUrl`, `status`).
+  - Added `scripts/import-images-to-hub.ts`: an idempotent migration CLI (`--env-file`, `--dry-run`, `--vendor`, `--limit`) that reads existing `ProductImage` and `CategoryAsset` rows, fetches bytes from store S3/R2 storage, imports them into the Image Hub with provenance, and updates `hubAssetId` (and `hubUsageId` for approved usages).
+  - Tested live on staging: successfully imported existing store product images into the Merqify Image Hub.
+
 - **Client Setup: Dual Listbox Transfer Picker & Inline Edit for Receiving Addresses (#1684, 2026-11-20).**
   - Upgraded forward-to recipient selection in `/staff/platform/client-setup` to a Dual Listbox Transfer Picker (`DualListboxTransferPicker`) featuring native HTML5 drag-and-drop between Available and Selected mailboxes, click-to-transfer buttons (`Add →`, `← Remove`, `Add all →`, `← Clear all`), and direct custom mailbox input.
   - Added inline editing (`InboundAddressRow`) for existing receiving addresses, allowing platform admins to update purpose and forward-to recipients directly without having to delete and re-add or risk duplicate address collisions.
