@@ -12,6 +12,12 @@ every branch merges.
 
 ### Added
 
+- **Client Setup: Dual Listbox Transfer Picker & Inline Edit for Receiving Addresses (#1682, 2026-11-20).**
+  - Upgraded forward-to recipient selection in `/staff/platform/client-setup` to a Dual Listbox Transfer Picker (`DualListboxTransferPicker`) featuring native HTML5 drag-and-drop between Available and Selected mailboxes, click-to-transfer buttons (`Add →`, `← Remove`, `Add all →`, `← Clear all`), and direct custom mailbox input.
+  - Added inline editing (`InboundAddressRow`) for existing receiving addresses, allowing platform admins to update purpose and forward-to recipients directly without having to delete and re-add or risk duplicate address collisions.
+  - Added `updateInboundAddress` repository method, service method with routing loop guard, and `updateInboundAddressAction` server action.
+  - **Tests:** `tests/client-setup-email-forms.test.tsx`, `tests/client-setup.test.ts`, `tests/client-setup-update-inbound.test.ts`.
+
 - **Client Setup: Multi-forward receiving addresses & in-dashboard destination verification (#1680, 2026-11-20).**
   - In-dashboard destination verification: Platform admins can dispatch a 1-click Cloudflare Email Routing destination verification email to any new team member mailbox directly from `/staff/platform/client-setup` via `createDestinationAddress()` and `POST /email/routing/addresses`.
   - Multi-forward receiving addresses: Stores can forward incoming customer emails to multiple verified team mailboxes simultaneously without using Google Groups.

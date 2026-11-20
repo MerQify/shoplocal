@@ -47,6 +47,13 @@ export const inboundAddressSchema = z.object({
   forwardTo: forwardToListSchema,
 });
 
+export const updateInboundAddressSchema = z.object({
+  vendorId: z.string().min(1),
+  id: z.string().min(1),
+  forwardTo: forwardToListSchema,
+  purpose: z.enum(["ORDERS", "SUPPORT"]).optional(),
+});
+
 export const removeInboundAddressSchema = z.object({
   vendorId: z.string().min(1),
   id: z.string().min(1),

@@ -7,6 +7,7 @@ import {
   saveSenderAction,
   sendDestinationVerificationAction,
   sendTestEmailAction,
+  updateInboundAddressAction,
 } from "@/app/(admin)/staff/platform/client-setup/actions";
 import {
   initialClientSetupFormState,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/client-setup/form-state";
 import { buttonClass, inputClass, labelClass } from "@/lib/form-classes";
 import { Icon } from "@/components/icons/Icon";
+import { DualListboxTransferPicker } from "./DualListboxTransferPicker";
 import type { InboundDefaultForward } from "@/lib/config";
 import type { DestinationsResult } from "@/lib/email/destinations";
 import type { SuggestedSender } from "@/lib/client-setup/sender-suggestion";
@@ -298,15 +300,22 @@ export function AddInboundAddressForm({
     initialClientSetupFormState,
   );
   return (
-    <form action={action} className="space-y-3" data-client-setup-form="add-address">
+    <form action={action} className="space-y-4" data-client-setup-form="add-address">
       <FormMessage state={state} />
       <input type="hidden" name="vendorId" value={vendorId} />
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className={labelClass} htmlFor="address">
             Receiving address
           </label>
-          <input id="address" name="address" type="email" required className={inputClass} />
+          <input
+            id="address"
+            name="address"
+            type="email"
+            required
+            placeholder="e.g. info@domain.com"
+            className={inputClass}
+          />
         </div>
         <div>
           <label className={labelClass} htmlFor="purpose">
@@ -317,40 +326,168 @@ export function AddInboundAddressForm({
             <option value="SUPPORT">Support</option>
           </select>
         </div>
-        <div>
-          {destinations.status === "ok" ? (
-            <ForwardToSelect defaultForward={defaultForward} addresses={destinations.addresses} />
-          ) : (
-            <>
-              <label className={labelClass} htmlFor="forwardTo">
-                Forward to (the store&apos;s real mailbox)
-              </label>
-              <input
-                id="forwardTo"
-                name="forwardTo"
-                type="email"
-                required
-                defaultValue={prefill}
-                aria-describedby={prefill ? "forwardTo-hint" : undefined}
-                className={inputClass}
-              />
-              {prefill && (
-                <p id="forwardTo-hint" className="mt-1 text-xs text-primary-muted">
-                  The platform default inbox. Change it if this store has its own mailbox.
-                </p>
-              )}
-              <p className="mt-1 text-xs text-primary-muted" data-destinations-unavailable>
-                {DESTINATIONS_UNAVAILABLE_MESSAGE[destinations.reason]}
-              </p>
-            </>
-          )}
-        </div>
       </div>
+
+      <div>
+        <p className={labelClass}>Forward to (the store&apos;s real mailbox)</p>
+        {destinations.status === "ok" ? (
+          <DualListboxTransferPicker
+            verifiedAddresses={destinations.addresses.filter((a) => a.verified).map((a) => a.email)}
+            pendingAddresses={destinations.addresses.filter((a) => !a.verified).map((a) => a.email)}
+            initialSelected={prefill ? prefill.split(",").map((s) => s.trim()) : []}
+          />
+        ) : (
+          <>
+            <input
+              id="forwardTo"
+              name="forwardTo"
+              type="text"
+              required
+              defaultValue={prefill}
+              placeholder="e.g. team1@gmail.com, team2@gmail.com"
+              aria-describedby={prefill ? "forwardTo-hint" : undefined}
+              className={inputClass}
+            />
+            {prefill && (
+              <p id="forwardTo-hint" className="mt-1 text-xs text-primary-muted">
+                The platform default inbox. Change it if this store has its own mailbox.
+              </p>
+            )}
+            <p className="mt-1 text-xs text-primary-muted" data-destinations-unavailable>
+              {DESTINATIONS_UNAVAILABLE_MESSAGE[destinations.reason]}
+            </p>
+          </>
+        )}
+      </div>
+
       <button type="submit" disabled={saving} className={buttonClass}>
         <Icon name="plus" className="h-4 w-4" />
         {saving ? "Adding…" : "Add address"}
       </button>
     </form>
+  );
+}
+
+export function InboundAddressRow({
+  vendorId,
+  address,
+  destinations,
+}: {
+  vendorId: string;
+  address: {
+    id: string;
+    address: string;
+    purpose: "ORDERS" | "SUPPORT";
+    forwardTo: string;
+  };
+  destinations: DestinationsResult;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [state, action, saving] = useActionState(
+    updateInboundAddressAction,
+    initialClientSetupFormState,
+  );
+
+  return isEditing ? (
+    <li
+      className="rounded-xl border border-action/40 bg-action-tint/20 p-3 my-2 space-y-3"
+      data-edit-inbound-row={address.id}
+    >
+      <form action={action} className="space-y-3">
+        <FormMessage state={state} />
+        <input type="hidden" name="vendorId" value={vendorId} />
+        <input type="hidden" name="id" value={address.id} />
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+          <div>
+            <span className="text-xs font-semibold text-primary-muted">Editing:</span>
+            <span className="ml-2 font-bold text-primary">{address.address}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor={`edit-purpose-${address.id}`}
+              className="text-xs font-semibold text-primary"
+            >
+              Purpose:
+            </label>
+            <select
+              id={`edit-purpose-${address.id}`}
+              name="purpose"
+              defaultValue={address.purpose}
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-primary"
+            >
+              <option value="ORDERS">Orders</option>
+              <option value="SUPPORT">Support</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <p className="block text-xs font-semibold text-primary mb-1">Forward to recipients</p>
+          {destinations.status === "ok" ? (
+            <DualListboxTransferPicker
+              verifiedAddresses={destinations.addresses
+                .filter((a) => a.verified)
+                .map((a) => a.email)}
+              pendingAddresses={destinations.addresses
+                .filter((a) => !a.verified)
+                .map((a) => a.email)}
+              initialSelected={address.forwardTo.split(",").map((s) => s.trim())}
+            />
+          ) : (
+            <input
+              name="forwardTo"
+              defaultValue={address.forwardTo}
+              required
+              className={inputClass}
+            />
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            disabled={saving}
+            className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-primary hover:bg-slate-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center gap-1 rounded-xl bg-action px-3 py-1.5 text-xs font-semibold text-white hover:bg-action/90 transition-colors shadow-sm"
+          >
+            <Icon name="check" className="h-3.5 w-3.5" />
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+        </div>
+      </form>
+    </li>
+  ) : (
+    <li
+      className="flex flex-wrap items-center justify-between gap-2 py-2"
+      data-inbound-row={address.id}
+    >
+      <span className="min-w-0">
+        <span className="font-semibold text-primary">{address.address}</span>
+        <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-primary-muted">
+          {address.purpose === "ORDERS" ? "Orders" : "Support"}
+        </span>
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setIsEditing(true)}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-action hover:bg-action-tint transition-colors"
+          aria-label={`Edit ${address.address}`}
+        >
+          <Icon name="pencil" className="h-3.5 w-3.5" />
+          Edit
+        </button>
+        <RemoveInboundAddressButton vendorId={vendorId} id={address.id} />
+      </div>
+    </li>
   );
 }
 
