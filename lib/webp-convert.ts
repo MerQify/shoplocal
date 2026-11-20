@@ -21,10 +21,13 @@ import {
  * constants in `lib/product-image` — never `lib/storage` or `lib/config`, which carry the signer
  * and the secret-reading loader and must not reach a client bundle.
  */
-export async function convertToWebp(source: Blob): Promise<Blob> {
+export async function convertToWebp(
+  source: Blob,
+  maxEdgePx: number = MAX_IMAGE_EDGE_PX,
+): Promise<Blob> {
   const bitmap = await createImageBitmap(source, { imageOrientation: "from-image" });
   try {
-    const { width, height } = fitWithinEdge(bitmap.width, bitmap.height, MAX_IMAGE_EDGE_PX);
+    const { width, height } = fitWithinEdge(bitmap.width, bitmap.height, maxEdgePx);
 
     const canvas = document.createElement("canvas");
     canvas.width = width;

@@ -20,35 +20,8 @@ import type {
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/icons/Icon";
-import {
-  IMAGE_CONTENT_TYPE,
-  IMAGE_QUALITY,
-  MAX_IMAGE_EDGE_PX,
-  STORAGE_CACHE_CONTROL_IMMUTABLE,
-  fitWithinEdge,
-} from "@/lib/product-image";
-
-async function toWebp(file: File | Blob): Promise<Blob> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  try {
-    const { width, height } = fitWithinEdge(bitmap.width, bitmap.height, MAX_IMAGE_EDGE_PX);
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("This browser can't process images.");
-    context.drawImage(bitmap, 0, 0, width, height);
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, IMAGE_CONTENT_TYPE, IMAGE_QUALITY),
-    );
-    if (!blob) throw new Error("This browser can't produce WebP images.");
-    return blob;
-  } finally {
-    bitmap.close();
-  }
-}
+import { IMAGE_CONTENT_TYPE, STORAGE_CACHE_CONTROL_IMMUTABLE } from "@/lib/product-image";
+import { convertToWebp } from "@/lib/webp-convert";
 
 export function PromotionForm({
   promotion,
@@ -152,7 +125,7 @@ export function PromotionForm({
     setUploadError(null);
 
     try {
-      const blob = await toWebp(file);
+      const blob = await convertToWebp(file);
       const ticketRes = await requestPromotionBannerUpload(blob.size);
       if (!ticketRes.ok) {
         throw new Error(ticketRes.error);
@@ -227,7 +200,7 @@ export function PromotionForm({
           const imgRes = await fetch(data.imageUrl);
           if (imgRes.ok) {
             const pngBlob = await imgRes.blob();
-            const webpBlob = await toWebp(pngBlob);
+            const webpBlob = await convertToWebp(pngBlob);
             const ticketRes = await requestPromotionBannerUpload(webpBlob.size);
             if (ticketRes.ok) {
               const putRes = await fetch(ticketRes.value.url, {
@@ -310,7 +283,7 @@ export function PromotionForm({
             const imgRes = await fetch(data.imageUrl);
             if (imgRes.ok) {
               const pngBlob = await imgRes.blob();
-              const webpBlob = await toWebp(pngBlob);
+              const webpBlob = await convertToWebp(pngBlob);
               const ticketRes = await requestPromotionBannerUpload(webpBlob.size);
               if (ticketRes.ok) {
                 const putRes = await fetch(ticketRes.value.url, {

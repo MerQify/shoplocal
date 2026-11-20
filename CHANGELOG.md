@@ -6,6 +6,14 @@ every branch merges.
 
 ## [Unreleased]
 
+### Changed
+
+- **Consolidate browser WebP converters onto `lib/webp-convert.ts` (#1675, 2026-11-20).**
+  - Parameterized `convertToWebp(source: Blob, maxEdgePx?: number)` with default `MAX_IMAGE_EDGE_PX` (1200px) from `lib/product-image.ts`.
+  - Consolidated duplicate `toWebp` canvas routines in `BundleImageUploader`, `CampaignBannerUploader`, `ProductImageManager`, `PromotionForm`, `VendorLogoUploader`, and `WhatsappQrUploader` onto `lib/webp-convert.ts`.
+  - Retained `VendorMarkUploader` as the sole documented exception (renders 5 square PNG mark files via `MARK_CONTENT_TYPE`).
+  - Added architectural guard test in `tests/webp-converters.test.ts` scanning `app/`, `components/`, `features/`, `lib/` to enforce that `canvas.toBlob(` and `createImageBitmap(` are isolated to `lib/webp-convert.ts` and `VendorMarkUploader`.
+
 ### Documentation
 
 - **Roadmap rows for the 2026-11-20 promotion (PR #1685).** Production row for Image Hub 1b, the picker, reject-approved and Client Setup multi-forward; backfilled staging rows, plan front-matter, and ARTIFACT_INDEX.md entries for the two Client Setup slices so sdd:audit passes with 0 gaps.

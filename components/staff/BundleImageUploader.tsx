@@ -10,11 +10,10 @@ import {
 } from "@/features/admin/bundle-image";
 import {
   IMAGE_CONTENT_TYPE,
-  IMAGE_QUALITY,
   MAX_IMAGE_EDGE_PX,
   STORAGE_CACHE_CONTROL_IMMUTABLE,
-  fitWithinEdge,
 } from "@/lib/product-image";
+import { convertToWebp } from "@/lib/webp-convert";
 import { Icon } from "@/components/icons/Icon";
 
 /**
@@ -28,29 +27,6 @@ import { Icon } from "@/components/icons/Icon";
  * prompt is built server-side from the bundle's contents), Remove, and a "Needs
  * review" flag on a generated photo until someone approves or replaces it.
  */
-async function toWebp(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  try {
-    const { width, height } = fitWithinEdge(bitmap.width, bitmap.height, MAX_IMAGE_EDGE_PX);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("This browser can't process images.");
-    context.drawImage(bitmap, 0, 0, width, height);
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, IMAGE_CONTENT_TYPE, IMAGE_QUALITY),
-    );
-    if (!blob) throw new Error("This browser can't produce WebP images.");
-    return blob;
-  } finally {
-    bitmap.close();
-  }
-}
-
 export function BundleImageUploader({
   bundleId,
   imageUrl,
@@ -96,7 +72,7 @@ export function BundleImageUploader({
     startTransition(async () => {
       let blob: Blob;
       try {
-        blob = await toWebp(file);
+        blob = await convertToWebp(file);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "That image couldn't be read.");
         return;
