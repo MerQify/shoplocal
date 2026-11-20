@@ -1,3 +1,17 @@
+---
+id: receiving-address-transfer-list-edit-plan
+title: "Client Setup — receiving addresses dual listbox transfer picker & inline edit (plan)"
+audience: [dev]
+type: spec
+status: draft
+version: "1.0.0"
+updated: 2026-11-20
+visibility: internal
+summary: "Replaces single-select dropdown with an accessible HTML5 dual listbox transfer picker for managing forward destinations, and introduces inline edit mode for existing receiving addresses."
+tags: [email, client-setup, inbound-email, transfer-picker, p10]
+related: [multi-forward-destination-verification-plan, architecture]
+---
+
 # Implementation Plan: Receiving Addresses Dual Listbox Transfer Picker & Inline Edit
 
 ## 1. Schema & Repository Layer
