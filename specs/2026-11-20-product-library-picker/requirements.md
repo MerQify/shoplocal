@@ -88,7 +88,10 @@ R9. `tests/product-library-picker.test.tsx` (with the actions mocked) proves:
 ## Library page
 
 R10. In `components/staff/ImageLibraryClient.tsx`, a search with a non-empty trimmed query sends
-     `sort: "relevance"`, and a search with an empty query sends no `sort`. A test in
+     `sort: "relevance"`, and a search with an empty query sends no `sort`.
+     The server page's first page (`app/(admin)/staff/image-library/page.tsx`) uses the same rule
+     through the shared `librarySearchSort` helper (amended at Validate: without it page 1 is
+     newest-first while Load more asks for relevance, and the hub refuses the mismatched cursor). A test in
      `tests/image-library-client.test.tsx` asserts both.
 
 ## Docs

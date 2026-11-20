@@ -37,3 +37,34 @@
 | R15 | Choose the exact-name image, keep **Main image**, and click **Assign** on a product with no image. You see `Assigned to …`, and the Images section shows it. The storefront `/products/<slug>` `<img>` src starts with the CDN base and contains `products/`. Remove it on the product page. Then `GET /v1/assets/<id>` (hub staging key, tenant `aheed-food-centre`) shows `usages: []`. Reject both R14 images. |
 | R16 | As `demo-staff`: the product page shows **Choose from library**. Assigning and then removing on a no-image product succeeds (same checks as R15). |
 | R17 | `npm run lint && npm run typecheck && npm run format:check && npx vitest run --maxWorkers=4 && npm run build` all exit 0. The PR's CI `gates` check is green. |
+
+## Results (2026-11-20)
+
+Validated in the **same session and on the same model that built it (Opus 5.5)**, at the owner's
+choice, so this is **not independent**.
+
+- **Pre-flight:** lint, typecheck and format:check pass. `npx vitest run --maxWorkers=4` gives 493
+  files and 7144 tests passed (4 files, 8 tests skipped, as on staging). `build` passes, and
+  check-client-syntax parses 185 client files.
+- **R1–R12 (local): pass.**
+  - R1–R3, R6, R7, R9, R10: targeted runs, 8 files and 222 tests, including every `#1678` case,
+    `rbac-gate-matrix` and `staff-nav-parity`.
+  - R4: the page diff adds only `isImageLibraryConfigured()` and `productContextQuery` over the
+    already-loaded `brands` and `categories`. No new data fetch.
+  - R5: the picker sits inside the `product &&` Images section, behind `imageLibrary?.configured`.
+  - R8: the grep for `convertToWebp` and `finalizeProductAssignAction` in `ImageLibraryClient.tsx`
+    finds nothing, and `assignLibraryAsset` appears in both components.
+  - R10: amended to cover the server page's first page, which `librarySearchSort` already did.
+  - R11: two guide sentences, each traced to the picker button (R6) and the sort switch (R10).
+  - R12: CHANGELOG entry present.
+- **Callers of the changed search functions:**
+  - `searchLibraryAction` is called by `ImageLibraryClient` and `ProductLibraryPicker`.
+  - `searchImageLibrary` is called by the library page and that action.
+  - `searchAssets` is called by the service and by `scripts/verify-image-hub.ts`, without a sort.
+  - `sort` is optional everywhere, so no caller changes behaviour unasked.
+- **Rendered output (step 5): unverified locally.** The picker renders in jsdom, and the tests
+  query it by role and label. A real browser render needs a database-backed preview, which is
+  blocked by the dev database password (#1599). R14–R16 on staging are the rendered check.
+- **R13–R16 (live): unverified.** They need hub #1677 on hub staging and this branch on staging.
+  They run at Ship.
+- **R17's CI half: unverified** until the PR runs.
