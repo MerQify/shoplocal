@@ -176,6 +176,13 @@ export function ImageLibraryClient({
   );
 }
 
+/**
+ * #1682 — the hub refuses to reject an image still used on a product or category (409 `in_use`), so
+ * a live product photo can't be withdrawn from under the shop. Say what to do instead of the code.
+ */
+const IN_USE_MESSAGE =
+  "This image is used on a product or category. Remove it there first, then reject it.";
+
 function LibraryCard({
   asset,
   canReview,
@@ -190,6 +197,8 @@ function LibraryCard({
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [assigning, setAssigning] = useState(false);
+  /** #1682 — an approved image's reject controls stay folded behind "Reject…" until asked for. */
+  const [rejectingApproved, setRejectingApproved] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function approve() {
@@ -209,10 +218,35 @@ function LibraryCard({
     }
     startTransition(async () => {
       const result = await rejectLibraryAction(asset.id, reason);
-      if (result.ok) onChange(result.value);
-      else setMessage(result.message);
+      if (result.ok) {
+        setRejectingApproved(false);
+        onChange(result.value);
+      } else setMessage(result.code === "in_use" ? IN_USE_MESSAGE : result.message);
     });
   }
+
+  const rejectControls = (
+    <>
+      <label className="sr-only" htmlFor={`reason-${asset.id}`}>
+        Reason for rejecting
+      </label>
+      <input
+        id={`reason-${asset.id}`}
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+        placeholder="Reason for rejecting"
+        className="w-full rounded-lg border border-black/15 px-2.5 py-1.5 text-primary placeholder:text-primary-subtle focus:border-action focus:outline-none"
+      />
+      <button
+        type="button"
+        onClick={reject}
+        disabled={pending}
+        className="w-full rounded-lg border border-danger px-3 py-1.5 font-semibold text-danger hover:bg-danger-tint disabled:opacity-50"
+      >
+        Reject
+      </button>
+    </>
+  );
 
   return (
     <li className="flex flex-col overflow-hidden rounded-xl border border-black/10 bg-white">
@@ -256,24 +290,7 @@ function LibraryCard({
             >
               Approve
             </button>
-            <label className="sr-only" htmlFor={`reason-${asset.id}`}>
-              Reason for rejecting
-            </label>
-            <input
-              id={`reason-${asset.id}`}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder="Reason for rejecting"
-              className="w-full rounded-lg border border-black/15 px-2.5 py-1.5 text-primary placeholder:text-primary-subtle focus:border-action focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={reject}
-              disabled={pending}
-              className="w-full rounded-lg border border-danger px-3 py-1.5 font-semibold text-danger hover:bg-danger-tint disabled:opacity-50"
-            >
-              Reject
-            </button>
+            {rejectControls}
           </div>
         )}
 
@@ -292,6 +309,19 @@ function LibraryCard({
             canAssignCategory={canAssignCategory}
             onClose={() => setAssigning(false)}
           />
+        )}
+
+        {canReview && asset.status === "APPROVED" && !rejectingApproved && (
+          <button
+            type="button"
+            onClick={() => setRejectingApproved(true)}
+            className="mt-1 w-full rounded-lg px-3 py-1 font-semibold text-danger hover:bg-danger-tint"
+          >
+            Reject…
+          </button>
+        )}
+        {canReview && asset.status === "APPROVED" && rejectingApproved && (
+          <div className="mt-2 space-y-2">{rejectControls}</div>
         )}
 
         {message && (

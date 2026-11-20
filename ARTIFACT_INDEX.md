@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-20T10:11:52.517Z` · commit `fb3bc53e` · `380` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-20T11:22:35.873Z` · commit `e5d89d86` · `381` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -364,6 +364,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Storefront trust fixes — staff content off /help, refund policy, consumer terms (plan)](specs/2026-11-18-storefront-trust-fixes/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes staff-only material from the public Help page and rewrites the terms' refund and platform clauses so a first-time shopper sees a finished, trustworthy shop before card payments go live (#1652). |
 | [Image Hub phase 1b — store gallery client (plan)](specs/2026-11-20-image-hub-gallery/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Phase 1b of the Merqify Image Hub (#1671): a /staff image library that searches, previews, uploads, reviews and assigns hub images to products and categories, copying the bytes into the store's own bucket. |
 | [Image Hub — pick from library on the product page (plan)](specs/2026-11-20-product-library-picker/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Adds a Choose from library picker to /staff/products/<id> that lists approved Image Hub images ranked by relevance to the product's name, brand and category, and assigns the chosen one through the existing #1671 assign path. |
+| [Image library — reject an approved image (plan)](specs/2026-11-20-reject-approved-image/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Lets store admins reject an already-approved Image Hub image from /staff/image-library, with a plain-words refusal when the image is still used on a product or category. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
 | [ADR-002 — Authentication Library](specs/decisions/ADR-002-auth-library.md) | adr | 1.0.0 | 2026-08-06 | approved | internal | Decision to use Better Auth (self-hosted, bearer tokens, RBAC) for email/password and Google Sign-In, rejecting hosted IdPs like Clerk/Auth0 for the MVP. |

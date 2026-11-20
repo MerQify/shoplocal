@@ -22,7 +22,7 @@ vi.mock("@/features/admin/image-library", () => ({
 vi.mock("@/features/admin/product-image", () => ({ requestImageUpload: vi.fn() }));
 
 import { ImageLibraryClient } from "@/components/staff/ImageLibraryClient";
-import { searchLibraryAction } from "@/features/admin/image-library";
+import { rejectLibraryAction, searchLibraryAction } from "@/features/admin/image-library";
 import type { HubAsset } from "@/lib/image-hub/client";
 
 afterEach(cleanup);
@@ -134,5 +134,80 @@ describe("library search sort (#1678 R10)", () => {
         cursor: "c2",
       }),
     );
+  });
+});
+
+describe("reject an approved image (#1682)", () => {
+  const reject = vi.mocked(rejectLibraryAction);
+  const approved = () => page([asset(9, { status: "APPROVED" })], null);
+  const IN_USE =
+    "This image is used on a product or category. Remove it there first, then reject it.";
+
+  it("offers Reject… on approved cards to admins only, leaving pending cards as before (R1)", () => {
+    renderClient({ initialPage: approved(), canReview: false });
+    expect(screen.queryByRole("button", { name: "Reject…" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Reject" })).toBeNull();
+    cleanup();
+
+    renderClient({ initialPage: approved(), canReview: true });
+    expect(screen.getByRole("button", { name: "Reject…" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
+    expect(screen.queryByLabelText("Reason for rejecting")).toBeNull();
+    cleanup();
+
+    renderClient({
+      initialPage: page([asset(1, { status: "PENDING_REVIEW" })], null),
+      canReview: true,
+    });
+    expect(screen.queryByRole("button", { name: "Reject…" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeTruthy();
+  });
+
+  it("asks for a reason before calling the action (R2)", () => {
+    reject.mockReset();
+    renderClient({ initialPage: approved(), canReview: true });
+    fireEvent.click(screen.getByRole("button", { name: "Reject…" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    expect(screen.getByRole("alert").textContent).toBe("Give a reason for rejecting it.");
+    expect(reject).not.toHaveBeenCalled();
+  });
+
+  it("rejects with the reason and shows the rejected card (R2, R3)", async () => {
+    reject.mockReset();
+    reject.mockResolvedValue({
+      ok: true,
+      value: asset(9, { status: "REJECTED", rejectionReason: "Wrong pack" }),
+    });
+    renderClient({ initialPage: approved(), canReview: true });
+    fireEvent.click(screen.getByRole("button", { name: "Reject…" }));
+    fireEvent.change(screen.getByLabelText("Reason for rejecting"), {
+      target: { value: "Wrong pack" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    await screen.findByText("Rejected: Wrong pack");
+    expect(reject).toHaveBeenCalledWith(asset(9).id, "Wrong pack");
+    expect(screen.queryByRole("button", { name: "Assign…" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Reject…" })).toBeNull();
+  });
+
+  it("explains an in-use refusal in plain words, and passes other messages through (R4)", async () => {
+    reject.mockReset();
+    reject.mockResolvedValueOnce({
+      ok: false,
+      code: "in_use",
+      message: "The image is in use; remove its usages first",
+      status: 409,
+    });
+    renderClient({ initialPage: approved(), canReview: true });
+    fireEvent.click(screen.getByRole("button", { name: "Reject…" }));
+    fireEvent.change(screen.getByLabelText("Reason for rejecting"), { target: { value: "Old" } });
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe(IN_USE));
+    expect(screen.getByRole("button", { name: "Assign…" })).toBeTruthy();
+
+    reject.mockResolvedValueOnce({ ok: false, code: "unreachable", message: "Hub down." });
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Hub down."));
   });
 });

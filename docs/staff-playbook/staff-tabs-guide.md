@@ -242,7 +242,7 @@ checked for the right to use them, and stay available for reuse across your cata
 
 **What you can do:** Search the library and filter it by status, preview images, and upload new
 ones. A search lists the best matches first: an image whose title holds your words comes before
-one that only mentions them in its keywords or description. Only store admins approve or reject an image. Anyone with access can assign an approved image
+one that only mentions them in its keywords or description. Only store admins approve or reject an image. A store admin can also reject an image after approving it, with **Reject…** on its card, unless it is in use on a product or category; remove it there first. Anyone with access can assign an approved image
 to a product, as its main image or an extra one. Only store admins assign an image to a category.
 
 **Typical workflow:** Upload an image you took or a supplier sent you, giving it a clear title and
