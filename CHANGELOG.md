@@ -6,6 +6,24 @@ every branch merges.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Checkout and cancellation fixes from the live-payments go-live (#1690, #1691, #1693, 2026-11-20).**
+  - **Provider minimum:** a basket under the payment provider's minimum charge (Stripe: 30p in
+    GBP) is refused before any order is created, with "Card payments need a total of at least
+    £0.30." It used to create an order, cancel it and blame an unreachable provider.
+  - **Stripe's error is logged:** a failed session creation writes Stripe's status and message to
+    the log and to `ErrorEvent`. The shopper's message is unchanged.
+  - **Cancelled checkouts are closed:** a shopper who returns from Stripe and cancels now also
+    expires that Checkout Session, so the cancelled order can no longer be paid.
+  - **Cancellation email:** staff cancelling a paid order choose who asked and what to tell the
+    customer (refunded in full, not refunded yet, or their own message). The email and the order
+    page use the matching wording; a blank message gives a neutral one, and older cancellations
+    keep the original. Migration `20261120200000_order_cancellation_choices` (additive).
+    The email's fixed opening line and preview text are now neutral ("Order X has been
+    cancelled."), so they no longer apologise for a cancellation the customer asked for.
+  - **Telegram alerts** no longer carry a large link-preview card.
+
 ### Changed
 
 - **Consolidate browser WebP converters onto `lib/webp-convert.ts` (#1675, 2026-11-20).**

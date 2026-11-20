@@ -22,6 +22,9 @@ const paymentStub = vi.hoisted(() => {
     createPayment: succeed as () => Promise<unknown>,
     // #1324 — the last input placeOrder handed the provider, for the expiresAt assertion.
     lastInput: null as unknown,
+    // #1690 — the provider's minimum; null (no minimum) unless a case sets one.
+    minimum: null as number | null,
+    calls: 0,
   };
 });
 vi.mock("@/lib/payments", () => ({
@@ -30,8 +33,10 @@ vi.mock("@/lib/payments", () => ({
   getPaymentService: () => ({
     createPayment: (input: unknown) => {
       paymentStub.lastInput = input;
+      paymentStub.calls += 1;
       return paymentStub.createPayment();
     },
+    minimumAmount: () => paymentStub.minimum,
   }),
 }));
 
@@ -88,6 +93,8 @@ type FakeState = {
   loyaltyDebitCount: number;
   /** How many rows releaseOrder's guarded cancel claims to have updated (P7.5a). */
   releaseCount: number;
+  /** #1690 R6 — make the ErrorEvent write itself fail. */
+  errorEventFails?: boolean;
 };
 
 let state: FakeState;
@@ -220,6 +227,15 @@ function fakePrisma() {
   };
   return {
     $transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
+    // #1690 R5 — the provider failure is persisted as an ErrorEvent, outside the transaction.
+    errorEvent: {
+      create: async ({ data }: { data: unknown }) => {
+        if (state.errorEventFails) throw new Error("ErrorEvent table unavailable");
+        created.errorEvent.push(data);
+        return {};
+      },
+      deleteMany: async () => ({ count: 0 }),
+    },
     // placeOrder writes the provider reference after the transaction commits.
     payment: {
       update: async ({ data }: { data: unknown }) => {
@@ -286,6 +302,7 @@ beforeEach(() => {
     "paymentFailed",
     "cartRestored",
     "cartRestoreOptions",
+    "errorEvent",
   ]) {
     created[key] = [];
   }
@@ -312,6 +329,8 @@ beforeEach(() => {
   };
   // Every test starts with a provider that works; the #234 cases opt out.
   paymentStub.createPayment = paymentStub.succeed;
+  paymentStub.minimum = null;
+  paymentStub.calls = 0;
 });
 
 describe("placeOrder — buyer identity (R5)", () => {
@@ -1792,5 +1811,124 @@ describe("findNextPaymentSweepDueAt (#1324 R15)", () => {
     await expect(findNextPaymentSweepDueAt(duePrisma(null, null), VENDOR, CUTOFF)).resolves.toBe(
       null,
     );
+  });
+});
+
+describe("placeOrder — provider minimum (#1690 R2, R3)", () => {
+  // One line at the given price with no delivery fee and no store minimum: the total is the line.
+  const atPence = (pence: number) => {
+    state.cart = { id: "cart-1", items: [{ productId: "p1", quantity: 1 }] };
+    state.products[0].basePrice = pence;
+    return input({
+      rules: { deliveryFeePence: 0, freeDeliveryThresholdPence: 0, minimumOrderPence: 0 },
+    });
+  };
+
+  it("refuses a 29p GBP order below a 30p minimum, creating no order and never calling the provider", async () => {
+    paymentStub.minimum = 30;
+    const attempt = placeOrder(fakePrisma(), VENDOR, atPence(29));
+    await expect(attempt).rejects.toBeInstanceOf(CheckoutError);
+    await expect(attempt).rejects.toMatchObject({
+      code: "BELOW_PAYMENT_MINIMUM",
+      message: "Card payments need a total of at least £0.30.",
+    });
+    expect(created.order).toHaveLength(0);
+    expect(created.payment).toHaveLength(0);
+    expect(created.cartCleared).toHaveLength(0);
+    expect(paymentStub.calls).toBe(0);
+  });
+
+  it("does not refuse a total equal to the minimum", async () => {
+    paymentStub.minimum = 30;
+    await expect(placeOrder(fakePrisma(), VENDOR, atPence(30))).resolves.toMatchObject({
+      totalPence: 30,
+    });
+    expect(paymentStub.calls).toBe(1);
+  });
+
+  it("has no effect when the provider sets no minimum", async () => {
+    await expect(placeOrder(fakePrisma(), VENDOR, atPence(29))).resolves.toMatchObject({
+      totalPence: 29,
+    });
+  });
+});
+
+describe("placeOrder — provider failure is logged (#1690 R5, R6)", () => {
+  const stripeRefusal = () => {
+    paymentStub.createPayment = async () => {
+      throw new Error('Stripe session creation failed: 400 {"error":{"code":"amount_too_small"}}');
+    };
+  };
+
+  it("logs and persists the provider's message, then still throws PAYMENT_PROVIDER_FAILED", async () => {
+    stripeRefusal();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(placeOrder(fakePrisma(), VENDOR, input())).rejects.toMatchObject({
+      code: "PAYMENT_PROVIDER_FAILED",
+      message:
+        "We couldn't reach our payment provider. Nothing has been charged — please try again.",
+    });
+
+    const logged = String(errorSpy.mock.calls[0]?.[0]);
+    expect(logged.startsWith("[payments] createPayment failed for order ")).toBe(true);
+    expect(logged).toContain("amount_too_small");
+    const row = created.errorEvent[0] as { message: string };
+    expect(row.message.startsWith("[payments] createPayment failed")).toBe(true);
+    expect(row.message).toContain("amount_too_small");
+    // The compensation is unchanged: the order was released and the cart restored.
+    expect(created.orderCancelled).toHaveLength(1);
+    expect(created.cartRestored.length).toBeGreaterThan(0);
+    errorSpy.mockRestore();
+  });
+
+  it("still throws PAYMENT_PROVIDER_FAILED when the ErrorEvent write itself fails", async () => {
+    stripeRefusal();
+    state.errorEventFails = true;
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(placeOrder(fakePrisma(), VENDOR, input())).rejects.toMatchObject({
+      code: "PAYMENT_PROVIDER_FAILED",
+    });
+    errorSpy.mockRestore();
+  });
+});
+
+describe("cancelConfirmedOrder — the customer-facing choices (#1691 R12)", () => {
+  it("stores both choices and the trimmed message on the CANCELLED event, with the internal reason as note", async () => {
+    const events: Record<string, unknown>[] = [];
+    const tx = {
+      order: { updateMany: async () => ({ count: 1 }) },
+      orderItem: { findMany: async () => [] },
+      inventory: { updateMany: async () => ({ count: 1 }) },
+      orderStatusEvent: {
+        create: async ({ data }: { data: Record<string, unknown> }) => {
+          events.push(data);
+          return data;
+        },
+      },
+      payment: { updateMany: async () => ({ count: 1 }) },
+      loyaltyLedgerEntry: { findUnique: async () => null, create: async () => ({}) },
+      loyaltyAccount: { updateMany: async () => ({ count: 0 }) },
+      discountRedemption: { findFirst: async () => null, updateMany: async () => ({ count: 0 }) },
+      discountCode: { updateMany: async () => ({ count: 0 }) },
+    };
+    const db = {
+      $transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
+    } as unknown as Parameters<typeof cancelConfirmedOrder>[0];
+
+    await cancelConfirmedOrder(db, VENDOR, "o-1", "out of stock on two lines", "staff-1", {
+      reason: "CUSTOMER_REQUEST",
+      message: "CUSTOM",
+      customerMessage: "We'll call you tomorrow.",
+    });
+
+    expect(events[0]).toMatchObject({
+      status: "CANCELLED",
+      note: "out of stock on two lines",
+      cancellationReason: "CUSTOMER_REQUEST",
+      cancellationMessage: "CUSTOM",
+      customerMessage: "We'll call you tomorrow.",
+    });
   });
 });

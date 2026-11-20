@@ -5,6 +5,7 @@ import { requireVendorRole } from "@/lib/auth-rbac";
 import { getOrderCancelService, getOrderRepository } from "@/lib/orders-service";
 import { canCancel } from "@/lib/order-status";
 import { notifyOrderEvent } from "@/lib/order-notifications-service";
+import { parseCancellationChoices } from "@/lib/order-cancellation-form";
 
 /**
  * Staff cancellation of a paid order (P9.2, #696).
@@ -45,6 +46,11 @@ export async function cancelOrderStaff(formData: FormData) {
   const trimmed = reason.trim();
   if (trimmed.length === 0) return;
 
+  // #1691 R12 — who asked and what the customer is told, re-validated like every other field: a
+  // missing or forged choice, or an over-long message, cancels nothing.
+  const choices = parseCancellationChoices(formData);
+  if (!choices) return;
+
   const order = await getOrderRepository().getForStaff(orderNumber);
   if (!order || !canCancel(order.status)) return;
 
@@ -53,6 +59,7 @@ export async function cancelOrderStaff(formData: FormData) {
     orderNumber,
     trimmed,
     auth.user.id,
+    choices,
   );
   if (!cancelled) return;
 

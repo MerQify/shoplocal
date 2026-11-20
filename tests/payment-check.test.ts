@@ -64,6 +64,8 @@ describe("checkOrderPayment (R21)", () => {
     });
     await expect(checkOrderPayment(d, PENDING)).resolves.toEqual({
       kind: "not-paid",
+      // #1690 R8 — the stored session id, so a shopper's cancel can expire that session.
+      sessionId: "cs_test_123",
       sessionStatus: "open",
       paymentStatus: "unpaid",
     });

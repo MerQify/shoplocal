@@ -240,3 +240,22 @@ describe("place-order holds collection to the collection minimum (#1083 R7)", ()
     expect(m.redirect).not.toHaveBeenCalled();
   });
 });
+
+describe("place-order shows the payment-minimum refusal (#1690 R4)", () => {
+  it("returns the BELOW_PAYMENT_MINIMUM message through the same error state as BELOW_MINIMUM", async () => {
+    m.profile.collectionMinimumOrderPence = 0;
+    m.createOrder.mockRejectedValue(
+      new CheckoutError("BELOW_PAYMENT_MINIMUM", "Card payments need a total of at least £0.30."),
+    );
+    const form = new FormData();
+    form.set("fulfilmentMethod", "COLLECTION");
+    form.set("recipientName", "Test Shopper");
+    form.set("phone", "07000000000");
+    form.set("email", "shopper@example.test");
+
+    const state = await placeOrderAction({ error: null }, form);
+
+    expect(state).toEqual({ error: "Card payments need a total of at least £0.30." });
+    expect(m.redirect).not.toHaveBeenCalled();
+  });
+});

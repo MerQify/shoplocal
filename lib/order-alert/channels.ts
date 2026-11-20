@@ -43,7 +43,13 @@ export function telegramAdapter(
         response = await fetchImpl(`${TELEGRAM_API}/bot${token.token}/sendMessage`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ chat_id: destination, text }),
+          // #1693 — no preview card for the staff link: Telegram's fetcher is signed out, so the
+          // card only ever showed the sign-in page and the logo, at several times the alert's size.
+          body: JSON.stringify({
+            chat_id: destination,
+            text,
+            link_preview_options: { is_disabled: true },
+          }),
           signal: AbortSignal.timeout(TELEGRAM_TIMEOUT_MS),
         });
       } catch (error) {
