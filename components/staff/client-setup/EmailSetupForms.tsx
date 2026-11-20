@@ -329,19 +329,28 @@ export function AddInboundAddressForm({
       </div>
 
       <div>
-        <p className={labelClass}>Forward to (the store&apos;s real mailbox)</p>
         {destinations.status === "ok" ? (
-          <DualListboxTransferPicker
-            verifiedAddresses={destinations.addresses.filter((a) => a.verified).map((a) => a.email)}
-            pendingAddresses={destinations.addresses.filter((a) => !a.verified).map((a) => a.email)}
-            initialSelected={prefill ? prefill.split(",").map((s) => s.trim()) : []}
-          />
+          <>
+            <p className={labelClass}>Forward to (the store&apos;s real mailbox)</p>
+            <DualListboxTransferPicker
+              verifiedAddresses={destinations.addresses
+                .filter((a) => a.verified)
+                .map((a) => a.email)}
+              pendingAddresses={destinations.addresses
+                .filter((a) => !a.verified)
+                .map((a) => a.email)}
+              initialSelected={prefill ? prefill.split(",").map((s) => s.trim()) : []}
+            />
+          </>
         ) : (
           <>
+            <label className={labelClass} htmlFor="forwardTo">
+              Forward to (the store&apos;s real mailbox)
+            </label>
             <input
               id="forwardTo"
               name="forwardTo"
-              type="text"
+              type="email"
               required
               defaultValue={prefill}
               placeholder="e.g. team1@gmail.com, team2@gmail.com"
@@ -423,24 +432,35 @@ export function InboundAddressRow({
         </div>
 
         <div>
-          <p className="block text-xs font-semibold text-primary mb-1">Forward to recipients</p>
           {destinations.status === "ok" ? (
-            <DualListboxTransferPicker
-              verifiedAddresses={destinations.addresses
-                .filter((a) => a.verified)
-                .map((a) => a.email)}
-              pendingAddresses={destinations.addresses
-                .filter((a) => !a.verified)
-                .map((a) => a.email)}
-              initialSelected={address.forwardTo.split(",").map((s) => s.trim())}
-            />
+            <>
+              <p className="block text-xs font-semibold text-primary mb-1">Forward to recipients</p>
+              <DualListboxTransferPicker
+                verifiedAddresses={destinations.addresses
+                  .filter((a) => a.verified)
+                  .map((a) => a.email)}
+                pendingAddresses={destinations.addresses
+                  .filter((a) => !a.verified)
+                  .map((a) => a.email)}
+                initialSelected={address.forwardTo.split(",").map((s) => s.trim())}
+              />
+            </>
           ) : (
-            <input
-              name="forwardTo"
-              defaultValue={address.forwardTo}
-              required
-              className={inputClass}
-            />
+            <>
+              <label
+                htmlFor={`edit-forwardTo-${address.id}`}
+                className="block text-xs font-semibold text-primary mb-1"
+              >
+                Forward to recipients
+              </label>
+              <input
+                id={`edit-forwardTo-${address.id}`}
+                name="forwardTo"
+                defaultValue={address.forwardTo}
+                required
+                className={inputClass}
+              />
+            </>
           )}
         </div>
 
