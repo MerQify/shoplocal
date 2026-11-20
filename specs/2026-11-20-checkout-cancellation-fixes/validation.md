@@ -36,3 +36,48 @@
 | R18 | Unit | The tests named in R1–R16 exist and pass: `npx vitest run --maxWorkers=4` on the changed test files. |
 | R19 | Docs | `git diff origin/staging -- CHANGELOG.md` shows an entry naming #1690, #1691 and #1693. |
 | R20 | Regression | `npm run lint && npm run typecheck && npm run format:check && npx vitest run --maxWorkers=4 && npm run build` all exit 0. CI `gates` on the PR is green. |
+
+## Results (2026-11-20)
+
+Validated in the **same session and on the same model that built it (Opus 5.5)**, at the owner's
+choice, so this is **not independent**.
+
+- **Run 1, on `8d6b2689`:** every row passed except that a spec gap was found.
+  - **The gap:** the cancellation email's fixed template intro and preheader still said "We're
+    sorry, we've had to cancel…" above the customer-asked wording.
+  - **Spec amended with R14a**, the owner approved, and it was fixed in `0779d934`.
+- **Run 2, from the top, on `0779d934`:**
+  - **Pre-flight:**
+    - lint, format:check, `tsc --noEmit` (0 errors) and kms:check-generated all pass.
+    - `build` passes, with check-client-syntax parsing 185 files.
+    - The internal docs site build passes (386 pages).
+  - **Full suite** (`npx vitest run --maxWorkers=4`): 7216 passed, 4 failed.
+    - The 4 failures (`aheed-stock-import-safeguards`, `concurrency-slot-booking`, `express-sla`,
+      `slot-capacity`) are DB-backed suites. They fail with "Authentication failed" against the dev
+      database (#1599). Plain `staging` (`25732f05`) fails the same way. They skip in CI.
+    - `email-allowlist-client-setup` failed once under load and passed 8/8 alone (the CLAUDE.md
+      loaded-machine pattern).
+  - **R1, R3–R7, R12, R13, R14a, R15: pass.** The named tests are in `payments`, `orders`,
+    `place-order-delivery-pricing`, `cancel-order-action`, `cancellation-wording` and
+    `staff-cancel-order`; 224/224 across the 9 files, including the purity and client-injection
+    tests.
+  - **R2: pass**, against the fake Prisma in `tests/orders.test.ts` (the repo's pattern for
+    `placeOrder` refusals) rather than a real Postgres. This is a recorded deviation; see the build
+    notes.
+  - **R8: code pass. Live expiry in Stripe test mode: UNVERIFIED**, because it needs staging.
+  - **R9: pass.** No non-async export.
+  - **R10: pass.**
+    - The migration is the newest folder and carries a HAND-AUTHORED header.
+    - It has 0 `DROP`/`trgm` statements.
+    - `prisma validate` is OK, and its SQL equals Prisma's schema-to-schema diff from
+      `origin/staging`.
+    - It is not yet applied anywhere; CI applies it on the staging deploy.
+  - **R11: pass**, on the rendered form (jsdom): labels, `required`, and the textarea appearing only
+    for "Write my own message".
+  - **R14: code pass.** All three customer pages pass `cancellation`. **Live email and page:
+    UNVERIFIED**, because it needs a staging cancellation.
+  - **R16: code pass. Live Telegram alert: UNVERIFIED**, because it needs staging.
+  - **R17, R19: pass.**
+  - **R20:** local checks pass. CI `gates` is confirmed at ship.
+- **Merge with staging:** staging gained #1675 (no overlap with this slice's code or migration).
+  The only conflict is `CHANGELOG.md`, to resolve at ship.
