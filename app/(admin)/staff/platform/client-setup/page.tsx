@@ -29,6 +29,7 @@ import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Icon } from "@/components/icons/Icon";
 import {
+  AddDestinationAddressForm,
   AddInboundAddressForm,
   RemoveInboundAddressButton,
   SenderForm,
@@ -362,6 +363,10 @@ async function ClientSetupSections({
                   defaultForward={email.platform.defaultForward}
                   destinations={email.destinations}
                 />
+              </Card>
+
+              <Card title="Verify team mailbox">
+                <AddDestinationAddressForm />
               </Card>
 
               <Card title="Test email">

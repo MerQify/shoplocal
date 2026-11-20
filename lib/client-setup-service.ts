@@ -19,7 +19,12 @@ import { emailDomain, parseEmailList, resolveSender } from "@/lib/email/policy";
 import { loadEmailBrand } from "@/lib/email-brand-service";
 import { renderEmail } from "@/lib/email/layout/render";
 import { canonicalBaseUrl } from "@/lib/order-notifications/links";
-import { readDestinationAddresses, type DestinationsResult } from "@/lib/email/destinations";
+import {
+  createDestinationAddress,
+  readDestinationAddresses,
+  type CreateDestinationResult,
+  type DestinationsResult,
+} from "@/lib/email/destinations";
 import { fetchPlatformVendors } from "@/lib/platform-admin-service";
 import {
   createInboundAddress,
@@ -187,6 +192,15 @@ export async function saveVendorSender(
   return updateVendorSender(getPrisma(), vendorId, data);
 }
 
+export async function sendDestinationVerification(email: string): Promise<CreateDestinationResult> {
+  const ai = readOptional(getAiEnv);
+  return createDestinationAddress(
+    { accountId: ai?.CLOUDFLARE_ACCOUNT_ID, token: ai?.CLOUDFLARE_API_TOKEN },
+    email,
+    (input, init) => fetch(input, init),
+  );
+}
+
 export type AddInboundAddressOutcome = { ok: true } | { ok: false; reason: "duplicate" | "loop" };
 
 /**
@@ -199,14 +213,21 @@ export async function addInboundAddress(
 ): Promise<AddInboundAddressOutcome> {
   const prisma = getPrisma();
   const address = normaliseAddress(input.address);
-  const forwardTo = normaliseAddress(input.forwardTo);
-  if (forwardTo === address || (await findInboundAddress(prisma, forwardTo))) {
-    return { ok: false, reason: "loop" };
+  const targets = input.forwardTo
+    .split(",")
+    .map((s) => normaliseAddress(s))
+    .filter((s) => s.length > 0);
+
+  for (const forwardTo of targets) {
+    if (forwardTo === address || (await findInboundAddress(prisma, forwardTo))) {
+      return { ok: false, reason: "loop" };
+    }
   }
+
   const created = await createInboundAddress(prisma, vendorId, {
     address,
     purpose: input.purpose,
-    forwardTo,
+    forwardTo: targets.join(", "),
   });
   return created.ok ? { ok: true } : { ok: false, reason: created.reason };
 }

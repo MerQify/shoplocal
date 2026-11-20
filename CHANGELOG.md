@@ -12,6 +12,13 @@ every branch merges.
 
 ### Added
 
+- **Client Setup: Multi-forward receiving addresses & in-dashboard destination verification (#1680, 2026-11-20).**
+  - In-dashboard destination verification: Platform admins can dispatch a 1-click Cloudflare Email Routing destination verification email to any new team member mailbox directly from `/staff/platform/client-setup` via `createDestinationAddress()` and `POST /email/routing/addresses`.
+  - Multi-forward receiving addresses: Stores can forward incoming customer emails to multiple verified team mailboxes simultaneously without using Google Groups.
+  - `ForwardToSelect` in `components/staff/client-setup/EmailSetupForms.tsx` offers quick selection of multiple verified destination mailboxes and comma-separated custom inputs.
+  - `workers/inbound-email/src/index.ts` loops across all forward targets and forwards to each recipient individually, isolating errors so delivery to one does not impede delivery to others.
+  - **Tests:** `tests/email-destinations.test.ts`, `tests/client-setup.test.ts`, `tests/client-setup-inbound-groups.test.ts`, `tests/inbound-email-worker.test.ts`.
+
 - **Pick a library image on the product page, ranked by fit (#1678, part of #1669, 2026-11-20).**
   - `/staff/products/<id>` gains **Choose from library** (staff and store admins; only where the hub is configured). It lists approved library images ranked by relevance to the product's name, brand and category (`lib/image-hub/product-context.ts`), with a prefilled, editable search, **Load more**, and a show-all fallback. Assigning uses the same sequence as the library page, now shared in `components/staff/library-assign.ts`.
   - `/staff/image-library`'s search ranks by relevance whenever the search box has text.

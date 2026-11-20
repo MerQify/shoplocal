@@ -87,7 +87,19 @@ export async function handleInboundEmail(message: InboundMessage, env: Env): Pro
     return;
   }
 
-  await message.forward(resolution.forwardTo);
+  const recipients = resolution.forwardTo
+    .split(",")
+    .map((r) => r.trim())
+    .filter((r) => r.length > 0);
+
+  for (const recipient of recipients) {
+    try {
+      await message.forward(recipient);
+    } catch (error) {
+      console.error(`inbound-email forward to ${recipient} failed:`, error);
+    }
+  }
+
   console.log(
     `inbound-email vendorId=${resolution.vendorId} purpose=${resolution.purpose} ` +
       `orderRelated=${resolution.orderRelated} orderNumber=${resolution.orderNumber ?? "none"}`,

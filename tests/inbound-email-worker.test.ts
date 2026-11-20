@@ -87,6 +87,40 @@ describe("inbound-email handler (R21)", () => {
     );
   });
 
+  it("200: forwards to multiple comma-separated recipients", async () => {
+    respond(200, {
+      ...RESOLUTION,
+      forwardTo: "owner@shop.test, manager@shop.test, team@shop.test",
+    });
+    const m = message();
+    await handleInboundEmail(m, env);
+
+    expect(m.forward).toHaveBeenCalledTimes(3);
+    expect(m.forward).toHaveBeenNthCalledWith(1, "owner@shop.test");
+    expect(m.forward).toHaveBeenNthCalledWith(2, "manager@shop.test");
+    expect(m.forward).toHaveBeenNthCalledWith(3, "team@shop.test");
+  });
+
+  it("200: continues forwarding to remaining recipients if one rejects", async () => {
+    respond(200, {
+      ...RESOLUTION,
+      forwardTo: "bad@shop.test, good@shop.test",
+    });
+    const m = message();
+    m.forward
+      .mockRejectedValueOnce(new Error("Cloudflare error 1000"))
+      .mockResolvedValueOnce(undefined);
+
+    await handleInboundEmail(m, env);
+
+    expect(m.forward).toHaveBeenCalledTimes(2);
+    expect(m.forward).toHaveBeenNthCalledWith(1, "bad@shop.test");
+    expect(m.forward).toHaveBeenNthCalledWith(2, "good@shop.test");
+    expect(logs.some((l) => l.includes("inbound-email forward to bad@shop.test failed"))).toBe(
+      true,
+    );
+  });
+
   it("404: rejects and does not forward", async () => {
     respond(404, { error: "Unknown recipient" });
     const m = message();

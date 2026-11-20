@@ -19,6 +19,10 @@ export type DestinationsResult =
   | { status: "ok"; addresses: DestinationAddress[] }
   | { status: "unavailable"; reason: DestinationUnavailableReason };
 
+export type CreateDestinationResult =
+  | { ok: true; address: DestinationAddress }
+  | { ok: false; reason: "not-configured" | "forbidden" | "already-exists" | "error" };
+
 const API_BASE = "https://api.cloudflare.com/client/v4/accounts";
 const PER_PAGE = 50;
 /** Cloudflare's published account limit is 200 destination addresses: 4 pages of 50. */
@@ -82,4 +86,63 @@ export async function readDestinationAddresses(
     if (outcome.count < PER_PAGE) break;
   }
   return { status: "ok", addresses };
+}
+
+export async function createDestinationAddress(
+  credentials: { accountId?: string; token?: string },
+  email: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<CreateDestinationResult> {
+  const accountId = credentials.accountId?.trim();
+  const token = credentials.token?.trim();
+  if (!accountId || !token) return { ok: false, reason: "not-configured" };
+  const normalized = email.trim().toLowerCase();
+  if (!normalized || !normalized.includes("@")) return { ok: false, reason: "error" };
+
+  const url = `${API_BASE}/${encodeURIComponent(accountId)}/email/routing/addresses`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetchImpl(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email: normalized }),
+      signal: controller.signal,
+    });
+    if (response.status === 401 || response.status === 403) {
+      return { ok: false, reason: "forbidden" };
+    }
+    const body = (await response.json()) as {
+      success?: unknown;
+      result?: { email?: unknown; verified?: unknown };
+      errors?: Array<{ code?: number; message?: string }>;
+    };
+    if (response.status === 400 || response.status === 409) {
+      const isAlreadyExists = body?.errors?.some(
+        (e) => e.code === 10001 || e.message?.toLowerCase().includes("already"),
+      );
+      if (isAlreadyExists) return { ok: false, reason: "already-exists" };
+      return { ok: false, reason: "error" };
+    }
+    if (!response.ok || body?.success !== true) {
+      return { ok: false, reason: "error" };
+    }
+    return {
+      ok: true,
+      address: {
+        email:
+          typeof body.result?.email === "string"
+            ? body.result.email.trim().toLowerCase()
+            : normalized,
+        verified: typeof body.result?.verified === "string" && body.result.verified.length > 0,
+      },
+    };
+  } catch {
+    return { ok: false, reason: "error" };
+  } finally {
+    clearTimeout(timer);
+  }
 }
