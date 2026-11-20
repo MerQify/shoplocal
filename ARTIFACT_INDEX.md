@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-20T22:16:10.552Z` · commit `67192c65` · `387` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-20T23:26:50.070Z` · commit `72558b5d` · `388` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -362,6 +362,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Halal claim wording — gate the homepage HMC pill, stop the product-page overclaim (plan)](specs/2026-11-18-halal-claim-wording/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Stops the homepage claiming "100% Certified HMC Halal" for every vendor and stops product pages claiming certification for halal products that carry none (#1658). |
 | [Help content names the store's own website (plan)](specs/2026-11-18-help-own-website/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes aheed.merqify.com and srimart.merqify.com storefront examples from Aheed's help content; /help shows the store's own canonical host (#1662). |
 | [Storefront trust fixes — staff content off /help, refund policy, consumer terms (plan)](specs/2026-11-18-storefront-trust-fixes/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes staff-only material from the public Help page and rewrites the terms' refund and platform clauses so a first-time shopper sees a finished, trustworthy shop before card payments go live (#1652). |
+| [Merqify Image Hub — phase 2: AI image generation in the gallery (plan)](specs/2026-11-20-ai-image-generation/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Provides interactive AI product photo generation in /staff/image-library and a batch CLI tool for products lacking images (including inactive products so photos are ready ahead of activation), metered against the vendor's daily AI budget and landing in the hub as PENDING_REVIEW. |
 | [Checkout and cancellation fixes from the live-payments go-live (plan)](specs/2026-11-20-checkout-cancellation-fixes/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Refuses baskets under the provider's minimum charge, logs Stripe's real error, expires a cancelled order's Checkout Session, lets staff say why and whether they refunded when cancelling (including a custom message), and turns off Telegram link previews. |
 | [Consolidate browser WebP converters onto lib/webp-convert.ts (plan)](specs/2026-11-20-consolidate-webp-convert/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Consolidates six duplicate toWebp canvas implementations across staff image uploaders onto lib/webp-convert.ts, keeping VendorMarkUploader separate, and adds an architectural guard test. |
 | [Image Hub phase 1b — store gallery client (plan)](specs/2026-11-20-image-hub-gallery/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Phase 1b of the Merqify Image Hub (#1671): a /staff image library that searches, previews, uploads, reviews and assigns hub images to products and categories, copying the bytes into the store's own bucket. |
