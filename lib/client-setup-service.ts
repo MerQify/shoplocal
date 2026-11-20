@@ -19,7 +19,12 @@ import { emailDomain, parseEmailList, resolveSender } from "@/lib/email/policy";
 import { loadEmailBrand } from "@/lib/email-brand-service";
 import { renderEmail } from "@/lib/email/layout/render";
 import { canonicalBaseUrl } from "@/lib/order-notifications/links";
-import { readDestinationAddresses, type DestinationsResult } from "@/lib/email/destinations";
+import {
+  createDestinationAddress,
+  readDestinationAddresses,
+  type CreateDestinationResult,
+  type DestinationsResult,
+} from "@/lib/email/destinations";
 import { fetchPlatformVendors } from "@/lib/platform-admin-service";
 import {
   createInboundAddress,
@@ -27,6 +32,7 @@ import {
   findInboundAddress,
   listInboundAddresses,
   normaliseAddress,
+  updateInboundAddress as repoUpdateInboundAddress,
   type InboundAddressPurposeValue,
   type InboundAddressRow,
 } from "@/lib/repositories/inbound-address";
@@ -187,6 +193,15 @@ export async function saveVendorSender(
   return updateVendorSender(getPrisma(), vendorId, data);
 }
 
+export async function sendDestinationVerification(email: string): Promise<CreateDestinationResult> {
+  const ai = readOptional(getAiEnv);
+  return createDestinationAddress(
+    { accountId: ai?.CLOUDFLARE_ACCOUNT_ID, token: ai?.CLOUDFLARE_API_TOKEN },
+    email,
+    (input, init) => fetch(input, init),
+  );
+}
+
 export type AddInboundAddressOutcome = { ok: true } | { ok: false; reason: "duplicate" | "loop" };
 
 /**
@@ -199,16 +214,63 @@ export async function addInboundAddress(
 ): Promise<AddInboundAddressOutcome> {
   const prisma = getPrisma();
   const address = normaliseAddress(input.address);
-  const forwardTo = normaliseAddress(input.forwardTo);
-  if (forwardTo === address || (await findInboundAddress(prisma, forwardTo))) {
-    return { ok: false, reason: "loop" };
+  const targets = input.forwardTo
+    .split(",")
+    .map((s) => normaliseAddress(s))
+    .filter((s) => s.length > 0);
+
+  for (const forwardTo of targets) {
+    if (forwardTo === address || (await findInboundAddress(prisma, forwardTo))) {
+      return { ok: false, reason: "loop" };
+    }
   }
+
   const created = await createInboundAddress(prisma, vendorId, {
     address,
     purpose: input.purpose,
-    forwardTo,
+    forwardTo: targets.join(", "),
   });
   return created.ok ? { ok: true } : { ok: false, reason: created.reason };
+}
+
+export type UpdateInboundAddressOutcome =
+  { ok: true } | { ok: false; reason: "not-found" | "loop" };
+
+/**
+ * Updates a receiving address. Refuses a forward-to that causes a loop or references another
+ * receiving address.
+ */
+export async function updateInboundAddress(
+  vendorId: string,
+  id: string,
+  input: { forwardTo: string; purpose?: InboundAddressPurposeValue },
+): Promise<UpdateInboundAddressOutcome> {
+  const prisma = getPrisma();
+  const existing = await prisma.vendorInboundAddress.findFirst({
+    where: { id, vendorId },
+  });
+  if (!existing) return { ok: false, reason: "not-found" };
+
+  const targets = input.forwardTo
+    .split(",")
+    .map((s) => normaliseAddress(s))
+    .filter((s) => s.length > 0);
+
+  if (targets.length === 0) {
+    return { ok: false, reason: "loop" };
+  }
+
+  for (const forwardTo of targets) {
+    if (forwardTo === existing.address || (await findInboundAddress(prisma, forwardTo))) {
+      return { ok: false, reason: "loop" };
+    }
+  }
+
+  const updated = await repoUpdateInboundAddress(prisma, vendorId, id, {
+    forwardTo: targets.join(", "),
+    purpose: input.purpose,
+  });
+  return updated.ok ? { ok: true } : { ok: false, reason: "not-found" };
 }
 
 export async function removeInboundAddress(vendorId: string, id: string): Promise<boolean> {

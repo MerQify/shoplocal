@@ -29,7 +29,9 @@ import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Icon } from "@/components/icons/Icon";
 import {
+  AddDestinationAddressForm,
   AddInboundAddressForm,
+  InboundAddressRow,
   RemoveInboundAddressButton,
   SenderForm,
   TestEmailButton,
@@ -339,18 +341,12 @@ async function ClientSetupSections({
                         </p>
                         <ul className="divide-y divide-slate-100">
                           {group.addresses.map((a) => (
-                            <li
+                            <InboundAddressRow
                               key={a.id}
-                              className="flex flex-wrap items-center justify-between gap-2 py-2"
-                            >
-                              <span className="min-w-0">
-                                <span className="font-semibold">{a.address}</span>
-                                <span className="ml-2 text-xs text-primary-muted">
-                                  {a.purpose === "ORDERS" ? "Orders" : "Support"}
-                                </span>
-                              </span>
-                              <RemoveInboundAddressButton vendorId={vendorId} id={a.id} />
-                            </li>
+                              vendorId={vendorId}
+                              address={a}
+                              destinations={email.destinations}
+                            />
                           ))}
                         </ul>
                       </li>
@@ -362,6 +358,10 @@ async function ClientSetupSections({
                   defaultForward={email.platform.defaultForward}
                   destinations={email.destinations}
                 />
+              </Card>
+
+              <Card title="Verify team mailbox">
+                <AddDestinationAddressForm />
               </Card>
 
               <Card title="Test email">

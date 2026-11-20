@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readDestinationAddresses } from "@/lib/email/destinations";
+import { createDestinationAddress, readDestinationAddresses } from "@/lib/email/destinations";
 
 /**
  * #1392 R1–R2 — the Cloudflare Email Routing destination-address reader, with a stubbed fetch.
@@ -169,5 +169,79 @@ describe("readDestinationAddresses", () => {
       const result = await readDestinationAddresses(CREDS, fetchImpl);
       expect(JSON.stringify(result)).not.toContain(TOKEN);
     }
+  });
+});
+
+describe("createDestinationAddress", () => {
+  it("returns not-configured without account id or token, making no request", async () => {
+    const fetchImpl = vi.fn();
+    expect(await createDestinationAddress({}, "test@inbox.test", fetchImpl)).toEqual({
+      ok: false,
+      reason: "not-configured",
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("returns error for empty or invalid email", async () => {
+    const fetchImpl = vi.fn();
+    expect(await createDestinationAddress(CREDS, "not-an-email", fetchImpl)).toEqual({
+      ok: false,
+      reason: "error",
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("dispatches POST with Bearer token and JSON body, lower-casing email", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          result: { email: "new@inbox.test", verified: null },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+    const result = await createDestinationAddress(CREDS, "New@Inbox.TEST", fetchImpl);
+    expect(result).toEqual({
+      ok: true,
+      address: { email: "new@inbox.test", verified: false },
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe(
+      "https://api.cloudflare.com/client/v4/accounts/acct123/email/routing/addresses",
+    );
+    expect(init.method).toBe("POST");
+    expect(init.headers).toEqual({
+      Authorization: `Bearer ${TOKEN}`,
+      "Content-Type": "application/json",
+    });
+    expect(JSON.parse(init.body)).toEqual({ email: "new@inbox.test" });
+  });
+
+  it("handles duplicate/already exists error", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: false,
+          errors: [{ code: 10001, message: "destination already exists" }],
+        }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      ),
+    );
+    const result = await createDestinationAddress(CREDS, "already@inbox.test", fetchImpl);
+    expect(result).toEqual({ ok: false, reason: "already-exists" });
+  });
+
+  it.each([401, 403])("maps status %i to forbidden", async (status) => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response("forbidden", { status }));
+    const result = await createDestinationAddress(CREDS, "test@inbox.test", fetchImpl);
+    expect(result).toEqual({ ok: false, reason: "forbidden" });
+  });
+
+  it("handles fetch rejection gracefully as error", async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error("network failure"));
+    const result = await createDestinationAddress(CREDS, "test@inbox.test", fetchImpl);
+    expect(result).toEqual({ ok: false, reason: "error" });
   });
 });

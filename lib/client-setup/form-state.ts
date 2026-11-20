@@ -15,6 +15,25 @@ export const initialClientSetupFormState: ClientSetupFormState = { ok: false, me
 
 const email = z.string().trim().toLowerCase().email("Enter a valid email address.");
 
+export const forwardToListSchema = z
+  .string()
+  .trim()
+  .min(1, "Select at least one destination mailbox.")
+  .refine(
+    (val) => {
+      const parts = val
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+      return parts.length > 0 && parts.every((p) => z.string().email().safeParse(p).success);
+    },
+    { message: "Enter a valid email address (or comma-separated list of addresses)." },
+  );
+
+export const sendDestinationVerificationSchema = z.object({
+  email,
+});
+
 export const senderSchema = z.object({
   vendorId: z.string().min(1),
   senderName: z.string().trim().min(1, "Enter a sender name.").max(120),
@@ -25,7 +44,14 @@ export const inboundAddressSchema = z.object({
   vendorId: z.string().min(1),
   address: email,
   purpose: z.enum(["ORDERS", "SUPPORT"]),
-  forwardTo: email,
+  forwardTo: forwardToListSchema,
+});
+
+export const updateInboundAddressSchema = z.object({
+  vendorId: z.string().min(1),
+  id: z.string().min(1),
+  forwardTo: forwardToListSchema,
+  purpose: z.enum(["ORDERS", "SUPPORT"]).optional(),
 });
 
 export const removeInboundAddressSchema = z.object({

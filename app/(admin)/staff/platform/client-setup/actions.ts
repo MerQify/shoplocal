@@ -9,6 +9,8 @@ import {
   savePlatformBranding,
   saveVendorSender,
   sendClientSetupTestEmail,
+  sendDestinationVerification,
+  updateInboundAddress,
 } from "@/lib/client-setup-service";
 import {
   addOrderAlertRecipient,
@@ -22,8 +24,10 @@ import {
   orderAlertRecipientSchema,
   platformBrandingFormSchema,
   removeInboundAddressSchema,
+  sendDestinationVerificationSchema,
   senderSchema,
   testEmailSchema,
+  updateInboundAddressSchema,
   type ClientSetupFormState,
 } from "@/lib/client-setup/form-state";
 
@@ -80,6 +84,36 @@ export async function saveSenderAction(
   return { ok: true, message: "Sender saved." };
 }
 
+export async function sendDestinationVerificationAction(
+  _prev: ClientSetupFormState,
+  formData: FormData,
+): Promise<ClientSetupFormState> {
+  if (!(await platformAdminEmail())) return refusal("Platform admin only.");
+  const parsed = sendDestinationVerificationSchema.safeParse({
+    email: formData.get("email"),
+  });
+  if (!parsed.success) return refusal(firstIssue(parsed.error));
+  try {
+    const outcome = await sendDestinationVerification(parsed.data.email);
+    if (!outcome.ok) {
+      if (outcome.reason === "already-exists") {
+        return refusal("That email address is already added in Cloudflare Email Routing.");
+      }
+      if (outcome.reason === "forbidden") {
+        return refusal("Cloudflare API token lacks Email Routing Addresses edit permission.");
+      }
+      return refusal("Failed to request verification from Cloudflare. Try again in a moment.");
+    }
+  } catch {
+    return refusal("Sending verification email failed. Try again in a moment.");
+  }
+  revalidatePath(PAGE);
+  return {
+    ok: true,
+    message: `Verification email sent to ${parsed.data.email}. Ask them to click the link in their inbox.`,
+  };
+}
+
 export async function addInboundAddressAction(
   _prev: ClientSetupFormState,
   formData: FormData,
@@ -107,6 +141,38 @@ export async function addInboundAddressAction(
   }
   revalidatePath(PAGE);
   return { ok: true, message: "Address added." };
+}
+
+export async function updateInboundAddressAction(
+  _prev: ClientSetupFormState,
+  formData: FormData,
+): Promise<ClientSetupFormState> {
+  if (!(await platformAdminEmail())) return refusal("Platform admin only.");
+  const parsed = updateInboundAddressSchema.safeParse({
+    vendorId: formData.get("vendorId"),
+    id: formData.get("id"),
+    purpose: formData.get("purpose") || undefined,
+    forwardTo: formData.get("forwardTo"),
+  });
+  if (!parsed.success) return refusal(firstIssue(parsed.error));
+  try {
+    if (!(await knownVendor(parsed.data.vendorId))) return refusal("That store no longer exists.");
+    const outcome = await updateInboundAddress(parsed.data.vendorId, parsed.data.id, {
+      forwardTo: parsed.data.forwardTo,
+      purpose: parsed.data.purpose,
+    });
+    if (!outcome.ok) {
+      return refusal(
+        outcome.reason === "not-found"
+          ? "That address no longer exists."
+          : "The forward-to mailbox is itself a receiving address here, so mail would loop. Use the store's real mailbox.",
+      );
+    }
+  } catch {
+    return refusal("Updating the address failed. Try again in a moment.");
+  }
+  revalidatePath(PAGE);
+  return { ok: true, message: "Address updated." };
 }
 
 export async function removeInboundAddressAction(

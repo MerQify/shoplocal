@@ -130,6 +130,8 @@ export async function createCategoryAsset(
     storageKey: string;
     style: string;
     isSelected?: boolean;
+    /** #1671 — the Merqify Image Hub asset these bytes were copied from. */
+    hubAssetId?: string | null;
   },
 ): Promise<CategoryAssetSummary> {
   const shouldSelect = data.isSelected ?? false;
@@ -172,6 +174,7 @@ export async function createCategoryAsset(
       storageKey: data.storageKey,
       style: data.style,
       isSelected: shouldSelect,
+      hubAssetId: data.hubAssetId ?? null,
     },
     include: {
       category: {
@@ -328,6 +331,8 @@ export async function deleteCategoryAsset(
   storageKey?: string;
   categoryId?: string | null;
   wasSelected?: boolean;
+  /** #1671 R18 — the hub reference the deleted row carried, for the caller to remove the usage. */
+  hubRef?: { hubAssetId: string; hubUsageId: string | null } | null;
   error?: string;
 }> {
   const asset = await prismaWs.categoryAsset.findFirst({
@@ -401,7 +406,26 @@ export async function deleteCategoryAsset(
     storageKey,
     categoryId,
     wasSelected,
+    hubRef: asset.hubAssetId
+      ? { hubAssetId: asset.hubAssetId, hubUsageId: asset.hubUsageId }
+      : null,
   };
+}
+
+/** #1671 R16 — store the hub usage id recorded for a category asset. Vendor-scoped. */
+export async function setCategoryAssetHubUsage(
+  prisma: Db,
+  vendorId: string,
+  assetId: string,
+  hubUsageId: string,
+): Promise<boolean> {
+  const row = await prisma.categoryAsset.findFirst({
+    where: { id: assetId, vendorId },
+    select: { id: true },
+  });
+  if (!row) return false;
+  await prisma.categoryAsset.update({ where: { id: row.id }, data: { hubUsageId } });
+  return true;
 }
 
 /**

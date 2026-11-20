@@ -82,6 +82,10 @@ const OPTIONAL_WORKER_SECRETS = [
   "TELEGRAM_BOT_TOKEN",
   // #1552 — the platform alert chat for the error-rate breach; unset means log-only.
   "PLATFORM_ALERT_TELEGRAM_CHAT_ID",
+  // #1671 — the Merqify Image Hub consumer pair. Unset means /staff/image-library says it is not
+  // set up. The hub's own credentials live in secrets/image-hub-*.vars and are never pushed here.
+  "IMAGE_HUB_URL",
+  "IMAGE_HUB_API_KEY",
 ];
 
 // #1323 — the reference database's DIRECT url, used by sync-reference-data.yml and the reference

@@ -233,6 +233,43 @@ it through a rename.
 **What happens after changes are saved:** Selected active images immediately update category cards, navigation scrollers, and touchpoints across the storefront with zero cache staleness.
 
 
+## Image library — `/staff/image-library`
+
+**Purpose:** A shared library of images for your products and categories. Images in it have been
+checked for the right to use them, and stay available for reuse across your catalogue.
+
+**Who can access:** Staff and store admins
+
+**What you can do:** Search the library and filter it by status, preview images, and upload new
+ones. A search lists the best matches first: an image whose title holds your words comes before
+one that only mentions them in its keywords or description. Only store admins approve or reject an image. A store admin can also reject an image after approving it, with **Reject…** on its card, unless it is in use on a product or category; remove it there first. Anyone with access can assign an approved image
+to a product, as its main image or an extra one. Only store admins assign an image to a category.
+
+**Typical workflow:** Upload an image you took or a supplier sent you, giving it a clear title and
+saying who owns the rights. It waits as "Pending review". A store admin approves it (or rejects it
+with a reason). Then open **Assign…** on the approved image, find the product or category, and
+assign it. The image is copied into your store, so the product or category shows it straight away.
+
+**Important fields and filters:** **Title** and **Alt text** describe the image; alt text is what
+screen readers announce. **Who owns the rights** is either "We took it or own it" or "A supplier
+gave written permission", and you must tick the confirmation before uploading. The **Status** filter
+shows all images, or only pending, approved or rejected ones. **Main image** replaces the product's
+current main image; **Extra image** adds one after the existing images.
+
+**Common mistakes and limitations:** Only approved images can be assigned, so ask a store admin to
+review new uploads. Do not upload photos copied from other websites: you need to own the image or
+have written permission. An image already in the library is refused as a duplicate. Images are
+resized and converted to WebP in your browser before uploading, and must be under 2 MB after
+conversion. An image the library holds in another format is converted in your browser when you
+assign it, which can take a few seconds. You cannot delete a library image from here. If the page
+says the library isn't set up, this store has no connection to it yet.
+
+**What happens after changes are saved:** An assigned image appears on the product or category
+immediately, like any other image you upload. The library records where each image is used. If you
+remove that image from the product page or the category's images, the library stops listing it as
+used there. A rejected image cannot be assigned.
+
+
 ## Brands — `/staff/brands`
 
 **Purpose:** The brands shoppers can filter by, such as Shan or TRS.
@@ -389,6 +426,9 @@ edited. This is the record of the product; the day-to-day stock figure lives und
 **What you can do:** Add a product, edit its name, description, price and unit label, record its net
 content so the shop can work out a real price per kilo or litre, set its department, choose its
 brand, mark dietary and provenance flags, feature it on the homepage, and manage its photographs.
+Where the image library is set up, a product's page also has **Choose from library**: it lists
+approved library images with the closest matches to the product's name, brand and department first,
+and you can search again, pick one, and use it as the main image or an extra one.
 
 **Typical workflow:** A new line arrives. Create the product, fill in name, price and unit label,
 add the net content if the item is sold by weight or volume, choose the department it belongs in,

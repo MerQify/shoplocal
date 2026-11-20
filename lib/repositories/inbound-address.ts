@@ -30,6 +30,14 @@ export function normaliseAddress(address: string): string {
   return address.trim().toLowerCase();
 }
 
+export function normaliseForwardToList(forwardTo: string): string {
+  const parts = forwardTo
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s) => s.length > 0);
+  return [...new Set(parts)].join(", ");
+}
+
 /** The address row, matched case-insensitively (rows are stored lower-case), or null. */
 export async function findInboundAddress(
   prisma: Db,
@@ -46,11 +54,16 @@ export async function findInboundAddress(
  * not a vendor.
  */
 export async function isRegisteredForwardTo(prisma: Db, address: string): Promise<boolean> {
-  const row = await prisma.vendorInboundAddress.findFirst({
-    where: { forwardTo: normaliseAddress(address) },
-    select: { id: true },
+  const target = normaliseAddress(address);
+  const rows = await prisma.vendorInboundAddress.findMany({
+    select: { forwardTo: true },
   });
-  return row !== null;
+  return rows.some((row) =>
+    row.forwardTo
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .includes(target),
+  );
 }
 
 export async function listInboundAddresses(
@@ -82,7 +95,7 @@ export async function createInboundAddress(
         vendorId,
         address: normaliseAddress(input.address),
         purpose: input.purpose,
-        forwardTo: normaliseAddress(input.forwardTo),
+        forwardTo: normaliseForwardToList(input.forwardTo),
       },
     });
     return { ok: true, row };
@@ -100,6 +113,31 @@ export async function deleteInboundAddress(
 ): Promise<number> {
   const { count } = await prisma.vendorInboundAddress.deleteMany({ where: { id, vendorId } });
   return count;
+}
+
+export type UpdateInboundAddressResult =
+  { ok: true; row: InboundAddressRow } | { ok: false; reason: "not-found" };
+
+/** Updates the forward-to (and optional purpose) of one of THIS vendor's addresses. */
+export async function updateInboundAddress(
+  prisma: Db,
+  vendorId: string,
+  id: string,
+  input: { forwardTo: string; purpose?: InboundAddressPurposeValue },
+): Promise<UpdateInboundAddressResult> {
+  const existing = await prisma.vendorInboundAddress.findFirst({
+    where: { id, vendorId },
+  });
+  if (!existing) return { ok: false, reason: "not-found" };
+
+  const row = await prisma.vendorInboundAddress.update({
+    where: { id },
+    data: {
+      forwardTo: normaliseForwardToList(input.forwardTo),
+      ...(input.purpose ? { purpose: input.purpose } : {}),
+    },
+  });
+  return { ok: true, row };
 }
 
 /** The vendor's own order with this number, or null — the cross-vendor guard for R18. */

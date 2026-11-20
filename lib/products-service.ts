@@ -33,6 +33,7 @@ import {
   saveGeneratedProductImage as saveGeneratedProductImageRepo,
   searchProducts,
   setPrimaryProductImage as setPrimaryProductImageRepo,
+  setProductImageHubUsage as setProductImageHubUsageRepo,
   toggleProductImageConfirmedPhoto as toggleProductImageConfirmedPhotoRepo,
   suggestProducts as suggestProductsRepo,
   updateProductForVendor as updateProductForVendorRepo,
@@ -43,6 +44,8 @@ import {
   type CatalogueWriteResult,
   type ProductPage,
   type ProductRepository,
+  type ProductImageOrigin,
+  type ProductImageWriteResult,
   type ProductWriteInput,
   type RemoveImageResult,
   type StaffInventoryPage,
@@ -310,8 +313,9 @@ export async function setPrimaryProductImage(
   productId: string,
   storageKey: string,
   alt: string,
-): Promise<CatalogueWriteResult> {
-  return setPrimaryProductImageRepo(getPrismaWs(), vendorId, productId, storageKey, alt);
+  origin?: ProductImageOrigin,
+): Promise<ProductImageWriteResult> {
+  return setPrimaryProductImageRepo(getPrismaWs(), vendorId, productId, storageKey, alt, origin);
 }
 
 export async function addProductImage(
@@ -319,8 +323,18 @@ export async function addProductImage(
   productId: string,
   storageKey: string,
   alt: string,
-): Promise<CatalogueWriteResult> {
-  return addProductImageRepo(getPrismaWs(), vendorId, productId, storageKey, alt);
+  origin?: ProductImageOrigin,
+): Promise<ProductImageWriteResult> {
+  return addProductImageRepo(getPrismaWs(), vendorId, productId, storageKey, alt, origin);
+}
+
+/** #1671 R16 — see the repository function. */
+export async function setProductImageHubUsage(
+  vendorId: string,
+  imageId: string,
+  hubUsageId: string,
+): Promise<boolean> {
+  return setProductImageHubUsageRepo(getPrisma(), vendorId, imageId, hubUsageId);
 }
 
 export async function promoteProductImage(

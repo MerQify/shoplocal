@@ -30,6 +30,14 @@ the evidence and the recipe.
   front-matter on `architecture.md`, `tech-stack.md` and ADR-003; caught only because the diff
   size was implausible, and fixed by `git checkout --` on all three and redoing the edits with the
   Edit tool. **Use the Edit/Write tools for file content; keep PowerShell for git, npm and gh.**
+- **Git Bash's `curl` rejects `-w '%{http_code}'` with error 43 on this machine** (`#1670`, 2026-11-19).
+  The write-out format is mangled before curl sees it, so the call fails as `curl: (43)` and reads
+  like a dead endpoint. Read the status from `curl -sS -i` headers, or the JSON body, instead.
+- **A migrate command is never a status check.** `prisma migrate deploy` / `migrate dev` and
+  `drizzle-kit migrate` APPLY pending migrations; none of them only reports. Running one "to see
+  where we are" migrated the Image Hub's production database during phase 1a's validation
+  (2026-11-19). Check migration state with a read-only query against the migrations table, for
+  example `select count(*) from "_prisma_migrations"`, with the target's `DIRECT_URL`.
 - **Check `git diff --numstat` after any scripted file rewrite.** A line count far larger than the
   edit is the cheapest possible signal that an encoding or line-ending rewrite happened.
 - **A `curl` read of a deployed `/api/health` intermittently fails on this machine, and the failure
@@ -309,6 +317,20 @@ GMT/UTC+0 and no longer discriminates) — fall back to a real DevTools Sensors 
 to the server-side two-`TZ`-run technique above, at that time of year.
 
 ## Live-testing staff panel server actions without a browser
+
+- **A server action called imperatively from a client component (not bound to a `<form>`) is
+  curl-drivable too, through the `Next-Action` header** (`#1671`, 2026-11-20, no Chrome extension
+  available).
+  - **Find the id:** fetch the page signed in and find the page chunk in the flight payload. The
+    `<script src>` tags do not include it; look for `static/chunks/app/.../page-<hash>.js`. That
+    chunk contains `createServerReference)("<id>", …, "<actionName>")` for every action the page
+    imports, with the export name.
+  - **Call it:** `POST` to the page URL with headers `next-action: <id>`,
+    `content-type: text/plain;charset=UTF-8`, `accept: text/x-component`, `origin: <same origin>`,
+    and the session cookie. The body is the JSON array of arguments.
+  - **Read the result:** the return value is the JSON on the response line starting `1:`.
+  - `/staff/image-library`'s approve, assign and finalize actions, and the product page's
+    `removeProductImage`, were driven this way end to end on staging.
 
 - **A plain progressive-enhancement server-action form (`<form action={someServerAction}>`, no
   client component) can be submitted with `curl`, with no browser and no JS runtime at all** —

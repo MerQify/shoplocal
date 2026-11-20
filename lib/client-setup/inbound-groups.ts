@@ -48,5 +48,11 @@ export function forwardTargetsVerified(
   const verified = new Set(
     destinations.addresses.filter((d) => d.verified).map((d) => d.email.toLowerCase()),
   );
-  return rows.every((row) => verified.has(row.forwardTo.trim().toLowerCase()));
+  return rows.every((row) => {
+    const targets = row.forwardTo
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length > 0);
+    return targets.length > 0 && targets.every((t) => verified.has(t));
+  });
 }

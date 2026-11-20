@@ -445,6 +445,42 @@ export function isIndexable(): boolean {
 }
 
 /**
+ * #1671 — the Merqify Image Hub, a separate service the store consumes (#1669).
+ *
+ * The store holds ONLY these two values: the hub's base URL and this Worker's own key, issued by
+ * the hub operator (`npm run keys` in `sriahead/merqify-image-hub`). The hub's Neon, R2 and
+ * Cloudflare credentials never come here (`secrets/image-hub-*.vars` are the operator's files).
+ *
+ * Optional, and kept out of `schema`/`getEnv()` for the same reason SEO and payments are: an
+ * environment without a hub is a supported state, in which `/staff/image-library` explains it is
+ * not set up and nothing else changes. Configured means BOTH are set — a URL without a key would
+ * only produce `unauthorized` from every call.
+ */
+const imageHubSchema = z.object({
+  IMAGE_HUB_URL: z
+    .string()
+    .url()
+    .refine((value) => value.startsWith("https://"), "IMAGE_HUB_URL must be an https:// URL")
+    .optional(),
+  IMAGE_HUB_API_KEY: z.string().min(1).optional(),
+});
+
+export type ImageHubEnv = { configured: true; url: string; apiKey: string } | { configured: false };
+
+export function getImageHubEnv(): ImageHubEnv {
+  const parsed = imageHubSchema.parse({
+    IMAGE_HUB_URL: readEnv("IMAGE_HUB_URL") || undefined,
+    IMAGE_HUB_API_KEY: readEnv("IMAGE_HUB_API_KEY") || undefined,
+  });
+  if (!parsed.IMAGE_HUB_URL || !parsed.IMAGE_HUB_API_KEY) return { configured: false };
+  return {
+    configured: true,
+    url: parsed.IMAGE_HUB_URL.replace(/\/+$/, ""),
+    apiKey: parsed.IMAGE_HUB_API_KEY,
+  };
+}
+
+/**
  * Calls `read` and returns its result, or `undefined` if it threw (P9.2, #621).
  *
  * WHY THIS EXISTS. The accessors above are deliberately fail-hard: each one's

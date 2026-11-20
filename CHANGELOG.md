@@ -6,6 +6,46 @@ every branch merges.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Reject-approved post-ship docs (#1682, 2026-11-20).** The image-library sanity guide in `env-setup.md` gains step 8, rejecting an approved image (Last run: staging, 2026-11-20). Added the roadmap row for the staging merge.
+
+- **Library picker post-ship docs (#1678, 2026-11-20).** `env-setup.md`'s image-library sanity guide gains the picker's live steps (Last run: staging, 2026-11-20). Restored the "Local development (dev)" heading that #1671's post-ship edit dropped. Added the roadmap row for the staging merge.
+
+- **Image library post-ship docs (#1671, 2026-11-20).** Corrected `env-setup.md`: `configure-env` re-pushes every secret in a vars file and refuses the AFC cell, so add only the two hub keys with `wrangler secret put`. Also added the image library sanity-check guide (Last run: staging, 2026-11-20); the handoff note that production store Workers do not yet carry the hub keys; the playbook note on driving a client-invoked server action with the `Next-Action` header; and the roadmap row for the staging merge.
+
+### Added
+
+- **Client Setup: Dual Listbox Transfer Picker & Inline Edit for Receiving Addresses (#1684, 2026-11-20).**
+  - Upgraded forward-to recipient selection in `/staff/platform/client-setup` to a Dual Listbox Transfer Picker (`DualListboxTransferPicker`) featuring native HTML5 drag-and-drop between Available and Selected mailboxes, click-to-transfer buttons (`Add →`, `← Remove`, `Add all →`, `← Clear all`), and direct custom mailbox input.
+  - Added inline editing (`InboundAddressRow`) for existing receiving addresses, allowing platform admins to update purpose and forward-to recipients directly without having to delete and re-add or risk duplicate address collisions.
+  - Added `updateInboundAddress` repository method, service method with routing loop guard, and `updateInboundAddressAction` server action.
+  - **Tests:** `tests/client-setup-email-forms.test.tsx`, `tests/client-setup.test.ts`, `tests/client-setup-update-inbound.test.ts`.
+
+- **Image library: reject an approved image (#1682, 2026-11-20).** Approved cards on `/staff/image-library` give store admins **Reject…** (reason required, through the existing `rejectLibraryAction`). The hub's `in_use` refusal for an image still on a product or category is shown in plain words: remove it there first. Staff never see it.
+
+- **Client Setup: Multi-forward receiving addresses & in-dashboard destination verification (#1680, 2026-11-20).**
+  - In-dashboard destination verification: Platform admins can dispatch a 1-click Cloudflare Email Routing destination verification email to any new team member mailbox directly from `/staff/platform/client-setup` via `createDestinationAddress()` and `POST /email/routing/addresses`.
+  - Multi-forward receiving addresses: Stores can forward incoming customer emails to multiple verified team mailboxes simultaneously without using Google Groups.
+  - `ForwardToSelect` in `components/staff/client-setup/EmailSetupForms.tsx` offers quick selection of multiple verified destination mailboxes and comma-separated custom inputs.
+  - `workers/inbound-email/src/index.ts` loops across all forward targets and forwards to each recipient individually, isolating errors so delivery to one does not impede delivery to others.
+  - **Tests:** `tests/email-destinations.test.ts`, `tests/client-setup.test.ts`, `tests/client-setup-inbound-groups.test.ts`, `tests/inbound-email-worker.test.ts`.
+
+- **Pick a library image on the product page, ranked by fit (#1678, part of #1669, 2026-11-20).**
+  - `/staff/products/<id>` gains **Choose from library** (staff and store admins; only where the hub is configured). It lists approved library images ranked by relevance to the product's name, brand and category (`lib/image-hub/product-context.ts`), with a prefilled, editable search, **Load more**, and a show-all fallback. Assigning uses the same sequence as the library page, now shared in `components/staff/library-assign.ts`.
+  - `/staff/image-library`'s search ranks by relevance whenever the search box has text.
+  - Needs the hub's `sort=relevance` (merqify-image-hub, #1677). An older hub ignores it and answers newest first.
+
+- **Image library: the Merqify Image Hub in the staff panel (#1671, phase 1b of #1669, 2026-11-20).**
+  - New `/staff/image-library` (Catalogue). Staff and store admins search, preview and upload. **Store admins only** approve or reject. Staff and admins assign an approved image to a product (main or extra image); store admins assign to a category.
+  - Assigning copies the image into the store's own bucket under a store key and records the usage in the hub. Removing or replacing that image releases the usage. A WebP under 2 MB is copied on the server; anything else is converted to WebP in the staff browser first.
+  - `lib/config` `getImageHubEnv()`: optional `IMAGE_HUB_URL` + `IMAGE_HUB_API_KEY`, both in `configure-env`'s optional list; unset means the page says it is not set up. Hub credentials never enter the store.
+  - `lib/image-hub/` (pure client) and `lib/image-hub-service.ts` (request-scoped facade); routes `/api/admin/image-library/upload` and `/api/admin/image-library/[id]/content`; WebP conversion extracted to `lib/webp-convert.ts`, shared with `ProductImageUploader`.
+  - **Migration** `20261120120000_image_hub_asset_refs`: nullable `hubAssetId`, `hubUsageId` on `ProductImage` and `CategoryAsset` (hand-authored, #895).
+  - `scripts/verify-image-hub.ts`: read-only check that an env file's key reaches the hub.
+  - Docs: staff guide section, env-setup, model-handoff, architecture §3.3, local-dev-playbook (curl error 43; migrate is not a status check); roadmap backfilled with 24 slice and 12 promotion rows.
+  - **Tests:** `lib/image-hub/client.test.ts`, `lib/image-hub-service.test.ts`, `tests/image-hub-unassign.test.ts`, `tests/image-library-routes.test.ts`, `tests/image-library-client.test.tsx`; config tests extended.
+
 ### Fixed
 
 - **Retry database reads on a dropped connection; "Try again" really retries (#1666, 2026-11-18).**

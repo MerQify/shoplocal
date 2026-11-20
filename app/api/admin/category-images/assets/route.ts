@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireVendorRole } from "@/lib/auth-rbac";
 import { getStorage } from "@/lib/storage";
+import { releaseHubUsage } from "@/lib/image-hub-service";
 import {
   listCategoryAssetsForVendor,
   deleteCategoryAssetForVendor,
@@ -79,6 +80,9 @@ export async function DELETE(request: Request) {
         console.warn("Storage deletion warning (safe to proceed):", storageError);
       }
     }
+
+    // #1671 R18 — an asset copied from the Image Hub gives up its hub usage. Best effort.
+    await releaseHubUsage(result.hubRef ?? null);
 
     revalidatePath("/staff/categories");
     if (result.categoryId) {

@@ -8,6 +8,7 @@ import {
   deactivateCategoryAsset,
   deleteCategoryAsset,
   getActiveSlotAssetsMap,
+  setCategoryAssetHubUsage,
   type CategoryAssetSummary,
   type ListCategoryAssetsOptions,
 } from "./repositories/category-assets";
@@ -43,6 +44,7 @@ export async function createCategoryAssetForVendor(
     storageKey: string;
     style: string;
     isSelected?: boolean;
+    hubAssetId?: string | null;
   },
 ): Promise<CategoryAssetSummary> {
   const prismaWs = getPrismaWs();
@@ -63,6 +65,15 @@ export async function deactivateCategoryAssetForVendor(vendorId: string, assetId
 export async function deleteCategoryAssetForVendor(vendorId: string, assetId: string) {
   const prismaWs = getPrismaWs();
   return deleteCategoryAsset(prismaWs, vendorId, assetId);
+}
+
+/** #1671 R16 — see the repository function. */
+export async function setCategoryAssetHubUsageForVendor(
+  vendorId: string,
+  assetId: string,
+  hubUsageId: string,
+): Promise<boolean> {
+  return setCategoryAssetHubUsage(getPrisma(), vendorId, assetId, hubUsageId);
 }
 
 export async function getActiveSlotAssetsForVendor(

@@ -710,7 +710,81 @@ Until the object exists (or where `CDN_BASE_URL` is unset, e.g. local `preview`)
 back to the Aheed wordmark — never a broken image. SriMart has no logo yet (`logoStorageKey` null →
 wordmark); setting a real one later is data-only, no deploy.
 
+### Merqify Image Hub consumer keys (`#1671`)
+
+The store's image library (`/staff/image-library`) talks to the **Merqify Image Hub**, a separate
+service (`sriahead/merqify-image-hub`). The store needs only two optional Worker secrets:
+
+| Variable | Value |
+|---|---|
+| `IMAGE_HUB_URL` | `https://merqify-image-hub-staging.merqify-image-hub.workers.dev` (staging) or `https://merqify-image-hub-production.merqify-image-hub.workers.dev` (production) |
+| `IMAGE_HUB_API_KEY` | This Worker's own key: `mih_stg_…` or `mih_prd_…`. The other environment's key is refused. |
+
+- **Where keys come from:** the hub operator runs `npm run keys -- create --env <env> --app
+  shoplocal --tenant <vendor-slug> … --scopes read,write,review` in the hub repo. The key prints
+  once; paste it into the matching `secrets/<file>.vars`. One key per store Worker per
+  environment, so each can be revoked alone. The tenant is the store's `Vendor.slug`.
+- **Pushing:** both are in `configure-env`'s optional list, and an empty value is skipped. But
+  `configure-env` re-pushes **every** secret in the file, and it accepts only `staging` or
+  `production`, not the AFC cell's `afc-staging` / `afc-production`. To add just these two keys
+  to a running Worker, set them alone. Take `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+  from that Worker's own vars file, then pipe each value into
+  `npx wrangler secret put IMAGE_HUB_URL --env <env>` (and the same for `IMAGE_HUB_API_KEY`).
+  Check with `npx wrangler secret list --env <env>`. This is how staging was set on 2026-11-20
+  (`aheed-store-staging`, `afc-store-staging`). An environment without the keys shows "The image
+  library isn't set up yet" and nothing else changes.
+- **`secrets/image-hub-{staging,production}.vars` are NOT store config.** They hold the hub's own
+  Neon, R2 and Cloudflare credentials for the hub operator (`npm run keys`, `secrets:push` in the
+  hub repo). Never copy a value from them into a store vars file, `.env`, `.dev.vars` or a store
+  Worker.
+- **Check a key without printing it:** `npx tsx scripts/verify-image-hub.ts --env-file
+  secrets/merqify-staging.vars` prints `health ok (staging)` and `search ok`. It is read-only, so
+  it proves read access only.
+
+### Sanity check: image library (`#1671`, `#1678`)
+
+Last run: 2026-11-20 on staging, including the product-page picker (#1678) against hub staging with
+`sort=relevance` (#1677), and rejecting an approved image (#1682); all passed. Production: not yet promoted; its store Workers do not yet
+carry the hub keys.
+
+Quick checks (no credentials, read-only). Use `<host>` = a store host such as `aheed-staging.merqify.com`:
+
+| # | Command | Expected |
+|---|---|---|
+| 1 | `curl -sS https://<host>/api/health` | `commit` is the deploy, `db.ok: true` |
+| 2 | `curl -sS -i https://<host>/api/admin/image-library/00000000-0000-4000-8000-000000000000/content` | `401`, `"code":"unauthenticated"` |
+| 3 | `curl -sS -i https://<host>/staff/image-library` | `307` to `/login` |
+| 4 | `npx tsx scripts/verify-image-hub.ts --env-file secrets/<env-file>.vars` | `health ok (<env>)`, `search ok`, exit 0 |
+
+Live checks (**staging only**, signed in as the demo store admin):
+
+1. Upload a small WebP on `/staff/image-library` → its card shows "Pending review".
+2. Approve it → "Approved".
+3. Assign it as the main image of a product **that has no image** → the storefront product page's
+   image URL starts with the store's `CDN_BASE_URL` and contains `products/`.
+4. Remove that image on `/staff/products/<id>` → the hub asset's `usages` is `[]`
+   (`GET /v1/assets/<id>` with the staging key and `X-Image-Hub-Tenant: aheed-food-centre`).
+
+5. **Picker (#1678):** open `/staff/products/<id>` for an active product with no image. The Images
+   section shows "Or pick an approved image from the library" and **Choose from library**. Its
+   search box starts with the product's name, brand and department.
+6. Approve two test images: one titled with that product's exact name, and one titled with only
+   its department name. **Choose from library** lists the exact-name image first.
+7. Pick it, keep **Main image**, and click **Assign** → "Assigned to `<product>`", and the storefront
+   shows it. Remove it again → the hub asset's `usages` is `[]`. Do the same as the demo **staff**
+   user: staff may assign too. Reject both test images afterwards.
+8. **Reject an approved image (#1682):** as the admin, an approved card shows **Reject…** (the
+   staff user sees none). Rejecting an unused approved image with a reason → "Rejected". Assign
+   another approved image to a product, then **Reject…** → "This image is used on a product or
+   category. Remove it there first, then reject it.", and it stays Approved. Remove it from the
+   product, then reject it → "Rejected".
+
+Choose test targets the storefront actually shows: an **inactive** category is never rendered, so
+assigning to one proves nothing on the storefront (hit at `#1671`'s staging validation).
+
 ## Local development (`dev`)
+
+
 
 A third environment tier, alongside staging and production — but **local-only**: no `wrangler.toml`
 `[env.dev]` block, no Cloudflare Worker deploy, no custom domain, no CI workflow, and no GitHub

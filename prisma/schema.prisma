@@ -949,6 +949,9 @@ model CategoryAsset {
   style      String // "photo" | "3d-icon"
   isSelected Boolean   @default(false)
   createdAt  DateTime  @default(now())
+  /// #1671 — Merqify Image Hub asset and usage ids, as on ProductImage. Null = not from the hub.
+  hubAssetId String?
+  hubUsageId String?
 
   @@index([vendorId, categoryId])
   @@index([vendorId, slot])
@@ -1243,6 +1246,10 @@ model ProductImage {
   sortOrder             Int                    @default(0)
   isPrimary             Boolean                @default(false)
   source                ProductImageSource     @default(UNKNOWN)
+  /// #1671 — the Merqify Image Hub asset this image was copied from, and the hub usage recorded
+  /// for it. Plain text, no relation: the hub is a separate service. Null = not from the hub.
+  hubAssetId            String?
+  hubUsageId            String?
   netContentSuggestions NetContentSuggestion[]
 
   @@index([productId, sortOrder])

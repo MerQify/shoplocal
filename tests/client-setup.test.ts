@@ -20,8 +20,10 @@ const service = {
   listClientSetupVendors: vi.fn(),
   saveVendorSender: vi.fn(),
   addInboundAddress: vi.fn(),
+  updateInboundAddress: vi.fn(),
   removeInboundAddress: vi.fn(),
   sendClientSetupTestEmail: vi.fn(),
+  sendDestinationVerification: vi.fn(),
 };
 vi.mock("@/lib/client-setup-service", () => service);
 
@@ -214,6 +216,48 @@ describe("addInboundAddressAction refusals (R29)", () => {
   });
 });
 
+describe("updateInboundAddressAction", () => {
+  const fields = {
+    vendorId: "v1",
+    id: "addr-1",
+    purpose: "SUPPORT",
+    forwardTo: "team1@domain.test, team2@domain.test",
+  };
+
+  it("explains a forwarding loop", async () => {
+    service.updateInboundAddress.mockResolvedValue({ ok: false, reason: "loop" });
+    const result = await actions.updateInboundAddressAction(
+      initialClientSetupFormState,
+      form(fields),
+    );
+    expect(result).toMatchObject({ ok: false });
+    expect(result.message).toMatch(/loop/);
+  });
+
+  it("explains an address not found", async () => {
+    service.updateInboundAddress.mockResolvedValue({ ok: false, reason: "not-found" });
+    const result = await actions.updateInboundAddressAction(
+      initialClientSetupFormState,
+      form(fields),
+    );
+    expect(result).toMatchObject({ ok: false });
+    expect(result.message).toMatch(/no longer exists/);
+  });
+
+  it("updates an address successfully", async () => {
+    service.updateInboundAddress.mockResolvedValue({ ok: true });
+    const result = await actions.updateInboundAddressAction(
+      initialClientSetupFormState,
+      form(fields),
+    );
+    expect(result.ok).toBe(true);
+    expect(service.updateInboundAddress).toHaveBeenCalledWith("v1", "addr-1", {
+      forwardTo: "team1@domain.test, team2@domain.test",
+      purpose: "SUPPORT",
+    });
+  });
+});
+
 describe("sendTestEmailAction (R33)", () => {
   it("sends to the signed-in admin's own address whatever the form posts", async () => {
     service.sendClientSetupTestEmail.mockResolvedValue({ status: "sent" });
@@ -249,6 +293,57 @@ describe("sendTestEmailAction (R33)", () => {
   });
 });
 
+describe("sendDestinationVerificationAction (#1680)", () => {
+  it("sends verification to a valid email and revalidates", async () => {
+    service.sendDestinationVerification.mockResolvedValue({
+      ok: true,
+      address: { email: "team@shop.test", verified: false },
+    });
+    const result = await actions.sendDestinationVerificationAction(
+      initialClientSetupFormState,
+      form({ email: "Team@Shop.TEST" }),
+    );
+    expect(result.ok).toBe(true);
+    expect(result.message).toContain("Verification email sent to team@shop.test");
+    expect(service.sendDestinationVerification).toHaveBeenCalledWith("team@shop.test");
+  });
+
+  it("handles duplicate/already exists error gracefully", async () => {
+    service.sendDestinationVerification.mockResolvedValue({
+      ok: false,
+      reason: "already-exists",
+    });
+    const result = await actions.sendDestinationVerificationAction(
+      initialClientSetupFormState,
+      form({ email: "already@shop.test" }),
+    );
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain("already added");
+  });
+
+  it("handles forbidden permission error gracefully", async () => {
+    service.sendDestinationVerification.mockResolvedValue({
+      ok: false,
+      reason: "forbidden",
+    });
+    const result = await actions.sendDestinationVerificationAction(
+      initialClientSetupFormState,
+      form({ email: "team@shop.test" }),
+    );
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain("lacks Email Routing Addresses edit permission");
+  });
+
+  it("rejects invalid email without calling service", async () => {
+    const result = await actions.sendDestinationVerificationAction(
+      initialClientSetupFormState,
+      form({ email: "invalid-email" }),
+    );
+    expect(result.ok).toBe(false);
+    expect(service.sendDestinationVerification).not.toHaveBeenCalled();
+  });
+});
+
 describe("forwardTargetsVerified (#1392 R11)", () => {
   const ok = (addresses: { email: string; verified: boolean }[]) => ({
     status: "ok" as const,
@@ -264,6 +359,22 @@ describe("forwardTargetsVerified (#1392 R11)", () => {
     expect(
       forwardTargetsVerified(rows("hub@inbox.test", "hub@inbox.test", "shop@inbox.test"), dest),
     ).toBe(true);
+  });
+
+  it("is true when a row has comma-separated forward-to and all targets are verified", () => {
+    const dest = ok([
+      { email: "hub@inbox.test", verified: true },
+      { email: "shop@inbox.test", verified: true },
+    ]);
+    expect(forwardTargetsVerified(rows("hub@inbox.test, shop@inbox.test"), dest)).toBe(true);
+  });
+
+  it("is false when a comma-separated forward-to contains an unverified target", () => {
+    const dest = ok([
+      { email: "hub@inbox.test", verified: true },
+      { email: "shop@inbox.test", verified: false },
+    ]);
+    expect(forwardTargetsVerified(rows("hub@inbox.test, shop@inbox.test"), dest)).toBe(false);
   });
 
   it("is false when one forward-to is verified and another is not", () => {
