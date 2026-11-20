@@ -175,7 +175,9 @@ R19. One new migration under `prisma/migrations/` adds nullable `"hubAssetId" TE
 
 R20. No file under `app/`, `lib/`, `components/` or `workers/` contains the string
      `merqify-image-hub-staging` or `merqify-image-hub-production`, so the hub URL comes only from
-     config. The only `IMAGE_HUB_*` names under those directories are the two from R1.
+     config. The only `IMAGE_HUB_*` names under those directories are the two from R1. (Amended at
+     Build: the generated `app/(admin)/staff/runbook/docs.ts` is excluded, because
+     `kms:build-index` copies this spec's own text into it, the #539 trap.)
 R21. `npx tsx scripts/verify-image-hub.ts --env-file <file>` runs two calls with that file's
      `IMAGE_HUB_URL` and `IMAGE_HUB_API_KEY`: `GET /v1/health`, and a `GET /v1/assets?limit=1`
      for tenant `aheed-food-centre`.
