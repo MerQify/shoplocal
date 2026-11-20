@@ -20,6 +20,8 @@ every branch merges.
     customer (refunded in full, not refunded yet, or their own message). The email and the order
     page use the matching wording; a blank message gives a neutral one, and older cancellations
     keep the original. Migration `20261120200000_order_cancellation_choices` (additive).
+    The email's fixed opening line and preview text are now neutral ("Order X has been
+    cancelled."), so they no longer apologise for a cancellation the customer asked for.
   - **Telegram alerts** no longer carry a large link-preview card.
 
 ### Documentation

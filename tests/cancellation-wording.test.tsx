@@ -107,6 +107,29 @@ describe("the cancellation email (R14, R15)", () => {
   });
 });
 
+describe("the cancellation email's fixed lines are neutral (R14a)", () => {
+  it("a customer-asked cancellation never apologises or says the store had to cancel", () => {
+    const email = cancelledEmail(notice("CUSTOMER_REQUEST", "REFUNDED"));
+    expect(email.text).toContain("Order SHO-20261105-ABC123 has been cancelled.");
+    expect(email.preheader).toBe("Here's what this means for your order and payment.");
+    expect(`${email.html} ${email.text}`).not.toMatch(/sorry|had to/i);
+  });
+
+  it("a store's saved intro still replaces the default", () => {
+    const email = buildCustomerEmail({
+      order: webhookOrder({
+        status: "CANCELLED",
+        cancellation: notice("CUSTOMER_REQUEST", "REFUNDED"),
+      }),
+      event: "CANCELLED",
+      storeName: "Corner Shop",
+      baseUrl: "https://shop.example.test",
+      overrides: { intro: "Your order {{orderNumber}} is cancelled, as requested." },
+    });
+    expect(email.text).toContain("Your order SHO-20261105-ABC123 is cancelled, as requested.");
+  });
+});
+
 describe("the order page (R14, R15)", () => {
   const base = {
     orderNumber: "SHO-1",

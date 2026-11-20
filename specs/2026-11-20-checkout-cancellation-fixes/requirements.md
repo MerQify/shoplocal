@@ -126,6 +126,14 @@ R14. The cancellation email sent by `cancelOrderStaff` (`notifyOrderEvent(…, "
       `/orders/lookup`.
     - The internal `note` still never reaches either surface.
 
+R14a. The default `order.cancelled` email template (`lib/email/templates/registry.ts`) has a
+    neutral intro, `Order **{{orderNumber}}** has been cancelled.`, and a neutral preheader,
+    `Here's what this means for your order and payment.` Neither contains "sorry" or "had to". The
+    R13 text below them carries the apology or the "as you asked". A store's saved template
+    override (#1564) is still used in place of the default. Added at validation on 2026-11-20:
+    the original intro ("We're sorry, we've had to cancel order …") contradicted the
+    customer-asked wording.
+
 R15. A custom message is rendered as text. In the email's HTML, `<`, `>`, `&` and `"` in it are
     escaped, so `<a href="x">y</a>` appears literally and creates no link. In the plain-text part it
     appears verbatim. On the order pages it is rendered as a React text node, never through
