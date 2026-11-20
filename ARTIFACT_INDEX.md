@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-20T21:41:35.911Z` · commit `a0f6cd84` · `386` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-20T22:06:23.678Z` · commit `a9684a4b` · `387` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -366,6 +366,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Consolidate browser WebP converters onto lib/webp-convert.ts (plan)](specs/2026-11-20-consolidate-webp-convert/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Consolidates six duplicate toWebp canvas implementations across staff image uploaders onto lib/webp-convert.ts, keeping VendorMarkUploader separate, and adds an architectural guard test. |
 | [Image Hub phase 1b — store gallery client (plan)](specs/2026-11-20-image-hub-gallery/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Phase 1b of the Merqify Image Hub (#1671): a /staff image library that searches, previews, uploads, reviews and assigns hub images to products and categories, copying the bytes into the store's own bucket. |
 | [Merqify Image Hub — phase 1c: import store catalogue images (plan)](specs/2026-11-20-import-store-images/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Adds importAsset to lib/image-hub/client.ts and a safe, idempotent CLI script to import existing store ProductImage and CategoryAsset rows into the central Image Hub with provenance and attribution, updating hubAssetId. |
+| [Merqify Image Hub — phase 3: licensed search & discovery (plan)](specs/2026-11-20-licensed-image-discovery/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Adds machine-readable open licensed search providers (Openverse, Wikimedia Commons, Open Food Facts) to /staff/image-library and a batch discovery CLI, importing candidate images with verified provenance into the Image Hub as PENDING_REVIEW. |
 | [Client Setup — multi-forward receiving addresses & in-dashboard destination verification (plan)](specs/2026-11-20-multi-forward-destination-verification/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Enables stores to forward incoming customer enquiries to multiple team members simultaneously without Google Groups, and lets platform admins send Cloudflare Email Routing destination verification emails directly from /staff/platform/client-setup. |
 | [Image Hub — pick from library on the product page (plan)](specs/2026-11-20-product-library-picker/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Adds a Choose from library picker to /staff/products/<id> that lists approved Image Hub images ranked by relevance to the product's name, brand and category, and assigns the chosen one through the existing #1671 assign path. |
 | [Client Setup — receiving addresses dual listbox transfer picker & inline edit (plan)](specs/2026-11-20-receiving-address-transfer-list-edit/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Replaces single-select dropdown with an accessible HTML5 dual listbox transfer picker for managing forward destinations, and introduces inline edit mode for existing receiving addresses. |
