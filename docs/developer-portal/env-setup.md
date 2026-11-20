@@ -770,7 +770,7 @@ Live checks (**staging only**, signed in as the demo store admin):
    search box starts with the product's name, brand and department.
 6. Approve two test images: one titled with that product's exact name, and one titled with only
    its department name. **Choose from library** lists the exact-name image first.
-7. Pick it, keep **Main image**, and click **Assign** → "Assigned to <product>", and the storefront
+7. Pick it, keep **Main image**, and click **Assign** → "Assigned to `<product>`", and the storefront
    shows it. Remove it again → the hub asset's `usages` is `[]`. Do the same as the demo **staff**
    user: staff may assign too. Reject both test images afterwards.
 8. **Reject an approved image (#1682):** as the admin, an approved card shows **Reject…** (the
