@@ -294,7 +294,9 @@ Policy: `specs/tech-stack.md`. Failures: `docs/developer-portal/runtime-pitfalls
   `curl: (43) bad argument` reporting **HTTP `000`** for a page that is actually fine; a
   `--path /cart` argument becomes `C:/Program Files/Git/cart`. Both happened at `#1187`, and the
   `000` was briefly mistaken for a broken production deploy. Prefix with `MSYS_NO_PATHCONV=1`, or
-  drop `-o` and pipe the body instead. `-o NUL` does **not** avoid it.
+  drop `-o` and pipe the body instead. `-o NUL` does **not** avoid it. **`-w '%{http_code}'`
+  failed the same way** (`curl: (43)`, `000`) on hub DELETEs at `#1677`'s ship even without `-o`;
+  read the status line with `curl -sS -i … | head -1` instead.
 - **Stopping `npm run preview` does not stop it** — kill the whole `node`/`workerd` chain first, or
   the next build fails with `EBUSY`.
 - **Server actions and staff pages are drivable with `curl`, no browser needed.**

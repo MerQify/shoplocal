@@ -741,10 +741,11 @@ service (`sriahead/merqify-image-hub`). The store needs only two optional Worker
   secrets/merqify-staging.vars` prints `health ok (staging)` and `search ok`. It is read-only, so
   it proves read access only.
 
-### Sanity check: image library (`#1671`)
+### Sanity check: image library (`#1671`, `#1678`)
 
-Last run: 2026-11-20 on staging (all passed). Production: not yet promoted; its store Workers do not
-yet carry the hub keys.
+Last run: 2026-11-20 on staging, including the product-page picker (#1678) against hub staging with
+`sort=relevance` (#1677); all passed. Production: not yet promoted; its store Workers do not yet
+carry the hub keys.
 
 Quick checks (no credentials, read-only). Use `<host>` = a store host such as `aheed-staging.merqify.com`:
 
@@ -764,8 +765,19 @@ Live checks (**staging only**, signed in as the demo store admin):
 4. Remove that image on `/staff/products/<id>` → the hub asset's `usages` is `[]`
    (`GET /v1/assets/<id>` with the staging key and `X-Image-Hub-Tenant: aheed-food-centre`).
 
+5. **Picker (#1678):** open `/staff/products/<id>` for an active product with no image. The Images
+   section shows "Or pick an approved image from the library" and **Choose from library**. Its
+   search box starts with the product's name, brand and department.
+6. Approve two test images: one titled with that product's exact name, and one titled with only
+   its department name. **Choose from library** lists the exact-name image first.
+7. Pick it, keep **Main image**, and click **Assign** → "Assigned to <product>", and the storefront
+   shows it. Remove it again → the hub asset's `usages` is `[]`. Do the same as the demo **staff**
+   user: staff may assign too. Reject both test images afterwards.
+
 Choose test targets the storefront actually shows: an **inactive** category is never rendered, so
 assigning to one proves nothing on the storefront (hit at `#1671`'s staging validation).
+
+## Local development (`dev`)
 
 
 
