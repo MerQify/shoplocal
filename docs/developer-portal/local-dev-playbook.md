@@ -318,6 +318,20 @@ to the server-side two-`TZ`-run technique above, at that time of year.
 
 ## Live-testing staff panel server actions without a browser
 
+- **A server action called imperatively from a client component (not bound to a `<form>`) is
+  curl-drivable too, through the `Next-Action` header** (`#1671`, 2026-11-20, no Chrome extension
+  available).
+  - **Find the id:** fetch the page signed in and find the page chunk in the flight payload. The
+    `<script src>` tags do not include it; look for `static/chunks/app/.../page-<hash>.js`. That
+    chunk contains `createServerReference)("<id>", …, "<actionName>")` for every action the page
+    imports, with the export name.
+  - **Call it:** `POST` to the page URL with headers `next-action: <id>`,
+    `content-type: text/plain;charset=UTF-8`, `accept: text/x-component`, `origin: <same origin>`,
+    and the session cookie. The body is the JSON array of arguments.
+  - **Read the result:** the return value is the JSON on the response line starting `1:`.
+  - `/staff/image-library`'s approve, assign and finalize actions, and the product page's
+    `removeProductImage`, were driven this way end to end on staging.
+
 - **A plain progressive-enhancement server-action form (`<form action={someServerAction}>`, no
   client component) can be submitted with `curl`, with no browser and no JS runtime at all** —
   that is the entire point of building it that way. The rendered HTML carries the target as a
