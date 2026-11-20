@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-20T17:57:56.755Z` · commit `1f6deb62` · `383` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-20T19:09:16.646Z` · commit `14abf843` · `384` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -362,6 +362,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Halal claim wording — gate the homepage HMC pill, stop the product-page overclaim (plan)](specs/2026-11-18-halal-claim-wording/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Stops the homepage claiming "100% Certified HMC Halal" for every vendor and stops product pages claiming certification for halal products that carry none (#1658). |
 | [Help content names the store's own website (plan)](specs/2026-11-18-help-own-website/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes aheed.merqify.com and srimart.merqify.com storefront examples from Aheed's help content; /help shows the store's own canonical host (#1662). |
 | [Storefront trust fixes — staff content off /help, refund policy, consumer terms (plan)](specs/2026-11-18-storefront-trust-fixes/plan.md) | spec | 1.0.0 | 2026-11-18 | draft | internal | Removes staff-only material from the public Help page and rewrites the terms' refund and platform clauses so a first-time shopper sees a finished, trustworthy shop before card payments go live (#1652). |
+| [Consolidate browser WebP converters onto lib/webp-convert.ts (plan)](specs/2026-11-20-consolidate-webp-convert/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Consolidates six duplicate toWebp canvas implementations across staff image uploaders onto lib/webp-convert.ts, keeping VendorMarkUploader separate, and adds an architectural guard test. |
 | [Image Hub phase 1b — store gallery client (plan)](specs/2026-11-20-image-hub-gallery/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Phase 1b of the Merqify Image Hub (#1671): a /staff image library that searches, previews, uploads, reviews and assigns hub images to products and categories, copying the bytes into the store's own bucket. |
 | [Client Setup — multi-forward receiving addresses & in-dashboard destination verification (plan)](specs/2026-11-20-multi-forward-destination-verification/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Enables stores to forward incoming customer enquiries to multiple team members simultaneously without Google Groups, and lets platform admins send Cloudflare Email Routing destination verification emails directly from /staff/platform/client-setup. |
 | [Image Hub — pick from library on the product page (plan)](specs/2026-11-20-product-library-picker/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Adds a Choose from library picker to /staff/products/<id> that lists approved Image Hub images ranked by relevance to the product's name, brand and category, and assigns the chosen one through the existing #1671 assign path. |
