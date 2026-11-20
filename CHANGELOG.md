@@ -8,6 +8,8 @@ every branch merges.
 
 ### Documentation
 
+- **Reject-approved post-ship docs (#1682, 2026-11-20).** The image-library sanity guide in `env-setup.md` gains step 8, rejecting an approved image (Last run: staging, 2026-11-20). Added the roadmap row for the staging merge.
+
 - **Library picker post-ship docs (#1678, 2026-11-20).** `env-setup.md`'s image-library sanity guide gains the picker's live steps (Last run: staging, 2026-11-20). Restored the "Local development (dev)" heading that #1671's post-ship edit dropped. Added the roadmap row for the staging merge.
 
 - **Image library post-ship docs (#1671, 2026-11-20).** Corrected `env-setup.md`: `configure-env` re-pushes every secret in a vars file and refuses the AFC cell, so add only the two hub keys with `wrangler secret put`. Also added the image library sanity-check guide (Last run: staging, 2026-11-20); the handoff note that production store Workers do not yet carry the hub keys; the playbook note on driving a client-invoked server action with the `Next-Action` header; and the roadmap row for the staging merge.

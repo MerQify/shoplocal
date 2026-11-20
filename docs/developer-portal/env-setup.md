@@ -744,7 +744,7 @@ service (`sriahead/merqify-image-hub`). The store needs only two optional Worker
 ### Sanity check: image library (`#1671`, `#1678`)
 
 Last run: 2026-11-20 on staging, including the product-page picker (#1678) against hub staging with
-`sort=relevance` (#1677); all passed. Production: not yet promoted; its store Workers do not yet
+`sort=relevance` (#1677), and rejecting an approved image (#1682); all passed. Production: not yet promoted; its store Workers do not yet
 carry the hub keys.
 
 Quick checks (no credentials, read-only). Use `<host>` = a store host such as `aheed-staging.merqify.com`:
@@ -770,9 +770,14 @@ Live checks (**staging only**, signed in as the demo store admin):
    search box starts with the product's name, brand and department.
 6. Approve two test images: one titled with that product's exact name, and one titled with only
    its department name. **Choose from library** lists the exact-name image first.
-7. Pick it, keep **Main image**, and click **Assign** → "Assigned to <product>", and the storefront
+7. Pick it, keep **Main image**, and click **Assign** → "Assigned to `<product>`", and the storefront
    shows it. Remove it again → the hub asset's `usages` is `[]`. Do the same as the demo **staff**
    user: staff may assign too. Reject both test images afterwards.
+8. **Reject an approved image (#1682):** as the admin, an approved card shows **Reject…** (the
+   staff user sees none). Rejecting an unused approved image with a reason → "Rejected". Assign
+   another approved image to a product, then **Reject…** → "This image is used on a product or
+   category. Remove it there first, then reject it.", and it stays Approved. Remove it from the
+   product, then reject it → "Rejected".
 
 Choose test targets the storefront actually shows: an **inactive** category is never rendered, so
 assigning to one proves nothing on the storefront (hit at `#1671`'s staging validation).
