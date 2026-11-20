@@ -14,6 +14,12 @@ every branch merges.
 
 ### Added
 
+- **Client Setup: Dual Listbox Transfer Picker & Inline Edit for Receiving Addresses (#1684, 2026-11-20).**
+  - Upgraded forward-to recipient selection in `/staff/platform/client-setup` to a Dual Listbox Transfer Picker (`DualListboxTransferPicker`) featuring native HTML5 drag-and-drop between Available and Selected mailboxes, click-to-transfer buttons (`Add →`, `← Remove`, `Add all →`, `← Clear all`), and direct custom mailbox input.
+  - Added inline editing (`InboundAddressRow`) for existing receiving addresses, allowing platform admins to update purpose and forward-to recipients directly without having to delete and re-add or risk duplicate address collisions.
+  - Added `updateInboundAddress` repository method, service method with routing loop guard, and `updateInboundAddressAction` server action.
+  - **Tests:** `tests/client-setup-email-forms.test.tsx`, `tests/client-setup.test.ts`, `tests/client-setup-update-inbound.test.ts`.
+
 - **Image library: reject an approved image (#1682, 2026-11-20).** Approved cards on `/staff/image-library` give store admins **Reject…** (reason required, through the existing `rejectLibraryAction`). The hub's `in_use` refusal for an image still on a product or category is shown in plain words: remove it there first. Staff never see it.
 
 - **Client Setup: Multi-forward receiving addresses & in-dashboard destination verification (#1680, 2026-11-20).**

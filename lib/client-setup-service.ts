@@ -32,6 +32,7 @@ import {
   findInboundAddress,
   listInboundAddresses,
   normaliseAddress,
+  updateInboundAddress as repoUpdateInboundAddress,
   type InboundAddressPurposeValue,
   type InboundAddressRow,
 } from "@/lib/repositories/inbound-address";
@@ -230,6 +231,46 @@ export async function addInboundAddress(
     forwardTo: targets.join(", "),
   });
   return created.ok ? { ok: true } : { ok: false, reason: created.reason };
+}
+
+export type UpdateInboundAddressOutcome =
+  { ok: true } | { ok: false; reason: "not-found" | "loop" };
+
+/**
+ * Updates a receiving address. Refuses a forward-to that causes a loop or references another
+ * receiving address.
+ */
+export async function updateInboundAddress(
+  vendorId: string,
+  id: string,
+  input: { forwardTo: string; purpose?: InboundAddressPurposeValue },
+): Promise<UpdateInboundAddressOutcome> {
+  const prisma = getPrisma();
+  const existing = await prisma.vendorInboundAddress.findFirst({
+    where: { id, vendorId },
+  });
+  if (!existing) return { ok: false, reason: "not-found" };
+
+  const targets = input.forwardTo
+    .split(",")
+    .map((s) => normaliseAddress(s))
+    .filter((s) => s.length > 0);
+
+  if (targets.length === 0) {
+    return { ok: false, reason: "loop" };
+  }
+
+  for (const forwardTo of targets) {
+    if (forwardTo === existing.address || (await findInboundAddress(prisma, forwardTo))) {
+      return { ok: false, reason: "loop" };
+    }
+  }
+
+  const updated = await repoUpdateInboundAddress(prisma, vendorId, id, {
+    forwardTo: targets.join(", "),
+    purpose: input.purpose,
+  });
+  return updated.ok ? { ok: true } : { ok: false, reason: "not-found" };
 }
 
 export async function removeInboundAddress(vendorId: string, id: string): Promise<boolean> {

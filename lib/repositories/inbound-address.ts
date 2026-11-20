@@ -115,6 +115,31 @@ export async function deleteInboundAddress(
   return count;
 }
 
+export type UpdateInboundAddressResult =
+  { ok: true; row: InboundAddressRow } | { ok: false; reason: "not-found" };
+
+/** Updates the forward-to (and optional purpose) of one of THIS vendor's addresses. */
+export async function updateInboundAddress(
+  prisma: Db,
+  vendorId: string,
+  id: string,
+  input: { forwardTo: string; purpose?: InboundAddressPurposeValue },
+): Promise<UpdateInboundAddressResult> {
+  const existing = await prisma.vendorInboundAddress.findFirst({
+    where: { id, vendorId },
+  });
+  if (!existing) return { ok: false, reason: "not-found" };
+
+  const row = await prisma.vendorInboundAddress.update({
+    where: { id },
+    data: {
+      forwardTo: normaliseForwardToList(input.forwardTo),
+      ...(input.purpose ? { purpose: input.purpose } : {}),
+    },
+  });
+  return { ok: true, row };
+}
+
 /** The vendor's own order with this number, or null — the cross-vendor guard for R18. */
 export async function findVendorOrderNumber(
   prisma: Db,

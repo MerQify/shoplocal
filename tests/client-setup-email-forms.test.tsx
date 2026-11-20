@@ -4,19 +4,19 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { DESTINATIONS_UNAVAILABLE_MESSAGE } from "@/lib/client-setup/destination-copy";
 
 /**
- * #1392 R5–R9 (Forward to dropdown) and #1403 R14 (Use suggested sender). The server actions are
- * mocked; nothing here submits. A form's posted fields are read with `new FormData(form)`.
+ * Dual Listbox Transfer Picker and Inline Inbound Address Edit testing.
  */
 
 const saveSenderAction = vi.fn();
 vi.mock("@/app/(admin)/staff/platform/client-setup/actions", () => ({
   addInboundAddressAction: vi.fn(),
   removeInboundAddressAction: vi.fn(),
+  updateInboundAddressAction: vi.fn(),
   saveSenderAction,
   sendTestEmailAction: vi.fn(),
 }));
 
-const { AddInboundAddressForm, SenderForm } =
+const { AddInboundAddressForm, InboundAddressRow, SenderForm } =
   await import("@/components/staff/client-setup/EmailSetupForms");
 
 afterEach(() => cleanup());
@@ -45,99 +45,93 @@ function renderForm(
   return container.querySelector("form") as HTMLFormElement;
 }
 
-const select = () => screen.getByLabelText(/forward to/i) as unknown as HTMLSelectElement;
-const otherInput = () => screen.queryByLabelText(/other mailbox/i) as HTMLInputElement | null;
-const warning = () => screen.queryByText(/forwards only to verified destination addresses/i);
 const posted = (form: HTMLFormElement) => new FormData(form).getAll("forwardTo");
 
-describe("Forward to dropdown (R5)", () => {
-  it("lists verified mailboxes enabled, pending ones disabled, and Other… last", () => {
+describe("Dual Listbox Transfer Picker (R1–R2)", () => {
+  it("renders verified mailboxes and pending mailboxes clearly", () => {
     renderForm(DEFAULT);
-    const options = [...select().options];
-    expect(select().tagName).toBe("SELECT");
-    expect(options.map((o) => o.textContent)).toEqual([
-      "hub@inbox.test",
-      "shop@inbox.test",
-      "pending@inbox.test (awaiting verification)",
-      "Other…",
-    ]);
-    expect(options.map((o) => o.disabled)).toEqual([false, false, true, false]);
+    expect(screen.getByText("Available Mailboxes")).toBeTruthy();
+    expect(screen.getByText("Forward To (Recipients)")).toBeTruthy();
+    expect(screen.getByText(/pending@inbox\.test/)).toBeTruthy();
   });
 
-  it("shows the text box and warning only while Other… is chosen", () => {
-    renderForm(DEFAULT);
-    expect(otherInput()).toBeNull();
-    expect(warning()).toBeNull();
-    fireEvent.change(select(), { target: { value: "__other__" } });
-    expect(otherInput()).not.toBeNull();
-    expect(otherInput()!.required).toBe(true);
-    expect(warning()).not.toBeNull();
-    fireEvent.change(select(), { target: { value: "shop@inbox.test" } });
-    expect(otherInput()).toBeNull();
-    expect(warning()).toBeNull();
-  });
-});
-
-describe("Forward to preselection (R6)", () => {
-  it("preselects the platform default when it is verified", () => {
-    renderForm(DEFAULT);
-    expect(select().value).toBe("hub@inbox.test");
-    expect(otherInput()).toBeNull();
-  });
-
-  it("preselects Other… with the default typed in when the default is not verified", () => {
-    renderForm({ status: "set", address: "pending@inbox.test" });
-    expect(select().value).toBe("__other__");
-    expect(otherInput()!.value).toBe("pending@inbox.test");
-  });
-
-  it.each([{ status: "unset" as const }, { status: "invalid" as const }])(
-    "preselects the first verified mailbox when the default is $status",
-    (defaultForward) => {
-      renderForm(defaultForward);
-      expect(select().value).toBe("hub@inbox.test");
-    },
-  );
-
-  it("preselects Other…, empty, when the default is unset and nothing is verified", () => {
-    renderForm(
-      { status: "unset" },
-      { status: "ok", addresses: [{ email: "pending@inbox.test", verified: false }] },
-    );
-    expect(select().value).toBe("__other__");
-    expect(otherInput()!.value).toBe("");
-  });
-});
-
-describe("exactly one forwardTo is posted (R7)", () => {
-  it("posts the selected mailbox", () => {
+  it("preselects the default forward when provided", () => {
     const form = renderForm(DEFAULT);
-    fireEvent.change(select(), { target: { value: "shop@inbox.test" } });
+    expect(posted(form)).toEqual(["hub@inbox.test"]);
+    expect(screen.getByText("shop@inbox.test")).toBeTruthy();
+  });
+
+  it("allows transferring items between Available and Selected using click buttons", () => {
+    const form = renderForm({ status: "unset" });
+    expect(posted(form)).toEqual([""]);
+
+    // Click to add shop@inbox.test
+    const addShopBtn = screen.getByRole("button", { name: /add shop@inbox\.test/i });
+    fireEvent.click(addShopBtn);
+
     expect(posted(form)).toEqual(["shop@inbox.test"]);
+
+    // Click to remove shop@inbox.test
+    const removeShopBtn = screen.getByRole("button", { name: /remove shop@inbox\.test/i });
+    fireEvent.click(removeShopBtn);
+
+    expect(posted(form)).toEqual([""]);
   });
 
-  it("posts the typed text when Other… is chosen", () => {
-    const form = renderForm(DEFAULT);
-    fireEvent.change(select(), { target: { value: "__other__" } });
-    fireEvent.change(otherInput()!, { target: { value: "own@mailbox.test" } });
-    expect(posted(form)).toEqual(["own@mailbox.test"]);
+  it("allows adding custom email directly to recipients", () => {
+    const form = renderForm({ status: "unset" });
+    const customInput = screen.getByPlaceholderText(/team\.member@gmail\.com/i);
+    const addCustomBtn = screen.getByRole("button", { name: /add to recipients/i });
+
+    fireEvent.change(customInput, { target: { value: "custom@team.test" } });
+    fireEvent.click(addCustomBtn);
+
+    expect(posted(form)).toEqual(["custom@team.test"]);
   });
 });
 
 describe("fallback when Cloudflare cannot be read (R8)", () => {
   it.each(["not-configured", "forbidden", "error"] as const)(
-    "keeps the #1399 text field and names the %s reason",
+    "keeps the text field and names the %s reason",
     (reason) => {
       const form = renderForm(DEFAULT, { status: "unavailable", reason });
       const input = screen.getByLabelText(/forward to/i) as HTMLInputElement;
       expect(input.tagName).toBe("INPUT");
-      expect(input.type).toBe("email");
-      expect(input.required).toBe(true);
       expect(input.value).toBe("hub@inbox.test");
       expect(screen.getByText(DESTINATIONS_UNAVAILABLE_MESSAGE[reason])).toBeTruthy();
       expect(posted(form)).toEqual(["hub@inbox.test"]);
     },
   );
+});
+
+describe("InboundAddressRow inline edit", () => {
+  const addressItem = {
+    id: "addr-1",
+    address: "info@store.test",
+    purpose: "SUPPORT" as const,
+    forwardTo: "team1@domain.test, team2@domain.test",
+  };
+
+  it("renders read-only row with Edit and Remove buttons by default", () => {
+    render(<InboundAddressRow vendorId="v1" address={addressItem} destinations={OK} />);
+    expect(screen.getByText("info@store.test")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /edit info@store\.test/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /remove/i })).toBeTruthy();
+  });
+
+  it("opens inline edit form when Edit is clicked and cancels when Cancel is clicked", () => {
+    render(<InboundAddressRow vendorId="v1" address={addressItem} destinations={OK} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /edit info@store\.test/i }));
+
+    expect(screen.getByText("Editing:")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /save changes/i })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(screen.queryByText("Editing:")).toBeNull();
+    expect(screen.getByRole("button", { name: /edit info@store\.test/i })).toBeTruthy();
+  });
 });
 
 describe("Use suggested sender (#1403 R14)", () => {

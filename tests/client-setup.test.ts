@@ -20,6 +20,7 @@ const service = {
   listClientSetupVendors: vi.fn(),
   saveVendorSender: vi.fn(),
   addInboundAddress: vi.fn(),
+  updateInboundAddress: vi.fn(),
   removeInboundAddress: vi.fn(),
   sendClientSetupTestEmail: vi.fn(),
   sendDestinationVerification: vi.fn(),
@@ -211,6 +212,48 @@ describe("addInboundAddressAction refusals (R29)", () => {
       address: "orders@shop.test",
       purpose: "ORDERS",
       forwardTo: "o@m.test",
+    });
+  });
+});
+
+describe("updateInboundAddressAction", () => {
+  const fields = {
+    vendorId: "v1",
+    id: "addr-1",
+    purpose: "SUPPORT",
+    forwardTo: "team1@domain.test, team2@domain.test",
+  };
+
+  it("explains a forwarding loop", async () => {
+    service.updateInboundAddress.mockResolvedValue({ ok: false, reason: "loop" });
+    const result = await actions.updateInboundAddressAction(
+      initialClientSetupFormState,
+      form(fields),
+    );
+    expect(result).toMatchObject({ ok: false });
+    expect(result.message).toMatch(/loop/);
+  });
+
+  it("explains an address not found", async () => {
+    service.updateInboundAddress.mockResolvedValue({ ok: false, reason: "not-found" });
+    const result = await actions.updateInboundAddressAction(
+      initialClientSetupFormState,
+      form(fields),
+    );
+    expect(result).toMatchObject({ ok: false });
+    expect(result.message).toMatch(/no longer exists/);
+  });
+
+  it("updates an address successfully", async () => {
+    service.updateInboundAddress.mockResolvedValue({ ok: true });
+    const result = await actions.updateInboundAddressAction(
+      initialClientSetupFormState,
+      form(fields),
+    );
+    expect(result.ok).toBe(true);
+    expect(service.updateInboundAddress).toHaveBeenCalledWith("v1", "addr-1", {
+      forwardTo: "team1@domain.test, team2@domain.test",
+      purpose: "SUPPORT",
     });
   });
 });

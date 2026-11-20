@@ -10,6 +10,7 @@ import {
   saveVendorSender,
   sendClientSetupTestEmail,
   sendDestinationVerification,
+  updateInboundAddress,
 } from "@/lib/client-setup-service";
 import {
   addOrderAlertRecipient,
@@ -26,6 +27,7 @@ import {
   sendDestinationVerificationSchema,
   senderSchema,
   testEmailSchema,
+  updateInboundAddressSchema,
   type ClientSetupFormState,
 } from "@/lib/client-setup/form-state";
 
@@ -139,6 +141,38 @@ export async function addInboundAddressAction(
   }
   revalidatePath(PAGE);
   return { ok: true, message: "Address added." };
+}
+
+export async function updateInboundAddressAction(
+  _prev: ClientSetupFormState,
+  formData: FormData,
+): Promise<ClientSetupFormState> {
+  if (!(await platformAdminEmail())) return refusal("Platform admin only.");
+  const parsed = updateInboundAddressSchema.safeParse({
+    vendorId: formData.get("vendorId"),
+    id: formData.get("id"),
+    purpose: formData.get("purpose") || undefined,
+    forwardTo: formData.get("forwardTo"),
+  });
+  if (!parsed.success) return refusal(firstIssue(parsed.error));
+  try {
+    if (!(await knownVendor(parsed.data.vendorId))) return refusal("That store no longer exists.");
+    const outcome = await updateInboundAddress(parsed.data.vendorId, parsed.data.id, {
+      forwardTo: parsed.data.forwardTo,
+      purpose: parsed.data.purpose,
+    });
+    if (!outcome.ok) {
+      return refusal(
+        outcome.reason === "not-found"
+          ? "That address no longer exists."
+          : "The forward-to mailbox is itself a receiving address here, so mail would loop. Use the store's real mailbox.",
+      );
+    }
+  } catch {
+    return refusal("Updating the address failed. Try again in a moment.");
+  }
+  revalidatePath(PAGE);
+  return { ok: true, message: "Address updated." };
 }
 
 export async function removeInboundAddressAction(
