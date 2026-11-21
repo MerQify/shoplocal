@@ -20,8 +20,11 @@ export async function GET() {
     const row = await getPrisma().healthCheck.findFirst({ orderBy: { checkedAt: "desc" } });
     body.db = { ok: true, label: row?.label ?? null, checkedAt: row?.checkedAt ?? null };
   } catch (e) {
+    // #1714 — this route is public; a driver message can name the database host. Log it, show a
+    // fixed string.
+    console.error("[health] database check failed:", (e as Error).message);
     body.status = "degraded";
-    body.db = { ok: false, error: (e as Error).message };
+    body.db = { ok: false, error: "database unavailable" };
   }
 
   // 2) Storage config presence (no network call in the smoke test — extend later).
@@ -50,7 +53,8 @@ export async function GET() {
   try {
     body.reference = await getReferenceStatus();
   } catch (e) {
-    body.reference = { configured: false, reachable: false, error: (e as Error).message };
+    console.error("[health] reference status failed:", (e as Error).message);
+    body.reference = { configured: false, reachable: false, error: "reference status unavailable" };
   }
 
   return NextResponse.json(body, { status: body.status === "ok" ? 200 : 503 });

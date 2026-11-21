@@ -6,6 +6,25 @@ every branch merges.
 
 ## [Unreleased]
 
+### Security
+
+- **Stock-export Excel downloads built live behind the platform-admin check; the generated export
+  files are no longer public (#1714, 2026-11-21).**
+  - The Universal, Essential and Master `.xlsx` downloads used to 302 to workbooks committed under
+    `public/templates/`. Cloudflare served those as static assets with no sign-in on every production
+    host. They were also a stale 2026-11-17 snapshot that ignored the status and category filters.
+  - `/staff/platform/stock-export/export?format=xlsx` now builds them from the database on request
+    (200, `no-store`), with the same filters and fetches as the CSV branch.
+  - The five generated `*-export.*` files are deleted. `tests/public-no-generated-exports.test.ts`
+    fails if one returns. `export-all-stock.ts` writes exports to `.import-reports/exports/` only.
+  - New `lib/spreadsheet/workbook.ts` writes OpenXML directly on `fflate` (no SheetJS in the Worker,
+    per #1216). The pure sheet builders are in `lib/product-templates/workbook-sheets.ts` and are
+    shared with the script.
+  - Fixed: the export page's filter suffix began with `?`, so every CSV link sent
+    `format=csv?status=…` and got a 400. The Master card no longer hard-codes the vendor's name.
+  - `/api/health` shows fixed strings instead of raw database/reference error messages, which could
+    name the database host. The real message goes to `console.error`.
+
 ### Added
 
 - **Roadmap rows for the 2026-11-21 promotion (PR #1704) and the #1705 staging merge (PR #1707).**

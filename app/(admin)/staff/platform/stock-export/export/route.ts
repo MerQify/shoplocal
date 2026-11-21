@@ -4,6 +4,7 @@ import {
   generateEssentialStockCsv,
   generateBlankUniversalCsv,
   generateBlankEssentialCsv,
+  fetchStockRecordsForExport,
 } from "@/lib/product-templates/service";
 import { fetchBundlesForExport, exportBundlesToCsv } from "@/lib/bundle-templates/export";
 import { fetchPromotionsForExport, exportPromotionsToCsv } from "@/lib/promotion-templates/export";
@@ -17,7 +18,14 @@ import { fetchFiltersForExport, exportFiltersToCsv } from "@/lib/filter-template
  * Enforces role-based access control:
  * - 401 if unauthenticated
  * - 403 if authenticated but not platform-admin (`auth.via !== 'platform-admin'`)
+ *
+ * #1714 — the stock, essential and master `.xlsx` downloads are built here, live, from the same
+ * fetches and filters as the CSV branch. They used to redirect to workbooks committed under
+ * `public/templates/`, which Cloudflare served as static assets with no sign-in, as a stale
+ * snapshot, ignoring the filters. Only the blank import templates still redirect.
  */
+
+const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export const dynamic = "force-dynamic";
 
@@ -99,15 +107,53 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   if (format === "xlsx") {
-    let staticPath = "";
+    if (type === "stock" || type === "essential" || type === "master") {
+      const [{ buildWorkbook }, sheets] = await Promise.all([
+        import("@/lib/spreadsheet/workbook"),
+        import("@/lib/product-templates/workbook-sheets"),
+      ]);
+      const products = await fetchStockRecordsForExport(auth.vendorId, { status, category });
 
-    if (type === "master") {
-      staticPath = "/templates/aheed-food-centre-master-stock-export.xlsx";
-    } else if (type === "stock") {
-      staticPath = "/templates/aheed-food-centre-stock-export.xlsx";
-    } else if (type === "essential") {
-      staticPath = "/templates/aheed-food-centre-essential-export.xlsx";
-    } else if (type === "universal" || type === "universal-template") {
+      let workbookSheets;
+      let filename: string;
+      if (type === "stock") {
+        workbookSheets = sheets.buildStockSheets(products);
+        filename = `stock-${status}-export-${dateStr}.xlsx`;
+      } else if (type === "essential") {
+        workbookSheets = sheets.buildEssentialSheets(products);
+        filename = `stock-essential-${status}-export-${dateStr}.xlsx`;
+      } else {
+        const [categories, bundles, promotions, discounts, filters] = await Promise.all([
+          fetchCategoriesForExport(auth.vendorId, { status }),
+          fetchBundlesForExport(auth.vendorId, { status }),
+          fetchPromotionsForExport(auth.vendorId, { status }),
+          fetchDiscountsForExport(auth.vendorId, { status }),
+          fetchFiltersForExport(auth.vendorId),
+        ]);
+        workbookSheets = sheets.buildMasterSheets({
+          products,
+          categories,
+          bundles,
+          promotions,
+          discounts,
+          filters,
+        });
+        filename = `master-${status}-export-${dateStr}.xlsx`;
+      }
+
+      return new Response(buildWorkbook(workbookSheets), {
+        status: 200,
+        headers: {
+          "content-type": XLSX_CONTENT_TYPE,
+          "content-disposition": `attachment; filename="${filename}"`,
+          "cache-control": "no-store",
+        },
+      });
+    }
+
+    // Blank import templates: headers and invented sample rows only, so a static asset is fine.
+    let staticPath = "";
+    if (type === "universal" || type === "universal-template") {
       staticPath = "/templates/universal-product-template.xlsx";
     } else if (type === "essential-template") {
       staticPath = "/templates/essential-product-template.xlsx";
