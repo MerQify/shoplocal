@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Add opt-in server render timings on Aheed staging for homepage performance investigation.
+
 - Reduce storefront rendering waits and exclude documentation and test fixtures from the application stylesheet.
 
 - Reject redirects in licensed Image Hub downloads using Cloudflare Workers-compatible manual redirect handling.

@@ -1,3 +1,4 @@
+import { timeStorefrontRender } from "@/lib/storefront-render-timing";
 import { Suspense, type ReactNode } from "react";
 import { headers } from "next/headers";
 import { getStorefrontSession } from "@/lib/storefront-session";
@@ -36,7 +37,9 @@ export async function StorefrontChrome({
 }) {
   const [requestHeaders, activeSlotIcons] = await Promise.all([
     headers(),
-    getActiveSlotAssetsForVendor(profile.id).catch(() => ({})),
+    timeStorefrontRender("chrome.icons", () => getActiveSlotAssetsForVendor(profile.id)).catch(
+      () => ({}),
+    ),
   ]);
   const host = requestHeaders.get("host") ?? "";
   const proto = requestHeaders.get("x-forwarded-proto") ?? "https";
@@ -100,7 +103,9 @@ export async function StorefrontChrome({
 // The floating rewards control can arrive after the storefront has rendered.
 async function StorefrontRewards({ baseUrl, vendorName }: { baseUrl: string; vendorName: string }) {
   const session = await getStorefrontSession();
-  const initialData = await getRewardsDataForUser(session?.user?.id ?? null, baseUrl);
+  const initialData = await timeStorefrontRender("chrome.rewards", () =>
+    getRewardsDataForUser(session?.user?.id ?? null, baseUrl),
+  );
   if (!initialData.loyaltyEnabled) return null;
 
   return <RewardsLauncher initialData={initialData} vendorName={vendorName} />;
