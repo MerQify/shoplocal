@@ -29,12 +29,7 @@ vi.mock("@/lib/auth-rbac", () => ({ getUserId: vi.fn() }));
 
 import PrivacyPage from "@/app/(storefront)/privacy/page";
 import { CART_COOKIE } from "@/lib/cart-identity";
-import {
-  CHECKOUT_DETAILS_KEY,
-  CONSENT_COOKIE,
-  FILTERS_COLLAPSED_KEY,
-  REFERRAL_COOKIE,
-} from "@/lib/storage-keys";
+import { CONSENT_COOKIE, FILTERS_COLLAPSED_KEY, REFERRAL_COOKIE } from "@/lib/storage-keys";
 import { DELIVERY_POSTCODE_COOKIE } from "@/lib/delivery-cookie";
 import { FULFILMENT_METHOD_COOKIE } from "@/lib/fulfilment-cookie";
 
@@ -62,10 +57,6 @@ const EXPECTED_ITEMS: ReadonlyArray<readonly [string, string]> = [
   [
     "store_referral_code",
     "Remembers a referral code from a link you followed, so it can be applied at checkout. Optional: set only if you arrive through a referral link and choose Accept All.",
-  ],
-  [
-    "store_checkout_details",
-    "Keeps the contact and delivery details you type at checkout, so they are filled in next time. Stored on your device, not on our servers.",
   ],
 ];
 
@@ -106,7 +97,7 @@ describe("privacy page — Cookies and Local Storage (#1064)", () => {
       squash(p.textContent),
     );
     expect(paragraphs).toEqual([
-      "We use cookies and local storage technologies to support essential website functionality, including user authentication, shopping cart management, delivery and collection preferences, checkout convenience, and the storage of cookie consent preferences. One optional cookie remembers a referral code, and it is set only if you choose Accept All.",
+      "We use cookies and local storage technologies to support essential website functionality, including user authentication, shopping cart management, delivery and collection preferences, and the storage of cookie consent preferences. One optional cookie remembers a referral code, and it is set only if you choose Accept All.",
       "The following cookies and local storage items are used for these purposes:",
       "These cookies and local storage items are scoped to the relevant host. All of them except the referral cookie are used to provide core website functionality.",
       // #1107 R14 — the section now closes on the way to change a consent answer.
@@ -120,7 +111,7 @@ describe("privacy page — Cookies and Local Storage (#1064)", () => {
     expect(closing.compareDocumentPosition(list!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
-  it("R5/#1089 R15, #1173 R14: the eight items are in order and each LEADS with its purpose", async () => {
+  it("R5/#1089 R15, #1173 R14: the listed items are in order and each leads with its purpose", async () => {
     const { section } = await renderSection();
     const items = [...section.querySelectorAll("ul > li")];
     expect(items).toHaveLength(EXPECTED_ITEMS.length);
@@ -159,7 +150,7 @@ describe("privacy page — Cookies and Local Storage (#1064)", () => {
     expect(names).toContain(FULFILMENT_METHOD_COOKIE);
     expect(names).toContain(CONSENT_COOKIE);
     expect(names).toContain(REFERRAL_COOKIE);
-    expect(names).toContain(CHECKOUT_DETAILS_KEY);
+    expect(names).not.toContain("store_checkout_details");
     expect(names).toContain(FILTERS_COLLAPSED_KEY);
   });
 

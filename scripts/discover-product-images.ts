@@ -10,6 +10,7 @@
 import { PrismaClient, ProductImageSource } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { parseEnvFile } from "./lib/env-file";
+import { downloadDiscoveredImage } from "../lib/image-discovery/download";
 import { searchDiscoveredImages } from "../lib/image-discovery/service";
 import type { DiscoveredImage, DiscoveryProvider } from "../lib/image-discovery/types";
 import { importAsset, type HubCaller } from "../lib/image-hub/client";
@@ -133,32 +134,11 @@ async function main() {
 
       if (apply) {
         try {
-          const downloadUrl = topMatch.originalUrl || topMatch.thumbnailUrl;
-          const res = await fetch(downloadUrl, {
-            headers: {
-              "User-Agent":
-                "AheedFoodCentre/1.0 (https://aheedfoodcentre.co.uk; info@aheedfoodcentre.co.uk)",
-              Accept: "image/*",
-            },
-          });
-
-          if (!res.ok) {
-            console.error(`     Failed to download image (HTTP ${res.status})`);
-            continue;
-          }
-
-          const contentType = res.headers.get("content-type") || "image/jpeg";
-          const arrayBuffer = await res.arrayBuffer();
-          const ext = contentType.includes("png")
-            ? "png"
-            : contentType.includes("webp")
-              ? "webp"
-              : "jpg";
-          const file = new Blob([arrayBuffer], { type: contentType });
+          const { file, extension } = await downloadDiscoveredImage(topMatch);
 
           const importRes = await importAsset(caller, {
             file,
-            fileName: `${topMatch.provider.toLowerCase()}-${product.id.slice(0, 8)}.${ext}`,
+            fileName: `${topMatch.provider.toLowerCase()}-${product.id.slice(0, 8)}.${extension}`,
             title: `${product.name} — ${topMatch.title}`,
             source: topMatch.provider,
             licence: topMatch.licence,

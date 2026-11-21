@@ -535,6 +535,23 @@ describe("R18 — releaseHubUsage", () => {
 });
 
 describe("image discovery facade", () => {
+  it("rejects imports without staff access before contacting the provider", async () => {
+    mocks.requireVendorRole.mockResolvedValue({ ok: false, reason: "forbidden", status: 403 });
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    try {
+      await expect(
+        importDiscoveredImageToHub({
+          id: "openverse-123",
+          provider: "OPENVERSE",
+          query: "mango",
+        }),
+      ).resolves.toMatchObject({ ok: false, status: 403 });
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
   it("enforces STAFF role for searchDiscoveredImagesForStaff", async () => {
     mocks.requireVendorRole.mockResolvedValue({ ok: false, reason: "forbidden", status: 403 });
     const res = await searchDiscoveredImagesForStaff({ query: "mango" });
@@ -559,15 +576,33 @@ describe("image discovery facade", () => {
     mocks.fetchVendorProfile.mockResolvedValue({ slug: "aheed" });
 
     const originalFetch = globalThis.fetch;
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === "https://example.com/mango.jpg") {
-        return new Response(new Uint8Array([1, 2, 3]), {
+      if (url.startsWith("https://api.openverse.org/")) {
+        return Response.json({
+          results: [
+            {
+              id: "123",
+              title: "Discovered Mango",
+              creator: "Photographer",
+              url: "https://live.staticflickr.com/mango.jpg",
+              foreign_landing_url: "https://openverse.org/image/123",
+              license: "by",
+            },
+          ],
+        });
+      }
+      if (url === "https://live.staticflickr.com/mango.jpg") {
+        return new Response(new Uint8Array([255, 216, 255]), {
           status: 200,
           headers: { "content-type": "image/jpeg" },
         });
       }
       if (url.includes("/v1/assets/import")) {
+        const form = init?.body as FormData;
+        expect(form.get("licence")).toBe("CC_BY");
+        expect(form.get("originalUrl")).toBe("https://openverse.org/image/123");
+        expect(form.get("status")).toBe("PENDING_REVIEW");
         return new Response(
           JSON.stringify({
             ok: true,
@@ -582,25 +617,31 @@ describe("image discovery facade", () => {
     globalThis.fetch = fetchMock;
 
     try {
-      const res = await importDiscoveredImageToHub({
+      const selection = {
         id: "openverse-123",
-        provider: "OPENVERSE",
-        title: "Discovered Mango",
-        thumbnailUrl: "https://example.com/mango-thumb.jpg",
-        originalUrl: "https://example.com/mango.jpg",
-        sourceSite: "Openverse",
-        licence: "CC_BY",
-        attribution: "Photographer via Openverse",
+        provider: "OPENVERSE" as const,
+        query: "mango",
+        originalUrl: "https://untrusted.invalid/mango.jpg",
+        licence: "CC0",
+      };
+      expect(await importDiscoveredImageToHub({ ...selection, id: "missing" })).toMatchObject({
+        ok: false,
+        code: "discovery_result_unavailable",
       });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const res = await importDiscoveredImageToHub(selection);
 
       expect(res.ok).toBe(true);
       if (res.ok) {
         expect(res.value.title).toBe("Discovered Mango");
       }
-      expect(fetchMock).toHaveBeenCalledWith("https://example.com/mango.jpg", expect.any(Object));
+      expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain(
+        "https://live.staticflickr.com/mango.jpg",
+      );
+      expect(fetchMock.mock.calls.map(([url]) => String(url))).not.toContain(selection.originalUrl);
       expect(fetchMock).toHaveBeenCalledWith(
         "https://hub.test/v1/assets/import",
-        expect.any(Object),
+        expect.objectContaining({ body: expect.any(FormData) }),
       );
     } finally {
       globalThis.fetch = originalFetch;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCategoryRepository } from "@/lib/categories-service";
 import { getEnv } from "@/lib/config";
 import { PromotionHero } from "@/components/layout/PromotionHero";
@@ -36,20 +37,11 @@ export async function generateMetadata() {
  * platform-true trust claims.
  */
 export default async function HomePage() {
-  const [categories, profile, livePromotions] = await Promise.all([
-    getCategoryRepository().listTopLevel(),
-    getCurrentVendorProfile(),
+  const profileRequest = getCurrentVendorProfile();
+  const [profile, livePromotions, deliveryRules] = await Promise.all([
+    profileRequest,
     getLivePromotionsForStorefront(),
-  ]);
-
-  // P9.2 (#818) — three reads from this vendor's own database, in parallel with each other.
-  // No external call is on this path: the feedback is first-party and the review links are
-  // outbound URLs, not fetched content.
-  const feedbackRepo = getCustomerFeedbackRepository();
-  const [approvedFeedback, feedbackSummary, reviewLinks] = await Promise.all([
-    feedbackRepo.listApproved(FEEDBACK_CARD_LIMIT),
-    feedbackRepo.approvedSummary(),
-    getVendorReviewLinkRepository().listActive(),
+    profileRequest.then((profile) => getShopperDeliveryRules(profile, "DELIVERY")),
   ]);
 
   const { CDN_BASE_URL } = getEnv();
@@ -63,7 +55,6 @@ export default async function HomePage() {
   // #890: resolved for this shopper's own delivery area (the `delivery-postcode` cookie), so a
   // district that charges differently never sees the store-wide claim. A threshold of 0 means free
   // delivery is not offered there, so it hides the badge exactly as null does.
-  const deliveryRules = await getShopperDeliveryRules(profile, "DELIVERY");
   const freeDeliveryThresholdPence =
     deliveryRules.freeDeliveryThresholdPence && deliveryRules.freeDeliveryThresholdPence > 0
       ? deliveryRules.freeDeliveryThresholdPence
@@ -168,22 +159,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Shop by department — category product photography showcase */}
-      {categories.length > 0 && (
-        <section className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-primary">Shop by department</h2>
-            <Link
-              href="/categories"
-              prefetch={false}
-              className="text-xs font-semibold text-action hover:underline"
-            >
-              View all ({categories.length}) &rarr;
-            </Link>
-          </div>
-          <DepartmentScroller categories={categories} use3D />
-        </section>
-      )}
+      <Suspense fallback={null}>
+        <ShopByDepartment />
+      </Suspense>
 
       {/* Trust Values Strip — P7.5c+f (#239) & 3D Icon upgrade (#1245). */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -237,6 +215,42 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <Suspense fallback={null}>
+        <HomeFeedback />
+      </Suspense>
+    </PageContainer>
+  );
+}
+
+async function ShopByDepartment() {
+  const categories = await getCategoryRepository().listTopLevel();
+  if (!categories.length) return null;
+  return (
+    <section className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-primary">Shop by department</h2>
+        <Link
+          href="/categories"
+          prefetch={false}
+          className="text-xs font-semibold text-action hover:underline"
+        >
+          View all ({categories.length}) &rarr;
+        </Link>
+      </div>
+      <DepartmentScroller categories={categories} use3D />
+    </section>
+  );
+}
+
+async function HomeFeedback() {
+  const feedbackRepo = getCustomerFeedbackRepository();
+  const [approvedFeedback, feedbackSummary, reviewLinks] = await Promise.all([
+    feedbackRepo.listApproved(FEEDBACK_CARD_LIMIT),
+    feedbackRepo.approvedSummary(),
+    getVendorReviewLinkRepository().listActive(),
+  ]);
+  return (
+    <>
       {/* P9.2 (#818) — first-party customer feedback, below the fold.
           Both parts render independently: the cards disappear entirely when nothing is
           approved (#239's null-hides rule), while the outbound review links stay, because
@@ -253,6 +267,6 @@ export default async function HomePage() {
           which is sufficient because only a signed-in customer can submit in the first
           place. */}
       {approvedFeedback.length === 0 && <ReviewLinkGroup reviewLinks={reviewLinks} />}
-    </PageContainer>
+    </>
   );
 }

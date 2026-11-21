@@ -17,7 +17,6 @@ import {
 } from "@/lib/checkout-sections";
 import { SlotPicker } from "./SlotPicker";
 import type { HoursOverrideRow, WeeklyHoursRow } from "@/lib/footer-hours";
-import { readCheckoutDetails, writeCheckoutDetails } from "@/lib/checkout-details-storage";
 import { Icon } from "@/components/icons/Icon";
 
 /**
@@ -299,30 +298,6 @@ export function CheckoutForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPostcode]);
 
-  useEffect(() => {
-    const saved = readCheckoutDetails(localStorage);
-    if (saved) {
-      try {
-        const details = JSON.parse(saved);
-        // Same #749 fix as handleLookup above: this form, not the document's first one.
-        const form = formRef.current;
-        if (form) {
-          Object.entries(details).forEach(([key, value]) => {
-            const el = form.elements.namedItem(key);
-            if (el instanceof HTMLInputElement && !el.value && value) {
-              // For radio buttons, we need to check the right one
-              if (el.type === "radio") {
-                if (el.value === value) el.checked = true;
-              } else {
-                el.value = value as string;
-              }
-            }
-          });
-        }
-      } catch (e) {}
-    }
-  }, []);
-
   // #959 — numbered from the sections that actually render, so the sequence never repeats or skips.
   const sections = checkoutSections({
     offerCollection,
@@ -341,16 +316,6 @@ export function CheckoutForm({
     if (target instanceof HTMLInputElement && target.name) {
       editedFields.current.add(target.name);
     }
-
-    const fd = new FormData(e.currentTarget);
-    const details = Object.fromEntries(fd.entries());
-    delete details.redeemPoints;
-    delete details.discountCode;
-    // #748 — the method is no longer client state, so it must not be restored
-    // from here either: the cookie is the single source of truth, and a stale
-    // localStorage copy would fight it on the next visit.
-    delete details.fulfilmentMethod;
-    writeCheckoutDetails(localStorage, JSON.stringify(details));
   };
 
   return (
