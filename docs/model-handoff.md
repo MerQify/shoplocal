@@ -39,6 +39,38 @@ reconciliation. If overall project state did not materially change, leave this f
 
 ## Last Verified
 
+- **2026-11-21: go-live push. Everything on `staging` is in production (PR #1704, `7e66bfbd`).**
+  - **Promoted:** `#1690`/`#1691`/`#1693` (checkout/cancellation, migration
+    `20261120200000_order_cancellation_choices` applied on both production databases), and Image
+    Hub `#1674` (import), `#1697` (licensed search), `#1701` (AI generation) and `#1675`. All were
+    closed and moved to Done. `/api/health` was ok on all three production hosts at `7e66bfb`.
+    `#1669` stays open for phases 4 (scheduled discovery) and 5 (WebP sizes).
+  - **Go-live checklist `#1344`:**
+    - Ticked: domain, Stripe, email.
+    - `#1329` and `#104` closed 2026-11-21. Evidence: the bare domain 301s to `www`; DKIM-passing
+      mail from `info@aheedfoodcentre.co.uk` (`#1627`); a live order confirmation delivered.
+    - Still open: catalogue and photos (`#1330`), owner sign-off on the legal wording, Google
+      Search Console, the first store admin (`grant-role.ts`), then `#1332` (demo accounts last).
+  - **The production staff gallery is EMPTY** because no store image has a hub record yet.
+    - **Owed by the owner:** the one-off 1c import. Run
+      `npx tsx scripts/import-images-to-hub.ts --env-file secrets/afc-production.vars` (dry run),
+      then add `--apply`; then the same with `secrets/merqify-production.vars`. Both files hold
+      everything the script needs.
+    - Auto mode refuses production database scripts, so hand over `! <command>`.
+  - **`#1705` nightly Image Hub sync: MERGED TO STAGING** (PR #1707, `5e3399ea`), board In Review.
+    - Owner decision: nightly only, no on-the-fly sync.
+    - Validated in-session, not independently, against staging. Results are in
+      `specs/2026-11-21-nightly-image-hub-sync/validation.md`. The staging hub key covers both
+      stores (SriMart included); the production keys are untested.
+    - **Before promoting, the owner adds eight GitHub `production` secrets** (`IMAGE_HUB_URL`,
+      `IMAGE_HUB_API_KEY`, `AFC_IMAGE_HUB_API_KEY`, `AFC_S3_*`; table in `env-setup.md`). Promoting
+      first would make the 02:17 UTC run fail every night, naming the missing secrets. The
+      post-promotion checks are on `#1705`. Follow-up: `#1706`.
+    - Worktree `E:\GitRepositories\aheed-wt-1705` (real `node_modules`) can be removed once the
+      slice is promoted.
+  - **GitHub schedules run hours late:** `fill-product-images.yml`'s 03:00 UTC cron started at
+    about 11:00 UTC on 2026-11-18..20.
+  - **Still parked:** `#1689`. Round-the-clock warm-up on AFC production stays on.
 - **2026-11-20: AFC production takes LIVE payments (`#113` closed).**
   - **Stripe:**
     - `afc-store-production` runs Aheed Food Centre's own Stripe account in live mode: a restricted

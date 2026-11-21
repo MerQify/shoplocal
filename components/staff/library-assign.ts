@@ -54,15 +54,43 @@ async function convertAndUpload(
       : await requestCategoryImageUpload(target.id, blob.size);
   if (!ticket.ok) return { ok: false, error: "error" in ticket ? ticket.error : ticket.message };
 
-  const put = await fetch(ticket.value.url, {
-    method: "PUT",
-    body: blob,
-    headers: {
-      "content-type": IMAGE_CONTENT_TYPE,
-      "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
-    },
-  });
-  if (!put.ok) return { ok: false, error: `The upload was rejected by storage (${put.status}).` };
+  let putOk = false;
+  try {
+    const put = await fetch(ticket.value.url, {
+      method: "PUT",
+      body: blob,
+      headers: {
+        "content-type": IMAGE_CONTENT_TYPE,
+        "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+      },
+    });
+    if (put.ok) putOk = true;
+  } catch {
+    // Direct storage upload blocked (e.g. storage CORS restriction). Fallback to same-origin route below.
+  }
+
+  if (!putOk) {
+    const form = new FormData();
+    form.set("file", blob, "image.webp");
+    form.set("key", ticket.value.key);
+    form.set("targetKind", target.kind);
+    form.set("targetId", target.id);
+
+    const fallbackRes = await fetch("/api/admin/image-library/upload-direct", {
+      method: "POST",
+      body: form,
+    });
+    if (!fallbackRes.ok) {
+      const err = (await fallbackRes.json().catch(() => null)) as {
+        error?: { message?: string };
+      } | null;
+      return {
+        ok: false,
+        error: err?.error?.message ?? `The upload was rejected by storage (${fallbackRes.status}).`,
+      };
+    }
+  }
+
   return { ok: true, key: ticket.value.key };
 }
 

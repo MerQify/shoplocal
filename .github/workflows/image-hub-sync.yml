@@ -1,0 +1,113 @@
+name: image-hub-sync
+
+# #1705 (part of #1669) — copy every store image that has no hub record into the
+# Merqify Image Hub, once a night, for both production cells.
+#
+# WHY A NIGHTLY SWEEP. Twelve code paths write ProductImage / CategoryAsset rows
+# without a hubAssetId (staff upload, product-page generation, the backfill job,
+# fill-product-images.yml, the category image pipeline, the bulk scripts). The
+# import script (#1674) selects only rows with hubAssetId null, skips
+# placeholders, and the hub de-duplicates identical bytes, so re-running it is
+# safe and catches every current and future path. On-the-fly sync at each write
+# site was rejected by the owner (2026-11-21).
+#
+# WHY GITHUB ACTIONS. @opennextjs/cloudflare emits a Worker that exports `fetch`
+# only, so a Cloudflare cron trigger would have no handler (see
+# fill-product-images.yml).
+#
+# WHY 02:17. GitHub delays scheduled runs and on-the-hour slots are the most
+# congested: fill-product-images.yml's 03:00 ran at ~11:00 UTC on 2026-11-18..20.
+# The job is idempotent, so a late run only delays an image.
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      cell:
+        description: "Which production cell to sync"
+        type: choice
+        options: [all, afc, merqify]
+        default: all
+      limit:
+        description: "Maximum images per cell (blank = no limit)"
+        type: string
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run: list what would be imported, write nothing"
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: production # GitHub 'production' environment secrets; no required reviewers
+    strategy:
+      fail-fast: false # one cell failing must not cancel the other
+      matrix:
+        # On `schedule` inputs.cell is empty, which selects both cells.
+        cell: ${{ fromJSON(inputs.cell == 'afc' && '["afc"]' || inputs.cell == 'merqify' && '["merqify"]' || '["afc","merqify"]') }}
+    concurrency:
+      group: image-hub-sync-${{ matrix.cell }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+
+      # One step per cell, each reading ONLY its own cell's secrets. A single
+      # step choosing the AFC or Merqify secret in one expression (an and-or fallback) would
+      # silently fall back to Merqify's value whenever an AFC secret is empty,
+      # pointing the AFC job at the wrong database.
+      #
+      # Secrets arrive through `env:`, never interpolated into the script text,
+      # and are written only to the file. Values are double-quoted (CLAUDE.md
+      # env-format rule). A missing secret fails the step by NAME before the
+      # script runs.
+      - name: Materialise the AFC environment file
+        if: matrix.cell == 'afc'
+        env:
+          V_AFC_DIRECT_URL: ${{ secrets.AFC_DIRECT_URL }}
+          V_S3_ENDPOINT: ${{ secrets.AFC_S3_ENDPOINT }}
+          V_S3_BUCKET: ${{ secrets.AFC_S3_BUCKET }}
+          V_S3_ACCESS_KEY: ${{ secrets.AFC_S3_ACCESS_KEY }}
+          V_S3_SECRET_KEY: ${{ secrets.AFC_S3_SECRET_KEY }}
+          V_S3_REGION: ${{ secrets.AFC_S3_REGION }}
+          V_IMAGE_HUB_URL: ${{ secrets.IMAGE_HUB_URL }}
+          V_IMAGE_HUB_API_KEY: ${{ secrets.AFC_IMAGE_HUB_API_KEY }}
+        run: bash scripts/write-hub-sync-env.sh "$RUNNER_TEMP/afc.vars" AFC_DIRECT_URL:AFC_DIRECT_URL S3_ENDPOINT:AFC_S3_ENDPOINT S3_BUCKET:AFC_S3_BUCKET S3_ACCESS_KEY:AFC_S3_ACCESS_KEY S3_SECRET_KEY:AFC_S3_SECRET_KEY S3_REGION:AFC_S3_REGION IMAGE_HUB_URL:IMAGE_HUB_URL IMAGE_HUB_API_KEY:AFC_IMAGE_HUB_API_KEY
+
+      - name: Materialise the Merqify environment file
+        if: matrix.cell == 'merqify'
+        env:
+          V_DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          V_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          V_S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          V_S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+          V_S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
+          V_S3_REGION: ${{ secrets.S3_REGION }}
+          V_IMAGE_HUB_URL: ${{ secrets.IMAGE_HUB_URL }}
+          V_IMAGE_HUB_API_KEY: ${{ secrets.IMAGE_HUB_API_KEY }}
+        run: bash scripts/write-hub-sync-env.sh "$RUNNER_TEMP/merqify.vars" DIRECT_URL:DIRECT_URL S3_ENDPOINT:S3_ENDPOINT S3_BUCKET:S3_BUCKET S3_ACCESS_KEY:S3_ACCESS_KEY S3_SECRET_KEY:S3_SECRET_KEY S3_REGION:S3_REGION IMAGE_HUB_URL:IMAGE_HUB_URL IMAGE_HUB_API_KEY:IMAGE_HUB_API_KEY
+
+      # The job's result is the script's exit code: 1 when any import, storage
+      # read or usage record failed (#1705 R9). Nothing masks it.
+      - name: Sync images into the hub
+        env:
+          CELL: ${{ matrix.cell }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          args=(--env-file "$RUNNER_TEMP/$CELL.vars")
+          if [ "$DRY_RUN" != "true" ]; then args+=(--apply); fi
+          if [ -n "$LIMIT" ]; then args+=(--limit "$LIMIT"); fi
+          npx tsx scripts/import-images-to-hub.ts "${args[@]}"
+
+      # `always()` so a failed or cancelled run never leaves real credentials on
+      # the runner.
+      - name: Remove the environment file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/${{ matrix.cell }}.vars"

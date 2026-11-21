@@ -203,6 +203,21 @@ Separately, `deploy-staging.yml` (on push to `staging`) and `deploy-production.y
 and `wrangler deploy`. These are the only places a migration actually reaches a shared database in
 the normal flow — CI applies migrations, not a developer's machine, not the Worker at request time.
 
+**Scheduled workflows that touch production data** run on GitHub Actions, because the OpenNext
+Worker exports no `scheduled` handler. Each does nothing until it is on `main`:
+
+- `image-hub-sync.yml` (`#1705`), cron `17 2 * * *` (02:17 UTC), plus a manual dispatch with
+  `cell`, `limit` and `dry_run`. For the `afc` and `merqify` production cells it runs
+  `scripts/import-images-to-hub.ts --apply`. That copies every product and category image without
+  a hub record into the Merqify Image Hub. The job goes red when any import, storage read or usage
+  record fails, or when a GitHub secret it needs is missing (the missing secret is named in the
+  log). Secrets and its sanity check: `env-setup.md`, "Nightly Image Hub sync".
+- `fill-product-images.yml` (`#518`), cron `0 3 * * *`, fills a small batch of placeholder-only
+  products on Merqify production.
+
+GitHub starts scheduled runs late, often by hours (`fill-product-images.yml`'s 03:00 ran at about
+11:00 UTC on 2026-11-18..20). Read a run's actual start time; never assume the cron time.
+
 ---
 
 ## Global cross-cutting gotchas
