@@ -1,3 +1,4 @@
+import { timeStorefrontRender } from "@/lib/storefront-render-timing";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getCategoryRepository } from "@/lib/categories-service";
@@ -38,11 +39,17 @@ export async function generateMetadata() {
  */
 export default async function HomePage() {
   const profileRequest = getCurrentVendorProfile();
-  const [profile, livePromotions, deliveryRules] = await Promise.all([
-    profileRequest,
-    getLivePromotionsForStorefront(),
-    profileRequest.then((profile) => getShopperDeliveryRules(profile, "DELIVERY")),
-  ]);
+  const [profile, livePromotions, deliveryRules] = await timeStorefrontRender("hero.data", () =>
+    Promise.all([
+      profileRequest,
+      timeStorefrontRender("hero.promotions", () => getLivePromotionsForStorefront()),
+      profileRequest.then((profile) =>
+        timeStorefrontRender("hero.delivery-rules", () =>
+          getShopperDeliveryRules(profile, "DELIVERY"),
+        ),
+      ),
+    ]),
+  );
 
   const { CDN_BASE_URL } = getEnv();
   const localityName = profile?.localityName ?? "";

@@ -1,3 +1,4 @@
+import { timeStorefrontRender } from "@/lib/storefront-render-timing";
 import Link from "next/link";
 import { cookies } from "next/headers";
 
@@ -63,8 +64,12 @@ export async function Header({
       cookies(),
       getCurrentVendorProfile(),
       getFulfilmentMethod(),
-      getRequestCartSummary(),
-      isPortal ? [] : getCategoryRepository().listTree().then(toSearchDepartments),
+      timeStorefrontRender("header.cart", getRequestCartSummary),
+      isPortal
+        ? []
+        : timeStorefrontRender("header.departments", () =>
+            getCategoryRepository().listTree().then(toSearchDepartments),
+          ),
     ]);
   const user = session?.user as { name: string } | undefined;
   const firstName = user?.name?.split(" ")[0];
@@ -116,8 +121,12 @@ export async function Header({
   const deliveryPrefixes = profile?.deliveryPrefixes ?? [];
   const storedPostcode = cookieStore.get(DELIVERY_POSTCODE_COOKIE)?.value ?? null;
   const [deliverable, deliveryRules] = await Promise.all([
-    storedPostcode ? isPostcodeDeliverable(storedPostcode) : null,
-    getShopperDeliveryRules(profile, fulfilmentMethod),
+    storedPostcode
+      ? timeStorefrontRender("header.postcode", () => isPostcodeDeliverable(storedPostcode))
+      : null,
+    timeStorefrontRender("header.delivery-rules", () =>
+      getShopperDeliveryRules(profile, fulfilmentMethod),
+    ),
   ]);
   const offerCollection = profile?.offerCollection ?? false;
   // #239: this fallback was itself Aheed copy ("vine tomatoes, halal lamb
