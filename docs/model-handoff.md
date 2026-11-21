@@ -39,6 +39,33 @@ reconciliation. If overall project state did not materially change, leave this f
 
 ## Last Verified
 
+- **2026-11-21: go-live push. Everything on `staging` is in production (PR #1704, `7e66bfbd`).**
+  - **Promoted:** `#1690`/`#1691`/`#1693` (checkout/cancellation, migration
+    `20261120200000_order_cancellation_choices` applied on both production databases), and Image
+    Hub `#1674` (import), `#1697` (licensed search), `#1701` (AI generation) and `#1675`. All were
+    closed and moved to Done. `/api/health` was ok on all three production hosts at `7e66bfb`.
+    `#1669` stays open for phases 4 (scheduled discovery) and 5 (WebP sizes).
+  - **Go-live checklist `#1344`:**
+    - Ticked: domain, Stripe, email.
+    - `#1329` and `#104` closed 2026-11-21. Evidence: the bare domain 301s to `www`; DKIM-passing
+      mail from `info@aheedfoodcentre.co.uk` (`#1627`); a live order confirmation delivered.
+    - Still open: catalogue and photos (`#1330`), owner sign-off on the legal wording, Google
+      Search Console, the first store admin (`grant-role.ts`), then `#1332` (demo accounts last).
+  - **The production staff gallery is EMPTY** because no store image has a hub record yet.
+    - **Owed by the owner:** the one-off 1c import. Run
+      `npx tsx scripts/import-images-to-hub.ts --env-file secrets/afc-production.vars` (dry run),
+      then add `--apply`; then the same with `secrets/merqify-production.vars`. Both files hold
+      everything the script needs.
+    - Auto mode refuses production database scripts, so hand over `! <command>`.
+  - **In flight: `#1705` nightly Image Hub sync** (owner: nightly only, no on-the-fly sync).
+    - Branch `feature/1705-nightly-hub-sync`, worktree `E:\GitRepositories\aheed-wt-1705` (real
+      `node_modules`).
+    - Built; validation next. Read `specs/2026-11-21-nightly-image-hub-sync/build-notes.md` first.
+    - Its top risk is hub-key tenant scope on the Merqify cell (SriMart).
+    - It needs owner GitHub `production` secrets before its post-promotion run.
+  - **GitHub schedules run hours late:** `fill-product-images.yml`'s 03:00 UTC cron started at
+    about 11:00 UTC on 2026-11-18..20.
+  - **Still parked:** `#1689`. Round-the-clock warm-up on AFC production stays on.
 - **2026-11-20: AFC production takes LIVE payments (`#113` closed).**
   - **Stripe:**
     - `afc-store-production` runs Aheed Food Centre's own Stripe account in live mode: a restricted

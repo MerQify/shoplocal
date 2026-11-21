@@ -8,6 +8,18 @@ every branch merges.
 
 ### Added
 
+- **Merqify Image Hub: nightly sync of store images into the hub (#1705, 2026-11-21).**
+  - New `.github/workflows/image-hub-sync.yml` runs `scripts/import-images-to-hub.ts --apply` at
+    02:17 UTC for the `afc` and `merqify` production cells. An image created by any path (staff
+    upload, generation, `fill-product-images.yml`, the category pipeline, bulk scripts) reaches the
+    staff gallery within a day. It can also be started by hand with `cell`, `limit` and `dry_run`.
+  - The import script now fails loudly: only a 404 counts as a missing object. Any other storage
+    error (a bad key answers 403), a failed hub import or a failed usage record is counted under a
+    new `Failed:` summary line, and an apply run exits 1.
+  - A missing GitHub secret fails the job by name before the script runs. The owner must add the
+    hub and AFC storage secrets to the GitHub `production` environment (`env-setup.md`, "Nightly
+    Image Hub sync"). On-the-fly sync is out of scope (owner decision).
+
 - **Merqify Image Hub — phase 2: AI image generation in the gallery for active and inactive products (#1701, 2026-11-20).**
   - Interactive photo generator panel in `/staff/image-library` (`ImageAiGeneratorPanel.tsx`) powered by Cloudflare Workers AI (`@cf/black-forest-labs/flux-1-schnell`).
   - Supports searching and drafting prompts for **both active and inactive products**, allowing store operators to generate, review, and approve studio photos ahead of product activation.
