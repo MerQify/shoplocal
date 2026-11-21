@@ -89,8 +89,10 @@ describe("StorefrontChrome rewards launcher gate (#1023)", () => {
 
   it("streams the page while rewards data is still pending", async () => {
     state.loyaltyEnabled = true;
-    const { promise, resolve } = Promise.withResolvers<void>();
-    state.rewardsReady = promise;
+    let releaseRewards!: () => void;
+    state.rewardsReady = new Promise<void>((resolve) => {
+      releaseRewards = resolve;
+    });
     const stream = await streamChrome();
     const reader = stream.getReader();
 
@@ -100,7 +102,7 @@ describe("StorefrontChrome rewards launcher gate (#1023)", () => {
       expect(shell).toContain("<main>page</main>");
       expect(shell).not.toContain(LAUNCHER_LABEL);
     } finally {
-      resolve();
+      releaseRewards();
       await stream.allReady;
       await reader.cancel();
     }
