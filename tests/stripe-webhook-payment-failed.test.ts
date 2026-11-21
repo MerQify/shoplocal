@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 const fail = vi.fn();
+const confirm = vi.fn();
 const findOrder = vi.fn();
 const notifyOrderEvent = vi.fn();
 let event: Record<string, unknown> | null = null;
@@ -20,7 +21,7 @@ vi.mock("@/lib/stripe-webhook", () => ({
   parseCheckoutEvent: () => event,
 }));
 vi.mock("@/lib/orders-service", () => ({
-  getWebhookOrderService: () => ({ fail, findOrder, confirm: vi.fn() }),
+  getWebhookOrderService: () => ({ fail, findOrder, confirm }),
 }));
 vi.mock("@/lib/order-notifications-service", () => ({ notifyOrderEvent }));
 
@@ -82,4 +83,33 @@ describe("Stripe webhook payment failure (#1552 R2)", () => {
       expect(notifyOrderEvent).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("Stripe webhook delayed settlement", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    findOrder.mockResolvedValue({ orderNumber: "SHO-1", vendorId: "v1" });
+  });
+
+  it("confirms a paid settlement and suppresses duplicate notifications", async () => {
+    event = { ...checkoutEvent("checkout.session.async_payment_succeeded"), paymentStatus: "paid" };
+    confirm.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({
+      ok: false,
+      reason: "already-processed",
+    });
+    expect((await post()).status).toBe(200);
+    expect((await post()).status).toBe(200);
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(notifyOrderEvent).toHaveBeenCalledExactlyOnceWith(
+      { orderNumber: "SHO-1", vendorId: "v1" },
+      "CONFIRMED",
+    );
+  });
+
+  it("does not confirm an unsettled session", async () => {
+    event = checkoutEvent("checkout.session.completed");
+    expect((await post()).status).toBe(200);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(notifyOrderEvent).not.toHaveBeenCalled();
+  });
 });

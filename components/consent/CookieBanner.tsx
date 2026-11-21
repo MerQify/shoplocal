@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { clearStoredCheckoutDetails } from "@/lib/checkout-details-storage";
 import {
   browserCookieJar,
   CONSENT_CHANGE_EVENT,
@@ -54,6 +55,7 @@ export function CookieBanner() {
   }, [isVisible, reopened]);
 
   useEffect(() => {
+    clearStoredCheckoutDetails(() => window.localStorage);
     const jar = browserCookieJar();
     if (jar.get(CONSENT_COOKIE)) return;
 
@@ -98,9 +100,8 @@ export function CookieBanner() {
           {/* #1107 — the only optional storage is the referral cookie (#1065); nothing measures or
               "improves site experience", so the banner no longer says so. */}
           We use essential cookies and browser storage to keep you signed in, hold your basket, and
-          remember your delivery choice and checkout details. One optional cookie remembers a
-          referral code from a link you followed, and it is set only if you choose Accept All. Read
-          our{" "}
+          remember your delivery choice. One optional cookie remembers a referral code from a link
+          you followed, and it is set only if you choose Accept All. Read our{" "}
           <Link
             href="/privacy"
             className="font-medium underline underline-offset-2 hover:text-primary"

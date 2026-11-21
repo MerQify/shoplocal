@@ -25,6 +25,7 @@ export async function searchOpenFoodFacts(
   )}&search_simple=1&action=process&json=1&page_size=${limit}`;
 
   const res = await doFetch(url, {
+    signal: AbortSignal.timeout(10_000),
     headers: {
       "User-Agent":
         "AheedFoodCentre/1.0 (https://aheedfoodcentre.co.uk; info@aheedfoodcentre.co.uk)",
@@ -48,7 +49,8 @@ export async function searchOpenFoodFacts(
     const brandStr = p.brands ? ` (${p.brands})` : "";
     const name = p.product_name?.trim() || "Food product";
     const title = `${name}${brandStr}`;
-    const code = p.code || Math.random().toString(36).slice(2);
+    const code = p.code;
+    if (!code) continue;
 
     items.push({
       id: `off-${code}`,
@@ -56,6 +58,7 @@ export async function searchOpenFoodFacts(
       title,
       thumbnailUrl: p.image_front_small_url || imgUrl,
       originalUrl: `https://world.openfoodfacts.org/product/${code}`,
+      downloadUrl: imgUrl,
       sourceSite: "Open Food Facts",
       licence: "CC_BY_SA",
       attribution: "Open Food Facts contributors (CC BY-SA)",

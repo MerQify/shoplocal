@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-21T18:18:59.271Z` · commit `84bfb4ec` · `390` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-21T19:00:34.522Z` · commit `4ac92d52` · `391` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -36,6 +36,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Local Development Playbook — Windows shell, and proving things live without a browser](docs/developer-portal/local-dev-playbook.md) | runbook | 1.40.0 | 2026-11-05 | approved | internal | How to work on this repo on Windows and prove a change works live — shell/encoding traps, process cleanup, vitest forks-pool, KMS coverage vs gitignore, TZ overrides, curl-driven server actions, grep-vs-HTML pitfalls, vendor hosts, and what a session can and cannot drive when proving a payment path. |
 | [NFR Baseline — measured performance against the Gate-3 targets](docs/developer-portal/nfr-baseline.md) | doc | 1.4.0 | 2026-09-05 | approved | internal | Measurements against mission.md's LCP and API p95 targets, plus the index/query review behind them — including a 4.7x LCP breach from a 1.9 MB vendor logo — a re-measurement of the query paths at roughly 2,000 products rather than 22, and a further re-measurement of storefront search after |
 | [Onboarding](docs/developer-portal/onboarding.md) | doc | 1.1.0 | 2026-08-06 | approved | internal | 5-minute start-here guide — where the project actually is, prerequisites, local setup, and how to get a new developer running, tested, and branching independently. |
+| [Aheed Food Centre pre-launch application audit](docs/developer-portal/pre-launch-application-audit.md) | doc | 1.0.0 | 2026-11-21 | approved | internal | Security, privacy, and release-readiness findings with remediation evidence, staging checks, and the remaining launch gates for Aheed Food Centre. |
 | [Manual Regression Test Register](docs/developer-portal/regression-tests.md) | doc | 1.2.1 | 2026-11-15 | approved | internal | Manual regression test cases for known critical issues — the hybrid Prisma client contract under Cloudflare Worker connection limits, and cart persistence across a cancelled Stripe checkout. |
 | [Repository Structure](docs/developer-portal/repo-structure.md) | doc | 1.2.0 | 2026-08-12 | approved | internal | The agreed target folder layout for the Next.js + Prisma + Cloudflare app, Clean Architecture layering, and which phase scaffolds each folder. |
 | [Runtime Pitfalls — code that passes every check and still fails on Workers](docs/developer-portal/runtime-pitfalls.md) | doc | 1.6.0 | 2026-11-18 | approved | internal | The failure catalogue for this stack — Prisma and Neon on V8 isolates, storage credentials, edge caching, dependency traps, Workers AI and Better Auth. Everything here passes lint, typecheck, test and build, and fails at runtime anyway. |

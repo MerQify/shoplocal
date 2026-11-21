@@ -123,10 +123,17 @@ export function createAiMeter(
   };
 
   async function write(entry: Parameters<typeof recordAiUsage>[2]): Promise<void> {
+    const id = crypto.randomUUID();
     try {
-      await recordAiUsage(prisma, vendorId, entry);
-    } catch (error) {
-      console.error(`ai-meter record failed vendor=${vendorId} feature=${feature}`, error);
+      await recordAiUsage(prisma, vendorId, entry, id);
+    } catch {
+      try {
+        await recordAiUsage(prisma, vendorId, entry, id);
+      } catch (error) {
+        // This table has only one unique key. A conflict means the first write committed.
+        if (typeof error === "object" && error && "code" in error && error.code === "P2002") return;
+        console.error(`ai-meter record failed vendor=${vendorId} feature=${feature}`, error);
+      }
     }
   }
 }

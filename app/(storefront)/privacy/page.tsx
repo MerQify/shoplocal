@@ -10,7 +10,6 @@ import {
 } from "@/lib/data-retention";
 import {
   CART_COOKIE,
-  CHECKOUT_DETAILS_KEY,
   CONSENT_COOKIE,
   REFERRAL_COOKIE,
   FILTERS_COLLAPSED_KEY,
@@ -122,9 +121,8 @@ export default async function PrivacyPage() {
           <p className="text-sm text-primary-muted leading-relaxed">
             We use cookies and local storage technologies to support essential website
             functionality, including user authentication, shopping cart management, delivery and
-            collection preferences, checkout convenience, and the storage of cookie consent
-            preferences. One optional cookie remembers a referral code, and it is set only if you
-            choose Accept All.
+            collection preferences, and the storage of cookie consent preferences. One optional
+            cookie remembers a referral code, and it is set only if you choose Accept All.
           </p>
           <p className="text-sm text-primary-muted leading-relaxed">
             The following cookies and local storage items are used for these purposes:
@@ -189,14 +187,6 @@ export default async function PrivacyPage() {
               Optional: set only if you arrive through a referral link and choose Accept All.{" "}
               <span>
                 Shown in your browser as <span className="font-semibold">{REFERRAL_COOKIE}</span>.
-              </span>
-            </li>
-            <li>
-              Keeps the contact and delivery details you type at checkout, so they are filled in
-              next time. Stored on your device, not on our servers.{" "}
-              <span>
-                Shown in your browser as{" "}
-                <span className="font-semibold">{CHECKOUT_DETAILS_KEY}</span>.
               </span>
             </li>
           </ul>

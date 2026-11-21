@@ -62,6 +62,7 @@ export async function searchWikimedia(
   )}&gsrnamespace=6&gsrlimit=${limit}&prop=imageinfo&iiprop=url|size|extmetadata&format=json&origin=*`;
 
   const res = await doFetch(url, {
+    signal: AbortSignal.timeout(10_000),
     headers: {
       "User-Agent":
         "AheedFoodCentre/1.0 (https://aheedfoodcentre.co.uk; info@aheedfoodcentre.co.uk)",
@@ -105,6 +106,7 @@ export async function searchWikimedia(
       title: cleanTitle || "Wikimedia image",
       thumbnailUrl: info.thumburl || info.url,
       originalUrl: info.descriptionurl || info.url,
+      downloadUrl: info.url,
       sourceSite: "Wikimedia Commons",
       licence,
       attribution,

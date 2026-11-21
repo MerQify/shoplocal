@@ -103,7 +103,7 @@ export async function verifyStripeSignature(
 export interface StripeCheckoutEvent {
   type: string;
   orderNumber: string | null;
-  /** Only meaningful for checkout.session.completed. */
+  /** Used to confirm payment for completed and asynchronously settled sessions. */
   paymentStatus: string | null;
   sessionId: string | null;
   /**

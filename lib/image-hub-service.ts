@@ -47,8 +47,9 @@ import {
 } from "@/lib/image-hub/client";
 import { storeSourceForHubSource } from "@/lib/image-hub/source";
 import { searchDiscoveredImages } from "@/lib/image-discovery/service";
+import { downloadDiscoveredImage } from "@/lib/image-discovery/download";
 import type {
-  DiscoveredImage,
+  DiscoveryImportSelection,
   DiscoverySearchParams,
   DiscoverySearchResult,
 } from "@/lib/image-discovery/types";
@@ -659,7 +660,7 @@ export async function searchDiscoveredImagesForStaff(
  * The image lands in the hub as PENDING_REVIEW.
  */
 export async function importDiscoveredImageToHub(
-  image: DiscoveredImage,
+  selection: DiscoveryImportSelection,
 ): Promise<LibraryResult<HubAsset>> {
   const auth = await requireVendorRole("STAFF", "ADMIN");
   if (!auth.ok) {
@@ -677,65 +678,51 @@ export async function importDiscoveredImageToHub(
   const resolved = await resolveCaller(auth, STAFF_AND_ADMIN);
   if (!resolved.ok) return resolved;
 
-  const downloadUrl = image.originalUrl || image.thumbnailUrl;
-  let res: Response;
-  try {
-    res = await fetch(downloadUrl, {
-      headers: {
-        "User-Agent":
-          "AheedFoodCentre/1.0 (https://aheedfoodcentre.co.uk; info@aheedfoodcentre.co.uk)",
-        Accept: "image/*",
-      },
-    });
-  } catch (err) {
+  if (
+    typeof selection?.query !== "string" ||
+    !selection.query.trim() ||
+    selection.query.length > 200 ||
+    typeof selection.id !== "string" ||
+    selection.id.length > 150 ||
+    !["OPENVERSE", "WIKIMEDIA", "OPEN_FOOD_FACTS"].includes(selection.provider)
+  ) {
     return {
       ok: false,
-      code: "fetch_failed",
-      status: 502,
-      message: `Failed to download image from source: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
+      code: "invalid_selection",
+      status: 400,
+      message: "Choose an image from the discovery results.",
     };
   }
 
-  if (!res.ok) {
+  const results = await searchDiscoveredImages({
+    query: selection.query,
+    provider: selection.provider,
+    limit: 15,
+  });
+  const image = results.items.find((item) => item.id === selection.id);
+  if (!image) {
+    return {
+      ok: false,
+      code: "discovery_result_unavailable",
+      status: 404,
+      message: "This image is no longer in the results. Search again to refresh the list.",
+    };
+  }
+  let download: Awaited<ReturnType<typeof downloadDiscoveredImage>>;
+  try {
+    download = await downloadDiscoveredImage(image);
+  } catch (error) {
     return {
       ok: false,
       code: "download_failed",
       status: 502,
-      message: `Source server returned HTTP ${res.status}`,
+      message: error instanceof Error ? error.message : "The source image could not be downloaded.",
     };
   }
-
-  const contentType = res.headers.get("content-type") || "";
-  if (!contentType.startsWith("image/")) {
-    return {
-      ok: false,
-      code: "invalid_content_type",
-      status: 400,
-      message: `Expected image content-type, received '${contentType || "none"}'`,
-    };
-  }
-
-  const arrayBuffer = await res.arrayBuffer();
-  if (arrayBuffer.byteLength > MAX_IMAGE_BYTES) {
-    return {
-      ok: false,
-      code: "image_too_large",
-      status: 400,
-      message: `Image is too large (${Math.round(arrayBuffer.byteLength / 1024)} KB, max ${Math.round(
-        MAX_IMAGE_BYTES / (1024 * 1024),
-      )} MB)`,
-    };
-  }
-
-  const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
-  const fileName = `${image.provider.toLowerCase()}-${Date.now()}.${ext}`;
-  const file = new Blob([arrayBuffer], { type: contentType });
 
   const imported = await importAsset(resolved.value.caller, {
-    file,
-    fileName,
+    file: download.file,
+    fileName: `${image.provider.toLowerCase()}-${Date.now()}.${download.extension}`,
     title: image.title,
     source: image.provider,
     licence: image.licence,

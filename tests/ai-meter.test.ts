@@ -218,6 +218,7 @@ describe("record() and recordImage() (R25)", () => {
 
     expect(prisma.aiUsageEvent.create).toHaveBeenCalledExactlyOnceWith({
       data: {
+        id: expect.any(String),
         vendorId: "v1",
         feature: "SEARCH_SYNONYMS",
         model: "@cf/meta/llama-3.1-8b-instruct",
@@ -256,6 +257,19 @@ describe("record() and recordImage() (R25)", () => {
     await expect(
       meter.recordImage({ model: "@cf/black-forest-labs/flux-1-schnell" }),
     ).resolves.toBeUndefined();
+  });
+
+  it("retries a failed ledger write with the same ID", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    const prisma = fakePrisma();
+    prisma.aiUsageEvent.create.mockRejectedValueOnce(new Error("connection interrupted"));
+    await createAiMeter(prisma, "v1", "PRODUCT_IMAGE", "free").recordImage({
+      model: "@cf/black-forest-labs/flux-1-schnell",
+    });
+    expect(prisma.aiUsageEvent.create).toHaveBeenCalledTimes(2);
+    expect(prisma.aiUsageEvent.create.mock.calls[0]).toEqual(
+      prisma.aiUsageEvent.create.mock.calls[1],
+    );
   });
 });
 

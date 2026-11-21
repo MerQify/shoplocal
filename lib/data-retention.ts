@@ -5,9 +5,8 @@
  * states the same figures to shoppers. A change here changes both, so the policy cannot drift
  * from the code — the pattern `lib/storage-keys.ts` set for storage names (#1080).
  *
- * Retention is when a row becomes DUE for deletion, not when it is deleted: every sweep runs on a
- * small random fraction of writes (`SWEEP_PROBABILITY`), so on a quiet shop a row can outlive its
- * figure. `/privacy` says exactly that ("removed by routine clean-up after that").
+ * Retention defines when a row becomes eligible for deletion. The daily scheduler runs a
+ * bounded cleanup even on quiet shops, and write-triggered cleanup can remove rows sooner.
  *
  * Client-safe and import-free on purpose: the privacy page and the repositories both import it.
  */

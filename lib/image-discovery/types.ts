@@ -10,11 +10,18 @@ export interface DiscoveredImage {
   title: string;
   thumbnailUrl: string;
   originalUrl: string;
+  downloadUrl?: string;
   sourceSite: string;
   licence: DiscoveryLicence;
   attribution: string;
   width?: number;
   height?: number;
+}
+
+export interface DiscoveryImportSelection {
+  id: string;
+  provider: DiscoveryProvider;
+  query: string;
 }
 
 export interface DiscoverySearchParams {

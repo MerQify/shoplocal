@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Prepare the staging launch candidate with checkout privacy, verified Image Hub imports, dependency security updates, daily retention, delayed Stripe settlement, and faster homepage rendering. Record the audit and validation evidence in the internal KMS.
+
 ### Security
 
 - **Stock-export Excel downloads built live behind the platform-admin check; the generated export

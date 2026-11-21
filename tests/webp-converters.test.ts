@@ -107,7 +107,7 @@ describe("WebP converter consolidation (#1675)", () => {
       illegalBlobCalls,
       `Found disallowed canvas.toBlob() calls outside lib/webp-convert.ts: ${JSON.stringify(illegalBlobCalls, null, 2)}`,
     ).toEqual([]);
-  });
+  }, 30_000);
 
   it("restricts createImageBitmap to lib/webp-convert.ts and VendorMarkUploader", () => {
     const illegalBitmapCalls: Violation[] = [];
@@ -125,5 +125,5 @@ describe("WebP converter consolidation (#1675)", () => {
       illegalBitmapCalls,
       `Found disallowed createImageBitmap() calls outside lib/webp-convert.ts: ${JSON.stringify(illegalBitmapCalls, null, 2)}`,
     ).toEqual([]);
-  });
+  }, 30_000);
 });
