@@ -8,6 +8,10 @@ every branch merges.
 
 ### Added
 
+- **Roadmap rows for the 2026-11-21 promotion (PR #1704) and the #1705 staging merge (PR #1707).**
+  Also updates `env-setup.md`'s nightly-sync `Last run:` line and the handoff. Keeps `sdd:audit` at
+  0 gaps.
+
 - **Merqify Image Hub: nightly sync of store images into the hub (#1705, 2026-11-21).**
   - New `.github/workflows/image-hub-sync.yml` runs `scripts/import-images-to-hub.ts --apply` at
     02:17 UTC for the `afc` and `merqify` production cells. An image created by any path (staff
