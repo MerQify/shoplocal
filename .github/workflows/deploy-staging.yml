@@ -131,6 +131,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: Verify platform staging health and deployed commit
+        run: node scripts/verify-staging-health.mjs https://aheed-staging.merqify.com https://srimart-staging.merqify.com
+
   # #1505 — the dedicated AFC cell deploys in its OWN job, in parallel with the platform's `deploy`.
   # Its steps used to run at the end of `deploy`, so any platform failure (build, migrate, route
   # check, wrangler) left Aheed undeployed, and Aheed's release always waited on ShopLocal's. Same
@@ -211,4 +214,10 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          AFC_DIRECT_URL: ${{ secrets.AFC_DIRECT_URL }}
+
+      - name: Verify AFC staging health and deployed commit
+        if: env.AFC_DIRECT_URL != ''
+        run: node scripts/verify-staging-health.mjs https://staging.aheedfoodcentre.co.uk
+        env:
           AFC_DIRECT_URL: ${{ secrets.AFC_DIRECT_URL }}
