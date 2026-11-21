@@ -65,3 +65,51 @@ Record each step's result in the `#1705` issue and in the env-setup sanity-check
 5. After the next scheduled night, `gh run list --workflow image-hub-sync.yml` shows a `schedule`
    run that succeeded. Note its actual start time against 02:17 UTC.
 6. `/staff/image-library` on `www.aheedfoodcentre.co.uk` lists the store's images.
+
+## Results (2026-11-21)
+
+**Not independent.** This ran in the same context that built the slice, on Opus rather than Sonnet
+(owner preference: no pre-validation Clear when context is low). Branch head at validation was
+`82827ab7`.
+
+**Pre-flight**
+- `npm run build` exited 0, including `check-client-syntax`: 185 client files parse on Safari /
+  iOS 15.4.
+- `lint`, `typecheck`, `format:check` and `kms:check-generated` all exited 0.
+- The full suite was run twice, alone, with `--maxWorkers=4`:
+  - Run 1: 1 failure, 7253 passed. The failing test's name was not captured; it is outside this
+    slice's files.
+  - Run 2: 7254 passed, 8 skipped.
+  - Treated as the loaded-machine pattern in CLAUDE.md (a failure that moves between runs), not a
+    regression. CI is the authority.
+
+| Req | Result |
+|-----|--------|
+| R1 | Pass. The test passes, and the cron and three inputs match by eye. |
+| R2 | Pass. `ubuntu-latest`, `environment: production`, `fail-fast: false`, `concurrency` group `image-hub-sync-${{ matrix.cell }}` with `cancel-in-progress: false`. The `fromJSON` matrix maps `afc` to `["afc"]`, `merqify` to `["merqify"]`, and all or empty to both. GitHub allows `inputs` in `strategy.matrix` and `matrix` in a job's `concurrency`. The expression is first exercised at post-promotion step 3. |
+| R3 | Pass. |
+| R4 | Pass. All 16 `KEY:SECRET` pairs match the R4 table for both cells; values are quoted; clean-up uses `if: always()`. `umask 077` is in `scripts/write-hub-sync-env.sh`. The resulting mode could not be observed: NTFS under Git Bash shows `-rw-r--r--` whatever the umask. Recorded as verified by reading. |
+| R5 | Pass. The real helper was run with the AFC cell's exact 8 pairs and dummy values. With `AFC_S3_BUCKET` empty it exited 1, printed `Missing GitHub 'production' environment secret(s): AFC_S3_BUCKET`, printed no value, and wrote no file. With all 8 set it exited 0 and wrote a quoted file. The workflow test also passes. Deviation (build notes): the check is the helper, called inside each cell's step. |
+| R6 | Pass (read). Nothing masks the exit code. A failed env-file step skips the sync step by default. |
+| R7 | Pass. Unit tests pass. With `merqify-staging.vars` and `S3_SECRET_KEY="invalid"`, an apply with `--limit 3` gave 3 lines of `[FAILED] … storage read <key>: HTTP 403`, `Failed: 3`, `exit=1`. Before this slice, those reads counted as missing and the run exited 0. The 404 path was seen for real on AFC staging: two fixture rows logged `[WARN] Storage object missing or empty` with exit 0. |
+| R8 | Pass. With `IMAGE_HUB_API_KEY="mih_stg_invalid"`, an apply with `--limit 1` gave `[FAILED] … unauthorized - Missing or invalid API key`, `Failed: 1`, `exit=1`. A later dry run with the real file still listed the same rows, so nothing was written by either failure run. `recordUsage`'s failure branch was checked by reading the diff: both loops increment the count, log `[FAILED] usage …`, and skip the `hubUsageId` update. |
+| R9 | Pass. Unit tests pass. Merqify staging, with `--limit 2 --apply`:<br>- First attempt: 1 `[IMPORTED]` and 1 `[FAILED] … storage read …: fetch failed`, so `Failed: 1`, `exit=1`. That was a transient network error: the same image imported on the next run.<br>- Two further runs with `--limit 3`: 6 `[IMPORTED]`, `Failed: 0`, `exit=0`.<br>- AFC staging (`AFC_DIRECT_URL`), `--limit 2 --apply`: `Failed: 0`, `exit=0`.<br>- **Tenant scope:** a SriMart-only apply on Merqify staging (`--vendor srimart --limit 2`) imported 2 images with `exit=0`, so the staging key covers both stores. The production keys are untested. |
+| R10 | Pass. The dry run printed `DRY RUN (no mutations)` and `[DRY-RUN]` rows with `exit=0`. `mapProductImageProvenance` is unchanged in the diff, and every hub or Prisma write sits after the dry-run `continue`. |
+| R11 | Pass. 15 tests pass across both new files. |
+| R12 | Pass. |
+| R13 | Pass. Section, statement, all eight names, the numbered sanity check and `Last run:` are present, plus the runbook entry. `kms:assemble:internal` and the `kms/site-internal` Next build both exited 0 after the last docs edit. |
+| R14 | Pass. |
+| R15 | Pass locally (see pre-flight). CI `gates` is still owed at Ship. |
+
+**Observations, not failures**
+1. **A transient network error turns the night red.** The `fetch failed` in R9 shows that one
+   network blip on any single image makes that night's run exit 1, as R7 specifies. The row stays
+   `hubAssetId: null` and is retried the next night. `plan.md` deliberately excludes retries
+   within a run. If occasional red nights become noise, a single retry per storage read would be
+   a follow-up: not filed, owner's call.
+2. **The validation runs wrote real staging data.** About 11 staging images are now in hub
+   staging with their `hubAssetId` / `hubUsageId` set. Staging only; that is the intended outcome
+   of a sync.
+
+**Owed after promotion:** the "Post-promotion" steps above. They need the owner's GitHub
+`production` secrets and the workflow on `main`.
