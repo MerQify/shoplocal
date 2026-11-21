@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-21T11:06:53.197Z` · commit `4ca4a86f` · `389` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-21T15:39:29.104Z` · commit `2cace578` · `390` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -372,6 +372,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Image Hub — pick from library on the product page (plan)](specs/2026-11-20-product-library-picker/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Adds a Choose from library picker to /staff/products/<id> that lists approved Image Hub images ranked by relevance to the product's name, brand and category, and assigns the chosen one through the existing #1671 assign path. |
 | [Client Setup — receiving addresses dual listbox transfer picker & inline edit (plan)](specs/2026-11-20-receiving-address-transfer-list-edit/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Replaces single-select dropdown with an accessible HTML5 dual listbox transfer picker for managing forward destinations, and introduces inline edit mode for existing receiving addresses. |
 | [Image library — reject an approved image (plan)](specs/2026-11-20-reject-approved-image/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Lets store admins reject an already-approved Image Hub image from /staff/image-library, with a plain-words refusal when the image is still used on a product or category. |
+| [Live Excel Stock Exports Behind Auth; No Generated Exports in public/ (plan)](specs/2026-11-21-live-xlsx-stock-export/plan.md) | spec | 1.0.0 | 2026-11-21 | approved | internal | Build the Universal, Essential and Master xlsx downloads live from the database behind the platform-admin check, honouring filters, and remove the generated export files that were publicly served from public/templates/. |
 | [Nightly Image Hub sync for both production cells (plan)](specs/2026-11-21-nightly-image-hub-sync/plan.md) | spec | 1.0.0 | 2026-11-21 | draft | internal | A scheduled GitHub Actions job runs the |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
