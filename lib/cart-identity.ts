@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-import { getAuth } from "./auth";
-import { headers } from "next/headers";
+import { getStorefrontSession } from "./storefront-session";
 import { CART_COOKIE, LEGACY_CART_COOKIE, readCookieWithFallback } from "./storage-keys";
 
 /**
@@ -30,7 +29,7 @@ export interface CartIdentity {
 
 /** Reads the signed-in user id, or null for a guest. */
 export async function getUserId(): Promise<string | null> {
-  const session = await (await getAuth()).api.getSession({ headers: await headers() });
+  const session = await getStorefrontSession();
   return session?.user?.id ?? null;
 }
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { headers, cookies } from "next/headers";
+import { cookies } from "next/headers";
 
-import { getAuth } from "@/lib/auth";
+import { getStorefrontSession } from "@/lib/storefront-session";
 import { requireVendorRole } from "@/lib/auth-rbac";
 import { getEnv } from "@/lib/config";
 import { composePublicUrl } from "@/lib/storage";
@@ -56,8 +56,16 @@ export async function Header({
    */
   isLanding?: boolean;
 } = {}) {
-  const requestHeaders = await headers();
-  const session = await (await getAuth()).api.getSession({ headers: requestHeaders });
+  // These reads are independent. The cart and rewards reuse the render's session lookup.
+  const [session, cookieStore, profile, fulfilmentMethod, cartSummary, searchDepartments] =
+    await Promise.all([
+      getStorefrontSession(),
+      cookies(),
+      getCurrentVendorProfile(),
+      getFulfilmentMethod(),
+      getRequestCartSummary(),
+      isPortal ? [] : getCategoryRepository().listTree().then(toSearchDepartments),
+    ]);
   const user = session?.user as { name: string } | undefined;
   const firstName = user?.name?.split(" ")[0];
 
@@ -70,7 +78,6 @@ export async function Header({
       staffCheck.ok && (staffCheck.via === "platform-admin" || staffCheck.via === "ADMIN");
   }
 
-  const cookieStore = await cookies();
   let currentTier: "staff" | "admin" = "staff";
   if (canSeeAdmin) {
     const saved = cookieStore.get("admin-tier")?.value;
@@ -81,7 +88,6 @@ export async function Header({
     }
   }
 
-  const profile = await getCurrentVendorProfile();
   const name = profile?.name ?? "";
   const localityName = profile?.localityName ?? "";
   const bannerNote = profile?.bannerNote ?? null;
@@ -109,33 +115,17 @@ export async function Header({
   // longer drift apart, which is the failure this consolidation exists to prevent.
   const deliveryPrefixes = profile?.deliveryPrefixes ?? [];
   const storedPostcode = cookieStore.get(DELIVERY_POSTCODE_COOKIE)?.value ?? null;
-  const deliverable = storedPostcode ? await isPostcodeDeliverable(storedPostcode) : null;
+  const [deliverable, deliveryRules] = await Promise.all([
+    storedPostcode ? isPostcodeDeliverable(storedPostcode) : null,
+    getShopperDeliveryRules(profile, fulfilmentMethod),
+  ]);
   const offerCollection = profile?.offerCollection ?? false;
-
-  // #748 — one resolved answer for the whole render. Both LocationControl
-  // instances and the cart drawer read this same value, so they cannot disagree.
-  const fulfilmentMethod = await getFulfilmentMethod();
-  // #890 — the drawer's minimum and free-delivery prompts use this shopper's own area's rules.
-  const deliveryRules = await getShopperDeliveryRules(profile, fulfilmentMethod);
-
-  // P8.5a (#345): routed through the request-memoised reader so the header and
-  // a product grid on the same page share ONE getSummary() call. The identity
-  // guard and the EMPTY_CART fallback moved inside it unchanged.
-  const cartSummary = await getRequestCartSummary();
   // #239: this fallback was itself Aheed copy ("vine tomatoes, halal lamb
   // chops, basmati, lentils"). It only fires when no vendor resolves at all —
   // fetchVendorProfile already substitutes DEFAULT_SEARCH_PLACEHOLDER for a
   // vendor with none — but a platform default naming one vendor's trade is the
   // same defect this slice exists to remove.
   const searchPlaceholder = profile?.searchPlaceholder ?? "Search products…";
-  // #1131 — the search bar's department selector. The vendor's visible categories straight from the
-  // database (request-memoised, so a page that also reads the tree shares the one query), which is
-  // what makes a new department appear and a hidden one disappear with no code change. #1169 — the
-  // whole tree, so subcategories are offered under their department. The portal renders no search
-  // bar, so it skips the read.
-  const searchDepartments = isPortal
-    ? []
-    : toSearchDepartments(await getCategoryRepository().listTree());
   const { CDN_BASE_URL } = getEnv();
   const logoUrl =
     profile?.logoStorageKey && CDN_BASE_URL
