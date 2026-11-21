@@ -6,7 +6,51 @@ every branch merges.
 
 ## [Unreleased]
 
+### Added
+
+- **Merqify Image Hub — phase 2: AI image generation in the gallery for active and inactive products (#1701, 2026-11-20).**
+  - Interactive photo generator panel in `/staff/image-library` (`ImageAiGeneratorPanel.tsx`) powered by Cloudflare Workers AI (`@cf/black-forest-labs/flux-1-schnell`).
+  - Supports searching and drafting prompts for **both active and inactive products**, allowing store operators to generate, review, and approve studio photos ahead of product activation.
+  - Selecting a product automatically formulates an optimized studio commercial lighting prompt with product and category names.
+  - Enforces daily AI metering via `getVendorAiMeter(auth.vendorId, "PRODUCT_IMAGE")` with graceful refusal before Workers AI calls.
+  - Generated photos land in the Image Hub as `PENDING_REVIEW` with `source: "AI_GENERATED"`, `licence: "AI_GENERATED"`, and `rightsConfirmed: true`.
+  - Batch generation CLI script `scripts/generate-product-images-ai.ts` with `--status <all|active|inactive>`, `--limit`, `--vendor`, `--dry-run`, `--apply`.
+
+### Fixed
+
+- **Checkout and cancellation fixes from the live-payments go-live (#1690, #1691, #1693, 2026-11-20).**
+  - **Provider minimum:** a basket under the payment provider's minimum charge (Stripe: 30p in
+    GBP) is refused before any order is created, with "Card payments need a total of at least
+    £0.30." It used to create an order, cancel it and blame an unreachable provider.
+  - **Stripe's error is logged:** a failed session creation writes Stripe's status and message to
+    the log and to `ErrorEvent`. The shopper's message is unchanged.
+  - **Cancelled checkouts are closed:** a shopper who returns from Stripe and cancels now also
+    expires that Checkout Session, so the cancelled order can no longer be paid.
+  - **Cancellation email:** staff cancelling a paid order choose who asked and what to tell the
+    customer (refunded in full, not refunded yet, or their own message). The email and the order
+    page use the matching wording; a blank message gives a neutral one, and older cancellations
+    keep the original. Migration `20261120200000_order_cancellation_choices` (additive).
+    The email's fixed opening line and preview text are now neutral ("Order X has been
+    cancelled."), so they no longer apologise for a cancellation the customer asked for.
+  - **Telegram alerts** no longer carry a large link-preview card.
+
+### Changed
+
+- **Consolidate browser WebP converters onto `lib/webp-convert.ts` (#1675, 2026-11-20).**
+  - Parameterized `convertToWebp(source: Blob, maxEdgePx?: number)` with default `MAX_IMAGE_EDGE_PX` (1200px) from `lib/product-image.ts`.
+  - Consolidated duplicate `toWebp` canvas routines in `BundleImageUploader`, `CampaignBannerUploader`, `ProductImageManager`, `PromotionForm`, `VendorLogoUploader`, and `WhatsappQrUploader` onto `lib/webp-convert.ts`.
+  - Retained `VendorMarkUploader` as the sole documented exception (renders 5 square PNG mark files via `MARK_CONTENT_TYPE`).
+  - Added architectural guard test in `tests/webp-converters.test.ts` scanning `app/`, `components/`, `features/`, `lib/` to enforce that `canvas.toBlob(` and `createImageBitmap(` are isolated to `lib/webp-convert.ts` and `VendorMarkUploader`.
+
 ### Documentation
+
+- **Roadmap row for Image Hub phase 2 AI image generation (#1701).** Added roadmap change-log row for PR #1702 in `specs/roadmap.md`, keeping `sdd:audit` clean with 0 gaps.
+
+- **Roadmap rows for checkout cancellation fixes (#1698) and Image Hub phase 3 (#1699).** Added roadmap change-log rows for PR #1698 and PR #1699 in `specs/roadmap.md`, keeping `sdd:audit` clean with 0 gaps.
+
+- **Roadmap row for Image Hub phase 1c (#1674).** Added roadmap change-log row for PR #1695 in `specs/roadmap.md`, keeping `sdd:audit` clean.
+
+- **Roadmap rows for #1688 promotion and #1675 staging merge.** Added roadmap change-log rows for PR #1688 and PR #1692 in `specs/roadmap.md`, keeping `sdd:audit` clean with 0 gaps.
 
 - **Roadmap rows for the 2026-11-20 promotion (PR #1685).** Production row for Image Hub 1b, the picker, reject-approved and Client Setup multi-forward; backfilled staging rows, plan front-matter, and ARTIFACT_INDEX.md entries for the two Client Setup slices so sdd:audit passes with 0 gaps.
 
@@ -17,6 +61,17 @@ every branch merges.
 - **Image library post-ship docs (#1671, 2026-11-20).** Corrected `env-setup.md`: `configure-env` re-pushes every secret in a vars file and refuses the AFC cell, so add only the two hub keys with `wrangler secret put`. Also added the image library sanity-check guide (Last run: staging, 2026-11-20); the handoff note that production store Workers do not yet carry the hub keys; the playbook note on driving a client-invoked server action with the `Next-Action` header; and the roadmap row for the staging merge.
 
 ### Added
+
+- **Image Hub phase 3: licensed search & discovery (#1697, 2026-11-20).**
+  - Added open repository discovery adapters in `lib/image-discovery/` for Openverse, Wikimedia Commons, and Open Food Facts with automatic licensing and attribution extraction.
+  - Added `ImageDiscoveryPanel` to `/staff/image-library` enabling staff and store admins to search open image repositories and import candidates directly into the hub with one click.
+  - Added server actions `searchDiscoveredImagesAction` and `importDiscoveredImageAction` in `features/admin/image-library.ts` preserving full provenance (`source`, `licence`, `attribution`, `sourceSite`, `originalUrl`) and assigning `PENDING_REVIEW` status.
+  - Added batch discovery CLI `scripts/discover-product-images.ts` to discover and import open image candidates for unphotographed store products.
+
+- **Image Hub phase 1c: import store catalogue images (#1674, 2026-11-20).**
+  - Added `importAsset` to `lib/image-hub/client.ts` wrapping the hub's `POST /v1/assets/import` endpoint, supporting full provenance (`source`, `licence`, `attribution`, `sourceSite`, `originalUrl`, `status`).
+  - Added `scripts/import-images-to-hub.ts`: an idempotent migration CLI (`--env-file`, `--dry-run`, `--vendor`, `--limit`) that reads existing `ProductImage` and `CategoryAsset` rows, fetches bytes from store S3/R2 storage, imports them into the Image Hub with provenance, and updates `hubAssetId` (and `hubUsageId` for approved usages).
+  - Tested live on staging: successfully imported existing store product images into the Merqify Image Hub.
 
 - **Client Setup: Dual Listbox Transfer Picker & Inline Edit for Receiving Addresses (#1684, 2026-11-20).**
   - Upgraded forward-to recipient selection in `/staff/platform/client-setup` to a Dual Listbox Transfer Picker (`DualListboxTransferPicker`) featuring native HTML5 drag-and-drop between Available and Selected mailboxes, click-to-transfer buttons (`Add →`, `← Remove`, `Add all →`, `← Clear all`), and direct custom mailbox input.

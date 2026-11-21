@@ -130,7 +130,29 @@ export interface PaymentService {
    * same compare-and-set predicate #429 installed.
    */
   retrieveSession(sessionId: string): Promise<RetrievedSession>;
+  /**
+   * #1690 R1 — the smallest total, in minor units, the provider will charge in `currency`; null
+   * when it sets none we know of. `placeOrder` refuses a smaller order before creating anything.
+   *
+   * Optional, like `RetrievedSession.url`, only so hand-built doubles that predate it still
+   * type-check; both adapters implement it, and an absent method means "no minimum".
+   */
+  minimumAmount?(currency: string): number | null;
+  /**
+   * #1690 R7 — closes a still-open hosted page so it can no longer be paid. Called after the
+   * shopper's own cancel; best-effort there, since the provider expires it at `expires_at` anyway.
+   * Optional for the same reason as `minimumAmount`.
+   */
+  expireSession?(sessionId: string): Promise<void>;
 }
+
+/**
+ * #1690 — Stripe's published minimum charge amounts, in minor units, for the currencies this
+ * platform could plausibly trade in (https://docs.stripe.com/currencies#minimum-and-maximum-charge-amounts).
+ * A currency not listed has no check: refusing an unknown one would block a vendor outright, and
+ * Stripe's own refusal is now logged (R5) if it ever bites.
+ */
+const STRIPE_MINIMUM_CHARGE: Readonly<Record<string, number>> = { gbp: 30, eur: 50, usd: 50 };
 
 export const STUB_PAYMENT_PROVIDER = "stub";
 export const STRIPE_PAYMENT_PROVIDER = "stripe";
@@ -184,6 +206,11 @@ export function createStubPaymentService(): PaymentService {
         url: null,
       };
     },
+    // No provider, so no minimum and nothing to expire (#1690).
+    minimumAmount() {
+      return null;
+    },
+    async expireSession() {},
   };
 }
 
@@ -311,6 +338,29 @@ export function createStripePaymentService(secretKey: string): PaymentService {
         currency: session.currency ?? null,
         url: session.url ?? null,
       };
+    },
+
+    minimumAmount(currency) {
+      return STRIPE_MINIMUM_CHARGE[currency.toLowerCase()] ?? null;
+    },
+
+    async expireSession(sessionId) {
+      const response = await fetch(
+        `${STRIPE_SESSIONS_URL}/${encodeURIComponent(sessionId)}/expire`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${secretKey}`,
+            "Stripe-Version": "2025-09-30.clover",
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new PaymentProviderError(
+          `Stripe session expiry failed: ${response.status} ${await response.text()}`,
+          response.status,
+        );
+      }
     },
   };
 }

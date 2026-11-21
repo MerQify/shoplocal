@@ -36,6 +36,44 @@ export function isOrderEvent(status: string): status is OrderEvent {
 export const CANCELLED_NEXT_STEP =
   "We're sorry — we've had to cancel this order and any points or discount code you used have been put back on your account. No payment has been returned yet, so please reply to this email and we'll sort that out with you directly.";
 
+/**
+ * #1691 — what staff chose when cancelling (`OrderStatusEvent.cancellation*`). String unions rather
+ * than the Prisma enums so this file stays import-free for client components. Every field null (or
+ * no notice at all) means a cancellation made before #1691, or by the system: original wording.
+ */
+export interface CancellationNotice {
+  reason: "CUSTOMER_REQUEST" | "STORE_UNABLE" | "OTHER" | null;
+  message: "REFUNDED" | "NOT_REFUNDED" | "CUSTOM" | null;
+  customerMessage: string | null;
+}
+
+const REFUNDED_SENTENCE =
+  "Your payment has been refunded in full; it can take a few days to reach your account.";
+const PUT_BACK_SENTENCE =
+  "Any points or discount code you used have been put back on your account.";
+
+/** #1691 R13 — the "Write my own message" choice with nothing written: says nothing it can't know. */
+export const CANCELLED_NEUTRAL_NEXT_STEP =
+  "This order has been cancelled. If you have any questions about it, including any payment, please reply to this email.";
+
+/** #1691 R13 — the CANCELLED text for a staff cancellation's choices; one table for email and page. */
+export function cancelledNextStep(notice: CancellationNotice | null | undefined): string {
+  if (!notice || notice.message === null) return CANCELLED_NEXT_STEP;
+  if (notice.message === "CUSTOM") {
+    const custom = notice.customerMessage?.trim() ?? "";
+    return custom.length > 0 ? custom : CANCELLED_NEUTRAL_NEXT_STEP;
+  }
+  const customerAsked = notice.reason === "CUSTOMER_REQUEST";
+  if (notice.message === "REFUNDED") {
+    return customerAsked
+      ? `As you asked, we've cancelled this order. ${REFUNDED_SENTENCE} ${PUT_BACK_SENTENCE}`
+      : `We're sorry — we've had to cancel this order. ${REFUNDED_SENTENCE} ${PUT_BACK_SENTENCE}`;
+  }
+  return customerAsked
+    ? "As you asked, we've cancelled this order, and any points or discount code you used have been put back on your account. We'll refund your payment and let you know when it's done."
+    : CANCELLED_NEXT_STEP;
+}
+
 /** #1552 — an async payment method failed, so `failPayment` cancelled the order and released stock. */
 export const PAYMENT_FAILED_NEXT_STEP =
   "No money has been taken and the items have been released. You're welcome to place the order again whenever you're ready.";
@@ -48,6 +86,8 @@ export function nextStepText(
   status: string,
   method: FulfilmentMethodValue,
   orderNumber: string,
+  /** #1691 — the staff cancellation's choices; only read for CANCELLED. */
+  cancellation?: CancellationNotice | null,
 ): string | null {
   switch (status) {
     case "CONFIRMED":
@@ -62,7 +102,7 @@ export function nextStepText(
     case "COLLECTED":
       return DONE;
     case "CANCELLED":
-      return CANCELLED_NEXT_STEP;
+      return cancelledNextStep(cancellation);
     case "PAYMENT_FAILED":
       return PAYMENT_FAILED_NEXT_STEP;
     default:

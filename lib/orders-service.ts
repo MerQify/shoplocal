@@ -19,6 +19,7 @@ import {
   listOrdersForStaff,
   listOrdersForUser,
   placeOrder,
+  type CancellationChoices,
   type OrderRepository,
   type PaymentBinding,
   type PaymentTransitionRefusal,
@@ -242,7 +243,12 @@ export function getOrderCancelService() {
      * `getPrismaWs()` is mandatory, not stylistic: `cancelConfirmedOrder` uses
      * `updateMany`.
      */
-    cancelConfirmed: async (orderNumber: string, reason: string, actorUserId: string | null) => {
+    cancelConfirmed: async (
+      orderNumber: string,
+      reason: string,
+      actorUserId: string | null,
+      choices: CancellationChoices | null = null,
+    ) => {
       const prisma = getPrismaWs();
       const vendorId = await getCurrentVendorId();
       const order = await prisma.order.findFirst({
@@ -251,7 +257,14 @@ export function getOrderCancelService() {
       });
       if (!order) return null;
 
-      const cancelled = await cancelConfirmedOrder(prisma, vendorId, order.id, reason, actorUserId);
+      const cancelled = await cancelConfirmedOrder(
+        prisma,
+        vendorId,
+        order.id,
+        reason,
+        actorUserId,
+        choices,
+      );
       if (!cancelled) return null;
 
       // Re-read AFTER the commit for the caller's email, exactly as

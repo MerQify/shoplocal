@@ -4,8 +4,8 @@ title: "Staff Daily Operations Playbook"
 audience: [staff]
 type: runbook
 status: approved
-version: "2.23.0"
-updated: "2026-11-15"
+version: "2.24.0"
+updated: "2026-11-20"
 visibility: internal
 summary: "How to use every page in the Staff Panel: picking and dispatching orders, managing catalogue products, categories, brands, filters, bundles, promotions, inventory, search dictionary, customer feedback, enquiries & inbox, and runbooks. One section per menu item."
 tags: ["staff", "guide", "ui", "fulfillment", "inventory", "catalogue", "synonyms", "feedback", "enquiries", "inbox"]
@@ -48,10 +48,23 @@ the [notification matrix](../developer-portal/notification-matrix.md).
 | They paid | A confirmation email, with their slot |
 | You mark an order **Out for delivery** or **Ready for collection** | An email for each |
 | You mark it **Delivered** or **Collected** | A final email, with any points earned |
-| You cancel it | A cancellation email saying the charge has not been refunded yet, so expect a call or reply |
+| You cancel it | A cancellation email whose wording follows the two choices you make when cancelling (see below) |
 | Their payment failed | An email saying no money was taken |
 | They sent a **Contact us** message | An automatic "we've received your message" email, which promises only that someone will reply |
 | Their checkout expired | Nothing, unless a store admin sends a reminder from **Abandoned checkouts** |
+
+**Cancelling a paid order** (store admins, at the bottom of the order's page, `#1691`). The
+**Reason** you type is for your records only and is not shown to the customer. Two more
+choices decide what the customer is told, in the email and on their order page:
+
+- **Who asked for this?** — **Customer asked**, **We couldn't fulfil it** or **Other**.
+- **What should we tell the customer?** — **Refunded in full**, **Not refunded yet** or
+  **Write my own message**. The last one opens a **Message to the customer** box (up to 1,000
+  characters) whose text is sent instead of the standard wording. If you leave it blank, the
+  customer gets a short neutral message asking them to reply with any questions.
+
+**Refunded in full** does not refund anything: refund the payment in Stripe first, then choose
+it.
 
 Every status change you make also tells the store owner, by email and on Telegram, so there is no
 need to message them separately. **Changing many orders at once** sends each customer their own

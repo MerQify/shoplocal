@@ -43,7 +43,13 @@ export type PaymentCheckOutcome =
   | { kind: "not-pending" }
   | { kind: "no-session" }
   | { kind: "provider-error" }
-  | { kind: "not-paid"; sessionStatus: string | null; paymentStatus: string | null }
+  | {
+      kind: "not-paid";
+      /** #1690 R8 — the stored session id, so a shopper's cancel can expire that exact session. */
+      sessionId: string;
+      sessionStatus: string | null;
+      paymentStatus: string | null;
+    }
   | { kind: "confirmed" }
   | { kind: "refused"; reason: PaymentTransitionRefusal };
 
@@ -66,6 +72,7 @@ export async function checkOrderPayment(
   if (session.paymentStatus !== "paid") {
     return {
       kind: "not-paid",
+      sessionId: order.providerReference,
       sessionStatus: session.status,
       paymentStatus: session.paymentStatus,
     };

@@ -105,6 +105,7 @@ export default async function OrderConfirmationPage({
           fulfilmentMethod={order.fulfilmentMethod}
           timeline={order.timeline}
           slotLabel={order.slotLabel}
+          cancellation={order.cancellation}
         />
       )}
       <LiveRefresh active={!isFinalStatus(order.status)} />

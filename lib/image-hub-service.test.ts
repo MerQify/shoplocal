@@ -5,12 +5,15 @@ const mocks = vi.hoisted(() => ({
   getImageHubEnv: vi.fn(),
   fetchVendorProfile: vi.fn(),
   getProductForAdmin: vi.fn(),
+  listProductsForAdmin: vi.fn(),
   setPrimaryProductImage: vi.fn(),
   addProductImage: vi.fn(),
   setProductImageHubUsage: vi.fn(),
   getCategoryForAdmin: vi.fn(),
   createCategoryAssetForVendor: vi.fn(),
   setCategoryAssetHubUsageForVendor: vi.fn(),
+  getVendorAiMeter: vi.fn(),
+  getImageGenerationService: vi.fn(),
   storage: {
     putObject: vi.fn(),
     headObject: vi.fn(),
@@ -25,6 +28,7 @@ vi.mock("@/lib/storage", () => ({ getStorage: () => mocks.storage }));
 vi.mock("@/lib/vendor-service", () => ({ fetchVendorProfile: mocks.fetchVendorProfile }));
 vi.mock("@/lib/products-service", () => ({
   getProductForAdmin: mocks.getProductForAdmin,
+  listProductsForAdmin: mocks.listProductsForAdmin,
   setPrimaryProductImage: mocks.setPrimaryProductImage,
   addProductImage: mocks.addProductImage,
   setProductImageHubUsage: mocks.setProductImageHubUsage,
@@ -34,6 +38,13 @@ vi.mock("@/lib/category-assets-service", () => ({
   createCategoryAssetForVendor: mocks.createCategoryAssetForVendor,
   setCategoryAssetHubUsageForVendor: mocks.setCategoryAssetHubUsageForVendor,
 }));
+vi.mock("@/lib/ai-meter-service", () => ({
+  getVendorAiMeter: mocks.getVendorAiMeter,
+}));
+vi.mock("@/lib/image-generation", () => ({
+  getImageGenerationService: mocks.getImageGenerationService,
+  IMAGE_GENERATION_MODEL: "@cf/black-forest-labs/flux-1-schnell",
+}));
 
 import {
   approveImageLibraryAsset,
@@ -41,9 +52,13 @@ import {
   assignLibraryAssetToProduct,
   finalizeCategoryAssign,
   finalizeProductAssign,
+  generateAiImageForLibrary,
+  listProductsForAiPrompt,
   rejectImageLibraryAsset,
   releaseHubUsage,
   requestCategoryImageUploadTicket,
+  searchDiscoveredImagesForStaff,
+  importDiscoveredImageToHub,
   searchImageLibrary,
   uploadToImageLibrary,
 } from "./image-hub-service";
@@ -130,6 +145,14 @@ beforeEach(() => {
   });
   mocks.createCategoryAssetForVendor.mockResolvedValue({ id: "ca-1" });
   mocks.storage.putObject.mockResolvedValue(undefined);
+  mocks.listProductsForAdmin.mockResolvedValue({ items: [], nextCursor: null });
+  mocks.getVendorAiMeter.mockReturnValue({
+    check: vi.fn().mockResolvedValue({ allowed: true }),
+    recordImage: vi.fn().mockResolvedValue(undefined),
+  });
+  mocks.getImageGenerationService.mockReturnValue({
+    generateImage: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3]).buffer),
+  });
   asRole("ADMIN");
 });
 
@@ -508,5 +531,229 @@ describe("R18 — releaseHubUsage", () => {
     await releaseHubUsage({ hubAssetId: "a1", hubUsageId: null });
     await releaseHubUsage(null);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("image discovery facade", () => {
+  it("enforces STAFF role for searchDiscoveredImagesForStaff", async () => {
+    mocks.requireVendorRole.mockResolvedValue({ ok: false, reason: "forbidden", status: 403 });
+    const res = await searchDiscoveredImagesForStaff({ query: "mango" });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.code).toBe("forbidden");
+    }
+  });
+
+  it("imports a discovered image and calls importAsset", async () => {
+    mocks.requireVendorRole.mockResolvedValue({
+      ok: true,
+      vendorId: VENDOR,
+      user: { id: "user-1" },
+      via: "STAFF",
+    });
+    mocks.getImageHubEnv.mockReturnValue({
+      configured: true,
+      url: "https://hub.test",
+      apiKey: "mih_key",
+    });
+    mocks.fetchVendorProfile.mockResolvedValue({ slug: "aheed" });
+
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "https://example.com/mango.jpg") {
+        return new Response(new Uint8Array([1, 2, 3]), {
+          status: 200,
+          headers: { "content-type": "image/jpeg" },
+        });
+      }
+      if (url.includes("/v1/assets/import")) {
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            asset: asset({ title: "Discovered Mango", status: "PENDING_REVIEW" }),
+            duplicate: false,
+          }),
+          { status: 201, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response("Not found", { status: 404 });
+    });
+    globalThis.fetch = fetchMock;
+
+    try {
+      const res = await importDiscoveredImageToHub({
+        id: "openverse-123",
+        provider: "OPENVERSE",
+        title: "Discovered Mango",
+        thumbnailUrl: "https://example.com/mango-thumb.jpg",
+        originalUrl: "https://example.com/mango.jpg",
+        sourceSite: "Openverse",
+        licence: "CC_BY",
+        attribution: "Photographer via Openverse",
+      });
+
+      expect(res.ok).toBe(true);
+      if (res.ok) {
+        expect(res.value.title).toBe("Discovered Mango");
+      }
+      expect(fetchMock).toHaveBeenCalledWith("https://example.com/mango.jpg", expect.any(Object));
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://hub.test/v1/assets/import",
+        expect.any(Object),
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  describe("listProductsForAiPrompt", () => {
+    it("returns both active and inactive products matching query", async () => {
+      mocks.listProductsForAdmin.mockResolvedValue({
+        items: [
+          {
+            id: "prod-1",
+            name: "Halal Lamb Chops",
+            slug: "halal-lamb-chops",
+            isActive: true,
+            categoryName: "Meat & Poultry",
+          },
+          {
+            id: "prod-2",
+            name: "Fresh Whole Chicken",
+            slug: "fresh-whole-chicken",
+            isActive: false,
+            categoryName: "Meat & Poultry",
+          },
+        ],
+        nextCursor: null,
+      });
+
+      const products = await listProductsForAiPrompt(VENDOR, "lamb");
+      expect(products).toEqual([
+        {
+          id: "prod-1",
+          name: "Halal Lamb Chops",
+          slug: "halal-lamb-chops",
+          isActive: true,
+          categoryName: "Meat & Poultry",
+        },
+        {
+          id: "prod-2",
+          name: "Fresh Whole Chicken",
+          slug: "fresh-whole-chicken",
+          isActive: false,
+          categoryName: "Meat & Poultry",
+        },
+      ]);
+      expect(mocks.listProductsForAdmin).toHaveBeenCalledWith(VENDOR, {
+        take: 15,
+        search: "lamb",
+      });
+    });
+  });
+
+  describe("generateAiImageForLibrary", () => {
+    it("refuses callers without staff or admin role", async () => {
+      mocks.requireVendorRole.mockResolvedValue({
+        ok: false,
+        status: 401,
+        reason: "unauthenticated",
+      });
+
+      const res = await generateAiImageForLibrary({ prompt: "Lamb chops" });
+      expect(res.ok).toBe(false);
+      if (!res.ok) {
+        expect(res.code).toBe("unauthenticated");
+      }
+    });
+
+    it("refuses when prompt is empty or whitespace", async () => {
+      asRole("STAFF");
+      const res = await generateAiImageForLibrary({ prompt: "   " });
+      expect(res.ok).toBe(false);
+      if (!res.ok) {
+        expect(res.code).toBe("validation");
+      }
+    });
+
+    it("refuses when AI budget is exhausted", async () => {
+      asRole("STAFF");
+      mocks.getVendorAiMeter.mockReturnValue({
+        check: vi.fn().mockResolvedValue({
+          allowed: false,
+          reason: "vendor_budget_exhausted",
+          usedNeurons: 10000,
+          budgetNeurons: 10000,
+        }),
+        recordImage: vi.fn(),
+      });
+
+      const res = await generateAiImageForLibrary({ prompt: "Fresh Lamb Chops" });
+      expect(res.ok).toBe(false);
+      if (!res.ok) {
+        expect(res.code).toBe("budget_exceeded");
+        expect(res.status).toBe(429);
+      }
+    });
+
+    it("generates image, records usage, and imports to Hub as PENDING_REVIEW", async () => {
+      asRole("STAFF");
+      const recordImage = vi.fn().mockResolvedValue(undefined);
+      mocks.getVendorAiMeter.mockReturnValue({
+        check: vi.fn().mockResolvedValue({ allowed: true }),
+        recordImage,
+      });
+
+      const generateImage = vi.fn().mockResolvedValue(new Uint8Array([137, 80, 78, 71]).buffer);
+      mocks.getImageGenerationService.mockReturnValue({ generateImage });
+
+      const originalFetch = globalThis.fetch;
+      const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/v1/assets/import")) {
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              asset: asset({
+                title: "Fresh Lamb Chops",
+                source: "AI_GENERATED",
+                licence: "AI_GENERATED",
+                status: "PENDING_REVIEW",
+              }),
+              duplicate: false,
+            }),
+            { status: 201, headers: { "content-type": "application/json" } },
+          );
+        }
+        return new Response("Not found", { status: 404 });
+      });
+      globalThis.fetch = fetchMock;
+
+      try {
+        const res = await generateAiImageForLibrary({
+          prompt:
+            "Studio product photograph of Fresh Lamb Chops, Meat, clean plain white background, 4k",
+          title: "Fresh Lamb Chops",
+        });
+
+        expect(res.ok).toBe(true);
+        if (res.ok) {
+          expect(res.value.title).toBe("Fresh Lamb Chops");
+          expect(res.value.source).toBe("AI_GENERATED");
+          expect(res.value.status).toBe("PENDING_REVIEW");
+        }
+        expect(generateImage).toHaveBeenCalled();
+        expect(recordImage).toHaveBeenCalledWith({
+          model: "@cf/black-forest-labs/flux-1-schnell",
+        });
+        expect(fetchMock).toHaveBeenCalledWith(
+          "https://hub.test/v1/assets/import",
+          expect.any(Object),
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
   });
 });

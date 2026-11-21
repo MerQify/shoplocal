@@ -12,13 +12,24 @@ import {
   finalizeProductAssign,
   rejectImageLibraryAsset,
   requestCategoryImageUploadTicket,
+  searchDiscoveredImagesForStaff,
+  importDiscoveredImageToHub,
+  generateAiImageForLibrary,
+  listProductsForAiPrompt,
   searchImageLibrary,
+  type AiPromptProductCandidate,
   type AssignOutcome,
+  type GenerateAiImageInput,
   type LibraryResult,
   type ProductAssignMode,
 } from "@/lib/image-hub-service";
 import type { HubAsset, HubPage, HubSearchSort, HubStatus } from "@/lib/image-hub/client";
 import type { UploadTicket } from "@/lib/product-image";
+import type {
+  DiscoveredImage,
+  DiscoverySearchParams,
+  DiscoverySearchResult,
+} from "@/lib/image-discovery/types";
 
 /**
  * #1671 — server actions for `/staff/image-library`. Thin: every rule (who may, what qualifies, the
@@ -140,4 +151,43 @@ export async function listCategoriesForAssign(): Promise<Array<{ id: string; nam
   if (!auth.ok) return [];
   const rows = await listCategoriesForAdmin(auth.vendorId);
   return rows.map((c) => ({ id: c.id, name: c.name }));
+}
+
+/** #1697 — search open licensed image repositories (Openverse, Wikimedia Commons, Open Food Facts). */
+export async function searchDiscoveredImagesAction(
+  params: DiscoverySearchParams,
+): Promise<LibraryResult<DiscoverySearchResult>> {
+  return searchDiscoveredImagesForStaff(params);
+}
+
+/** #1697 — import an open-licensed discovered image into the Image Hub as PENDING_REVIEW. */
+export async function importDiscoveredImageAction(
+  image: DiscoveredImage,
+): Promise<LibraryResult<HubAsset>> {
+  const result = await importDiscoveredImageToHub(image);
+  if (result.ok) revalidatePath("/staff/image-library");
+  return result;
+}
+
+/** #1701 — generate commercial studio photo via Workers AI and import to Image Hub. */
+export async function generateAiImageAction(
+  input: GenerateAiImageInput,
+): Promise<LibraryResult<HubAsset>> {
+  const result = await generateAiImageForLibrary(input);
+  if (result.ok) {
+    revalidatePath("/staff/image-library");
+    if (input.productId) {
+      await revalidateProduct(input.productId);
+    }
+  }
+  return result;
+}
+
+/** #1701 — search vendor products (active and inactive) for AI prompt drafting. */
+export async function listProductsForAiPromptAction(
+  query: string,
+): Promise<AiPromptProductCandidate[]> {
+  const auth = await requireVendorRole("STAFF", "ADMIN");
+  if (!auth.ok) return [];
+  return listProductsForAiPrompt(auth.vendorId, query);
 }

@@ -27,7 +27,16 @@ export type EmailBlock =
       rows: readonly { label: string; note?: string | null; amount: string }[];
       totals: readonly { label: string; amount: string; strong?: boolean }[];
     }
-  | { kind: "callout"; title?: string | null; text: string }
+  | {
+      kind: "callout";
+      title?: string | null;
+      text: string;
+      /**
+       * #1691 R15 — text someone typed (a staff message to the customer): escaped with no `**bold**`
+       * markup in the HTML, and left exactly as written in the plain-text part.
+       */
+      verbatim?: boolean;
+    }
   | { kind: "message"; text: string }
   | { kind: "quote"; caption: string; text: string };
 
@@ -105,7 +114,7 @@ function blockHtml(block: EmailBlock, brand: EmailBrand): string {
         block.title
           ? `<strong style="display:block;margin:0 0 4px;color:${brand.primary};">${escapeHtml(block.title)}</strong>`
           : ""
-      }${inline(block.text)}</td></tr></table>`;
+      }${block.verbatim ? escapeHtml(block.text).replace(/\r?\n/g, "<br>") : inline(block.text)}</td></tr></table>`;
     case "message":
       return `<div class="em-text" style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:24px;color:${TEXT};white-space:pre-wrap;">${escapeHtml(block.text)}</div>`;
     case "quote":
@@ -126,7 +135,7 @@ function blockText(block: EmailBlock): string {
         ...block.totals.map((t) => `${t.label}: ${t.amount}`),
       ].join("\n");
     case "callout":
-      return `${block.title ? `${block.title}\n` : ""}${plain(block.text)}`;
+      return `${block.title ? `${block.title}\n` : ""}${block.verbatim ? block.text : plain(block.text)}`;
     case "message":
       return block.text;
     case "quote":

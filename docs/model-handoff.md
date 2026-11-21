@@ -39,6 +39,25 @@ reconciliation. If overall project state did not materially change, leave this f
 
 ## Last Verified
 
+- **2026-11-20: AFC production takes LIVE payments (`#113` closed).**
+  - **Stripe:**
+    - `afc-store-production` runs Aheed Food Centre's own Stripe account in live mode: a restricted
+      key (Checkout Sessions: Write) and a live webhook at `www.aheedfoodcentre.co.uk/api/webhooks/stripe`.
+    - Proven by owner order `AHE-20261120-SLUAJ9`: webhook 200, email received, refunded.
+    - Merqify's account and AFC staging (test keys) are unchanged. Detail is on `#113`.
+  - **Image Hub on production:** both production stores have `IMAGE_HUB_URL`/`IMAGE_HUB_API_KEY`.
+    The library and picker work on production (browser pass done 2026-11-20).
+  - **`#1689` is PARKED by the owner:** intermittent 500 "promise created by a request that has
+    since ended" under Better Auth `getSession`.
+    - Mitigated by setting AFC production's DB warm-up to **round the clock**. Return it to
+      after-sign-in once `#1689` is fixed, to save Neon compute.
+    - Evidence and the leading suspect (Prisma's module-level WASM loader) are on the issue. The
+      `ErrorEvent` table holds the stack.
+  - **In flight:** `#1690`/`#1691`/`#1693` checkout and cancellation fixes.
+    - Branch `feature/1690-checkout-cancellation`, worktree `E:\GitRepositories\aheed-wt-1690` (real
+      `node_modules`).
+    - Built; validation next. State: `specs/2026-11-20-checkout-cancellation-fixes/build-notes.md`.
+    - Carries an additive migration.
 - **2026-11-15: AFC go-live staging check, and `#1605` in flight.**
   - **Owner goal: go live ASAP.**
     - **Go-live path:** `#1344` checklist → `#1332` demo accounts deleted last.

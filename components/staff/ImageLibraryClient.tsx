@@ -11,6 +11,8 @@ import {
 import type { HubAsset, HubPage, HubStatus } from "@/lib/image-hub/client";
 import { librarySearchSort } from "@/lib/image-hub/search-sort";
 import { ImageLibraryUploader } from "@/components/staff/ImageLibraryUploader";
+import { ImageDiscoveryPanel } from "@/components/staff/ImageDiscoveryPanel";
+import { ImageAiGeneratorPanel } from "@/components/staff/ImageAiGeneratorPanel";
 import {
   assignLibraryAsset,
   libraryContentUrl,
@@ -91,6 +93,8 @@ export function ImageLibraryClient({
   return (
     <div className="space-y-6">
       <ImageLibraryUploader onUploaded={(asset) => setItems((current) => [asset, ...current])} />
+      <ImageDiscoveryPanel onImported={(asset) => setItems((current) => [asset, ...current])} />
+      <ImageAiGeneratorPanel onGenerated={(asset) => setItems((current) => [asset, ...current])} />
 
       <form method="GET" className="flex flex-wrap items-end gap-3" role="search">
         <div>
