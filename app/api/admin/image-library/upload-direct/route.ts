@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireVendorRole } from "@/lib/auth-rbac";
 import { getStorage } from "@/lib/storage";
-import {
-  IMAGE_CONTENT_TYPE,
-  MAX_IMAGE_BYTES,
-  isProductImageKey,
-} from "@/lib/product-image";
+import { IMAGE_CONTENT_TYPE, MAX_IMAGE_BYTES, isProductImageKey } from "@/lib/product-image";
 import { getProductForAdmin } from "@/lib/products-service";
 import { getCategoryForAdmin } from "@/lib/categories-service";
 
@@ -63,7 +59,12 @@ export async function POST(request: Request) {
     const product = await getProductForAdmin(auth.vendorId, targetId);
     if (!product || !isProductImageKey(key, product.id)) {
       return NextResponse.json(
-        { error: { code: "validation", message: "That upload key does not belong to this product." } },
+        {
+          error: {
+            code: "validation",
+            message: "That upload key does not belong to this product.",
+          },
+        },
         { status: 400 },
       );
     }

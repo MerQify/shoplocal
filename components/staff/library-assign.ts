@@ -86,9 +86,7 @@ async function convertAndUpload(
       } | null;
       return {
         ok: false,
-        error:
-          err?.error?.message ??
-          `The upload was rejected by storage (${fallbackRes.status}).`,
+        error: err?.error?.message ?? `The upload was rejected by storage (${fallbackRes.status}).`,
       };
     }
   }

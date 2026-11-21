@@ -57,7 +57,9 @@ describe("assignLibraryAsset with storage fallback", () => {
     });
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    mockConvertToWebp.mockResolvedValue(new Blob([new Uint8Array([4, 5, 6])], { type: "image/webp" }));
+    mockConvertToWebp.mockResolvedValue(
+      new Blob([new Uint8Array([4, 5, 6])], { type: "image/webp" }),
+    );
     mockRequestImageUpload.mockResolvedValue({
       ok: true,
       value: {
@@ -67,7 +69,11 @@ describe("assignLibraryAsset with storage fallback", () => {
     });
     mockFinalizeProductAssignAction.mockResolvedValue({
       ok: true,
-      value: { status: "assigned", url: "https://images.aheedfoodcentre.co.uk/products/p1/img.webp", warning: null },
+      value: {
+        status: "assigned",
+        url: "https://images.aheedfoodcentre.co.uk/products/p1/img.webp",
+        warning: null,
+      },
     });
 
     try {
