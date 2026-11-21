@@ -4,8 +4,8 @@ title: "Platform & Technical Admin Guide"
 audience: [platform-admin]
 type: guide
 status: approved
-version: "1.17.0"
-updated: 2026-11-13
+version: "1.18.0"
+updated: 2026-11-21
 visibility: internal
 summary: "A guide for Platform Administrators managing the multi-tenant infrastructure, onboarding new vendors, and configuring global platform settings."
 tags: ["admin", "platform", "technical", "multi-tenancy"]
@@ -417,6 +417,40 @@ closures also recalculates the windows automatically.
 **Common mistakes and limitations:** What if values are not saved: reloading the page restores the committed values, and nothing typed there changes the figures in the other sections. The totals use the UK card rate; the EEA rate is recorded but not modelled, and nor is the card fee Stripe keeps on a refund. Comparators exclude disputes. Nothing is pulled live except Workers AI usage and what a refresh fetches, so each figure is only as current as its date; the refresh does not yet read the production cost, Connect, add-on or risk pages. Refresh suggestions are not saved: download them as CSV first if you need them. Each refresh uses Workers AI and is recorded as Pricing review on the AI usage page against the store whose site you are signed in on, so it counts against that store's daily AI budget. The risks section is not legal, tax or insurance advice. The page sends no alerts and no emails.
 
 **What happens after changes are saved:** Nothing is saved from this page. An edit to a file under `lib/` takes effect once deployed, and the page recalculates every figure, and reads Workers AI usage, fresh on each load.
+
+---
+
+## Stock & Catalogue Export — `/staff/platform/stock-export`
+
+**Purpose:** Download the current store's catalogue and operational data as spreadsheets — to audit stock, to edit in bulk and re-import, or to hand to the shop — plus blank import templates for adding new records.
+
+**Who can access:** Platform admins only
+
+**What you can do:** Download the **Master Operational Workbook** (`.xlsx`, seven sheets: Products, Categories, Bundles, Promotions, Discount Codes, Filters & Attributes, Field Instructions). Download the full stock list and the essential (core columns) stock list as CSV or Excel. Download bundles, promotions, discount codes, categories and filters as CSV. Download the blank import templates. Every live download is built from the database at the moment you click (`#1714`).
+
+**Typical workflow:** Pick a status (Active Only, All Records, or Archived / Inactive Only) and, optionally, a department or category, then click the download you need. Edit the file and bring it back through the stock import page. To add a product, leave its `Product ID [DO NOT EDIT]` cell empty.
+
+**Important fields and filters:** In the Master workbook, **Products** follows both the status and category filters; Categories, Bundles, Promotions and Discount Codes follow the status filter only; Filters & Attributes is always complete. `Is Active` shows whether each product is live on the storefront. `Stock Mode*` shows the value stored on the product: `UNKNOWN` means nobody has set one yet (the default), not a fault in the export. Each sheet has AutoFilter arrows on its header row, and Products has dropdowns on its fixed-choice columns. Filenames carry the status and date, e.g. `master-all-export-2026-11-21.xlsx`.
+
+**Common mistakes and limitations:** Never edit a `[DO NOT EDIT]` column — it is how an import matches the existing record. The Master workbook contains live discount codes, so treat every download as confidential and never place one in the code repository's `public/` folder (anything there can be downloaded by anyone; `tests/public-no-generated-exports.test.ts` fails if one appears). Before `#1714` the Excel buttons served a fixed 2026-11-17 snapshot that ignored the filters, and a copy was publicly downloadable; it no longer exists. Signed out, a download returns 401; a store admin gets 403. The full catalogue takes a few seconds to build.
+
+**What happens after changes are saved:** Nothing is saved from this page; downloads only read. Changes you make in a downloaded file take effect only when it is imported.
+
+### Sanity check: live stock-export downloads (`#1714`)
+
+**Last run: 2026-11-21, staging, commit `84bfb4e`.** Steps 1–5 passed. Step 6 (opening the file in Excel) not yet done. Production runs after promotion. In Git Bash, avoid `curl -w` and `-o /dev/null` (they report a false `000`).
+
+1. `curl -sS https://HOST/api/health`: expected `commit` is the deployed merge, `db.ok: true`, `reference.reachable: true`.
+2. `curl -sS -I https://HOST/templates/aheed-food-centre-master-stock-export.xlsx | head -1`, and the same for `aheed-food-centre-stock-export.csv`: expected `404`.
+3. `curl -sS -I https://HOST/templates/universal-product-template.csv | head -1`: expected `200` (blank templates are public by design).
+4. `curl -sS -i "https://HOST/staff/platform/stock-export/export?type=master&format=xlsx" | head -1` signed out: expected `401`.
+5. Signed in as a platform admin, download `…/export?type=master&format=xlsx&status=all` and `…/export?type=stock&format=csv&status=all`. Expected:
+   - Both `200` within 30 s.
+   - 7 sheets in the xlsx.
+   - The Products row count equals the CSV row count.
+   - `Is Active` holds both TRUE and FALSE.
+   - Last run on `aheed-staging.merqify.com`: 3,799 rows in both files, 175 TRUE and 3,624 FALSE, about 2 s.
+6. Open the Master file in Excel. Expected: no "repair" prompt, dropdowns work, and AutoFilter arrows on every sheet.
 
 ---
 

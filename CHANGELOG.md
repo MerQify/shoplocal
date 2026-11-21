@@ -27,6 +27,11 @@ every branch merges.
 
 ### Added
 
+- **Platform admin guide 1.18.0: Stock & Catalogue Export section, with its post-ship sanity
+  check (#1714, 2026-11-21).**
+  - `/staff/platform/stock-export` had no operator-guide section.
+  - The coverage test missed it because it hardcodes the platform subpages (#1716).
+  - Also adds the roadmap row for the #1714 staging merge (PR #1715).
 - **Roadmap rows for the 2026-11-21 promotion (PR #1704) and the #1705 staging merge (PR #1707).**
   Also updates `env-setup.md`'s nightly-sync `Last run:` line and the handoff. Keeps `sdd:audit` at
   0 gaps.
