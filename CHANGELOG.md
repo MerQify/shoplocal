@@ -30,6 +30,11 @@ every branch merges.
 
 ### Fixed
 
+- **Image library assignment and product image upload CORS resilience (#1705, 2026-11-21).**
+  - Added same-origin fallback endpoint `/api/admin/image-library/upload-direct` that proxies WebP upload bytes through the Worker's server-to-server `putObject` when direct browser presigned PUT to object storage is blocked by CORS or storage policies.
+  - Hardened `library-assign.ts`, `ProductImageUploader.tsx`, and `ProductImageManager.tsx` to catch storage upload rejections and automatically route through the same-origin upload fallback.
+  - Added unit and fallback tests in `tests/image-library-upload-direct.test.ts` and `tests/library-assign-fallback.test.ts`.
+
 - **Checkout and cancellation fixes from the live-payments go-live (#1690, #1691, #1693, 2026-11-20).**
   - **Provider minimum:** a basket under the payment provider's minimum charge (Stripe: 30p in
     GBP) is refused before any order is created, with "Card payments need a total of at least
