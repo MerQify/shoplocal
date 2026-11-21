@@ -7,6 +7,10 @@
  * Iterates through ProductImage and CategoryAsset records with null hubAssetId,
  * fetches their bytes from store S3/R2 storage, maps their provenance, imports them into the Image Hub,
  * and updates hubAssetId (and hubUsageId for approved usages).
+ *
+ * #1705: runs nightly from .github/workflows/image-hub-sync.yml. In --apply mode it
+ * exits 1 when any storage read (other than a 404), hub import or usage record
+ * fails, so a broken key or bucket turns that run red.
  */
 import { PrismaClient, ProductImageSource } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
@@ -43,18 +47,36 @@ function createStorageFromVars(vars: Record<string, string>) {
   const objectUrl = (key: string) => `${base}/${key.replace(/^\/+/, "")}`;
 
   return {
-    async getObject(key: string): Promise<ArrayBuffer | null> {
+    // #1705: only a 404 is "missing". Any other status, or a thrown fetch, is an
+    // error — a bad S3 key answers 403, and folding that into "missing" kept a
+    // broken run green.
+    async getObject(key: string): Promise<StorageRead> {
       try {
         const res = await client.fetch(objectUrl(key), { method: "GET" });
-        if (res.status === 404) return null;
-        if (!res.ok) throw new Error(`storage getObject failed: ${res.status}`);
-        return await res.arrayBuffer();
+        const kind = classifyStorageResponse(res.status);
+        if (kind === "ok") return { kind, bytes: await res.arrayBuffer() };
+        if (kind === "missing") return { kind };
+        return { kind, detail: `HTTP ${res.status}` };
       } catch (err) {
-        console.error(`Failed to fetch storage key: ${key}`, err);
-        return null;
+        return { kind: "error", detail: err instanceof Error ? err.message : String(err) };
       }
     },
   };
+}
+
+type StorageRead =
+  { kind: "ok"; bytes: ArrayBuffer } | { kind: "missing" } | { kind: "error"; detail: string };
+
+/** #1705 R7: 2xx is ok, 404 is a missing object, anything else is an error. */
+export function classifyStorageResponse(status: number): "ok" | "missing" | "error" {
+  if (status >= 200 && status <= 299) return "ok";
+  if (status === 404) return "missing";
+  return "error";
+}
+
+/** #1705 R9: an apply run with any failure exits 1, so the nightly workflow turns red. */
+export function importExitCode({ apply, failed }: { apply: boolean; failed: number }): number {
+  return apply && failed > 0 ? 1 : 0;
 }
 
 export function mapProductImageProvenance(source: ProductImageSource): {
@@ -152,6 +174,7 @@ async function main(): Promise<number> {
     let importedCount = 0;
     let duplicateCount = 0;
     let skippedCount = 0;
+    let failedCount = 0;
 
     for (const vendor of vendors) {
       console.log(`\n=== Vendor: ${vendor.name} (${vendor.slug}) ===`);
@@ -201,14 +224,19 @@ async function main(): Promise<number> {
           continue;
         }
 
-        const bytes = await storage.getObject(img.storageKey);
-        if (!bytes || bytes.byteLength === 0) {
+        const read = await storage.getObject(img.storageKey);
+        if (read.kind === "error") {
+          console.error(`  [FAILED] ${title} storage read ${img.storageKey}: ${read.detail}`);
+          failedCount++;
+          continue;
+        }
+        if (read.kind === "missing" || read.bytes.byteLength === 0) {
           console.warn(`  [WARN] Storage object missing or empty: ${img.storageKey}`);
           skippedCount++;
           continue;
         }
 
-        const blob = new Blob([bytes]);
+        const blob = new Blob([read.bytes]);
         const importRes = await importAsset(caller, {
           file: blob,
           fileName,
@@ -226,6 +254,7 @@ async function main(): Promise<number> {
           console.error(
             `  [FAILED] ${title} (${img.storageKey}): ${importRes.code} - ${importRes.message}`,
           );
+          failedCount++;
           continue;
         }
 
@@ -255,6 +284,11 @@ async function main(): Promise<number> {
               where: { id: img.id },
               data: { hubUsageId: usageRes.value.id },
             });
+          } else {
+            console.error(
+              `  [FAILED] usage for ${title} (asset ${asset.id}): ${usageRes.code} - ${usageRes.message}`,
+            );
+            failedCount++;
           }
         }
       }
@@ -295,14 +329,19 @@ async function main(): Promise<number> {
             continue;
           }
 
-          const bytes = await storage.getObject(cat.storageKey);
-          if (!bytes || bytes.byteLength === 0) {
+          const read = await storage.getObject(cat.storageKey);
+          if (read.kind === "error") {
+            console.error(`  [FAILED] ${title} storage read ${cat.storageKey}: ${read.detail}`);
+            failedCount++;
+            continue;
+          }
+          if (read.kind === "missing" || read.bytes.byteLength === 0) {
             console.warn(`  [WARN] Storage object missing: ${cat.storageKey}`);
             skippedCount++;
             continue;
           }
 
-          const blob = new Blob([bytes]);
+          const blob = new Blob([read.bytes]);
           const importRes = await importAsset(caller, {
             file: blob,
             fileName,
@@ -317,6 +356,7 @@ async function main(): Promise<number> {
             console.error(
               `  [FAILED] ${title} (${cat.storageKey}): ${importRes.code} - ${importRes.message}`,
             );
+            failedCount++;
             continue;
           }
 
@@ -341,6 +381,11 @@ async function main(): Promise<number> {
                 where: { id: cat.id },
                 data: { hubUsageId: usageRes.value.id },
               });
+            } else {
+              console.error(
+                `  [FAILED] usage for ${title} (asset ${asset.id}): ${usageRes.code} - ${usageRes.message}`,
+              );
+              failedCount++;
             }
           }
         }
@@ -353,11 +398,12 @@ async function main(): Promise<number> {
       console.log(`Newly imported:        ${importedCount}`);
       console.log(`Duplicate matches:     ${duplicateCount}`);
       console.log(`Skipped / missing:     ${skippedCount}`);
+      console.log(`Failed:                ${failedCount}`);
     } else {
       console.log("Run with --apply to perform the live migration.");
     }
 
-    return 0;
+    return importExitCode({ apply, failed: failedCount });
   } finally {
     await prisma.$disconnect();
   }

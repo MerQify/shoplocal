@@ -782,6 +782,57 @@ Live checks (**staging only**, signed in as the demo store admin):
 Choose test targets the storefront actually shows: an **inactive** category is never rendered, so
 assigning to one proves nothing on the storefront (hit at `#1671`'s staging validation).
 
+### Nightly Image Hub sync (`#1705`)
+
+`.github/workflows/image-hub-sync.yml` runs `scripts/import-images-to-hub.ts --apply` for both
+production cells at 02:17 UTC, so an image created by any path (staff upload, generation,
+`fill-product-images.yml`, the category pipeline, bulk scripts) reaches the hub within a day.
+
+**It reads GitHub `production` environment secrets.** That store is separate from the Worker
+secrets: setting `IMAGE_HUB_API_KEY` on a Worker does not give it to this job, and the reverse is
+also true.
+
+| Written to the env file | `afc` job reads | `merqify` job reads |
+|---|---|---|
+| `AFC_DIRECT_URL` / `DIRECT_URL` | `AFC_DIRECT_URL` | `DIRECT_URL` |
+| `S3_ENDPOINT` | `AFC_S3_ENDPOINT` | `S3_ENDPOINT` |
+| `S3_BUCKET` | `AFC_S3_BUCKET` (`afc-images-production`) | `S3_BUCKET` (`shoplocal-images-production`) |
+| `S3_ACCESS_KEY` | `AFC_S3_ACCESS_KEY` | `S3_ACCESS_KEY` |
+| `S3_SECRET_KEY` | `AFC_S3_SECRET_KEY` | `S3_SECRET_KEY` |
+| `S3_REGION` | `AFC_S3_REGION` | `S3_REGION` |
+| `IMAGE_HUB_URL` | `IMAGE_HUB_URL` | `IMAGE_HUB_URL` |
+| `IMAGE_HUB_API_KEY` | `AFC_IMAGE_HUB_API_KEY` | `IMAGE_HUB_API_KEY` |
+
+- **Where the values come from:** the `afc` column comes from `secrets/afc-production.vars` (its
+  `S3_*` and `IMAGE_HUB_API_KEY`). The `merqify` column comes from
+  `secrets/merqify-production.vars`. Set each with
+  `gh secret set <NAME> --env production` and paste the value at the prompt. `AFC_DIRECT_URL`,
+  `DIRECT_URL` and `S3_*` already existed for other workflows.
+- **A missing secret fails the job by name**, for example
+  `Missing GitHub 'production' environment secret(s): AFC_S3_BUCKET`, before the script runs.
+- **A red run means something failed:** a storage read other than 404 (a bad key answers 403), a
+  hub import, or a usage record. A 404 is a warning only, because a row pointing at a deleted
+  object would otherwise fail every night. A failed row keeps `hubAssetId` null and is retried the
+  next night.
+
+#### Sanity check: nightly Image Hub sync
+
+Last run: not yet run. The workflow is not on `main`, and the owner has not added the secrets yet.
+
+1. `gh secret list --env production` lists all eight names in the `afc` column, plus
+   `IMAGE_HUB_API_KEY` → expected: all present (names only; values are never shown).
+2. `git ls-tree origin/main --name-only .github/workflows/ | grep image-hub-sync` → expected:
+   `.github/workflows/image-hub-sync.yml`.
+3. `gh workflow run image-hub-sync.yml -f cell=all -f dry_run=true -f limit=5`, then
+   `gh run watch` → expected: both matrix jobs green. Each log shows its own `Database:` host,
+   `Hub URL:`, and `Mode: DRY RUN`.
+4. `gh workflow run image-hub-sync.yml -f cell=all -f limit=5` → expected: both jobs green, with
+   `Failed: 0` in each summary.
+5. The morning after, `gh run list --workflow image-hub-sync.yml --limit 3` → expected: a
+   `schedule` run that succeeded. Note its real start time.
+6. Signed in as a store admin, `/staff/image-library` on `www.aheedfoodcentre.co.uk` → expected:
+   the store's catalogue images are listed.
+
 ## Local development (`dev`)
 
 
