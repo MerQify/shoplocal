@@ -729,7 +729,6 @@ export async function importDiscoveredImageToHub(
     attribution: image.attribution,
     originalUrl: image.originalUrl,
     sourceSite: image.sourceSite,
-    keywords: image.barcode ? image.barcode : undefined,
     rightsConfirmed: true,
     status: "PENDING_REVIEW",
   });
