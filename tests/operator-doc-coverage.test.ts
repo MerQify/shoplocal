@@ -69,6 +69,7 @@ function discoverStaffRoutes(): string[] {
     "costs",
     "client-setup",
     "db-warmup",
+    "stock-export",
   ];
   for (const sub of platformSubdirs) {
     if (existsSync(join(STAFF_ROUTES_DIR, "platform", sub, "page.tsx"))) {
