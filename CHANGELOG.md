@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Reduce storefront rendering waits and exclude documentation and test fixtures from the application stylesheet.
+
 - Reject redirects in licensed Image Hub downloads using Cloudflare Workers-compatible manual redirect handling.
 
 - Update OpenNext for the Next.js 16.4 preview manifest and verify runtime health and commit identity after both staging deploys.
