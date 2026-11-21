@@ -116,17 +116,36 @@ export function ProductImageManager({
         return;
       }
 
-      const put = await fetch(ticket.value.url, {
-        method: "PUT",
-        body: blob,
-        headers: {
-          "content-type": IMAGE_CONTENT_TYPE,
-          "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
-        },
-      });
-      if (!put.ok) {
-        setError(`The upload was rejected by storage (${put.status}).`);
-        return;
+      let putOk = false;
+      try {
+        const put = await fetch(ticket.value.url, {
+          method: "PUT",
+          body: blob,
+          headers: {
+            "content-type": IMAGE_CONTENT_TYPE,
+            "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+          },
+        });
+        if (put.ok) putOk = true;
+      } catch {
+        // Direct storage upload blocked (e.g. storage CORS restriction). Fallback to same-origin route below.
+      }
+
+      if (!putOk) {
+        const form = new FormData();
+        form.set("file", blob, "image.webp");
+        form.set("key", ticket.value.key);
+        form.set("targetKind", "product");
+        form.set("targetId", productId);
+
+        const fallback = await fetch("/api/admin/image-library/upload-direct", {
+          method: "POST",
+          body: form,
+        });
+        if (!fallback.ok) {
+          setError(`The upload was rejected by storage (${fallback.status}).`);
+          return;
+        }
       }
 
       const attached = await addProductImage(productId, ticket.value.key, productName);

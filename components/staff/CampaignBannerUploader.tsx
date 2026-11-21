@@ -94,14 +94,20 @@ export function CampaignBannerUploader({
         return;
       }
 
-      const put = await fetch(ticket.value.url, {
-        method: "PUT",
-        headers: {
-          "Content-Type": IMAGE_CONTENT_TYPE,
-          "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
-        },
-        body: blob,
-      });
+      let put: Response;
+      try {
+        put = await fetch(ticket.value.url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": IMAGE_CONTENT_TYPE,
+            "cache-control": STORAGE_CACHE_CONTROL_IMMUTABLE,
+          },
+          body: blob,
+        });
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "The upload failed to reach storage.");
+        return;
+      }
       if (!put.ok) {
         setError("The upload was rejected by storage.");
         return;
