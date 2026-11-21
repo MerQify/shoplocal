@@ -1,47 +1,35 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { writeWorkbook } from "../lib/read-spreadsheet";
 import {
-  writeWorkbook,
-  buildColumnValidations,
-  UNIVERSAL_DROPDOWN_RULES,
-  ESSENTIAL_DROPDOWN_RULES,
-} from "../lib/read-spreadsheet";
+  buildEssentialSheets,
+  buildMasterSheets,
+  buildStockSheets,
+} from "../../lib/product-templates/workbook-sheets";
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import {
-  UNIVERSAL_COLUMNS,
-  ESSENTIAL_COLUMNS,
-  UNIVERSAL_COLUMN_INSTRUCTIONS,
-} from "../../lib/product-templates/schema";
+import { UNIVERSAL_COLUMNS, ESSENTIAL_COLUMNS } from "../../lib/product-templates/schema";
 import {
   productToUniversalRow,
   productToEssentialRow,
   sortProductsHierarchically,
   type DatabaseProductForExport,
 } from "../../lib/product-templates/export";
-import {
-  BUNDLE_EXPORT_COLUMNS,
-  bundleToExportRow,
-  type BundleForExport,
-} from "../../lib/bundle-templates/export";
+import { BUNDLE_EXPORT_COLUMNS, type BundleForExport } from "../../lib/bundle-templates/export";
 import {
   PROMOTION_EXPORT_COLUMNS,
-  promotionToExportRow,
   type PromotionForExport,
 } from "../../lib/promotion-templates/export";
 import {
   CATEGORY_EXPORT_COLUMNS,
-  categoryToExportRow,
   type CategoryForExport,
 } from "../../lib/category-templates/export";
 import {
   DISCOUNT_EXPORT_COLUMNS,
-  discountToExportRow,
   type DiscountForExport,
 } from "../../lib/discount-templates/export";
 import {
   FILTER_EXPORT_COLUMNS,
-  filterToExportRows,
   type VendorAttributeForExport,
 } from "../../lib/filter-templates/export";
 import { formatCsvTable } from "../../lib/product-templates/csv";
@@ -237,219 +225,60 @@ async function main() {
     });
     console.log(`✓ Retrieved ${filters.length} attributes/filters.`);
 
-    // --- Build Sheet Data ---
-
-    // Tab 1: Products
-    const productRows = products.map((p) => productToUniversalRow(p));
-    const productSheetData: (string | number)[][] = [
-      [...UNIVERSAL_COLUMNS],
-      ...productRows.map((row) => UNIVERSAL_COLUMNS.map((col) => row[col] || "")),
-    ];
-    const universalColWidths = UNIVERSAL_COLUMNS.map((col) => {
-      if (col === "Product Name*") return 38;
-      if (col === "Description / Notes") return 45;
-      if (col.startsWith("Product ID")) return 38;
-      return Math.max(col.length + 3, 14);
+    // --- Build Workbooks (#1714: same sheet builders as the live download route) ---
+    const stockSheets = buildStockSheets(products);
+    const essentialSheets = buildEssentialSheets(products);
+    const masterSheets = buildMasterSheets({
+      products,
+      categories: categories as unknown as CategoryForExport[],
+      bundles: bundles as unknown as BundleForExport[],
+      promotions: promotions as unknown as PromotionForExport[],
+      discounts: discounts as unknown as DiscountForExport[],
+      filters: filters as unknown as VendorAttributeForExport[],
     });
 
-    // Tab 2: Categories
-    const categoryRows = (categories as unknown as CategoryForExport[]).map((c) =>
-      categoryToExportRow(c),
-    );
-    const categorySheetData: (string | number)[][] = [
-      [...CATEGORY_EXPORT_COLUMNS],
-      ...categoryRows.map((row) => CATEGORY_EXPORT_COLUMNS.map((col) => row[col] || "")),
-    ];
-    const categoryColWidths = CATEGORY_EXPORT_COLUMNS.map((col) => Math.max(col.length + 4, 16));
-
-    // Tab 3: Bundles
-    const bundleRows = (bundles as unknown as BundleForExport[]).map((b) => bundleToExportRow(b));
-    const bundleSheetData: (string | number)[][] = [
-      [...BUNDLE_EXPORT_COLUMNS],
-      ...bundleRows.map((row) => BUNDLE_EXPORT_COLUMNS.map((col) => row[col] || "")),
-    ];
-    const bundleColWidths = BUNDLE_EXPORT_COLUMNS.map((col) => {
-      if (col.includes("Summary") || col.includes("Specification")) return 45;
-      return Math.max(col.length + 4, 16);
-    });
-
-    // Tab 4: Promotions
-    const promoRows = (promotions as unknown as PromotionForExport[]).map((p) =>
-      promotionToExportRow(p),
-    );
-    const promoSheetData: (string | number)[][] = [
-      [...PROMOTION_EXPORT_COLUMNS],
-      ...promoRows.map((row) => PROMOTION_EXPORT_COLUMNS.map((col) => row[col] || "")),
-    ];
-    const promoColWidths = PROMOTION_EXPORT_COLUMNS.map((col) => Math.max(col.length + 4, 16));
-
-    // Tab 5: Discount Codes
-    const discountRows = (discounts as unknown as DiscountForExport[]).map((d) =>
-      discountToExportRow(d),
-    );
-    const discountSheetData: (string | number)[][] = [
-      [...DISCOUNT_EXPORT_COLUMNS],
-      ...discountRows.map((row) => DISCOUNT_EXPORT_COLUMNS.map((col) => row[col] || "")),
-    ];
-    const discountColWidths = DISCOUNT_EXPORT_COLUMNS.map((col) => Math.max(col.length + 4, 16));
-
-    // Tab 6: Filters & Attributes
-    const filterRowObjs: Record<string, string>[] = [];
-    for (const attr of filters as unknown as VendorAttributeForExport[]) {
-      const rows = filterToExportRows(attr);
-      filterRowObjs.push(...rows);
-    }
-    const filterSheetData: (string | number)[][] = [
-      [...FILTER_EXPORT_COLUMNS],
-      ...filterRowObjs.map((row) => FILTER_EXPORT_COLUMNS.map((col) => row[col] || "")),
-    ];
-    const filterColWidths = FILTER_EXPORT_COLUMNS.map((col) => Math.max(col.length + 4, 16));
-
-    // Tab 7: Field Instructions
-    const instructionsHeader = [
-      "Column Name",
-      "Required / Optional",
-      "Editable?",
-      "Description & Constraints",
-      "Example Values",
-    ];
-    const instructionsRows = UNIVERSAL_COLUMNS.map((col) => {
-      const info = UNIVERSAL_COLUMN_INSTRUCTIONS[col];
-      const isDoNotEdit = col.includes("[DO NOT EDIT]");
-      return [
-        col,
-        info?.required ? "REQUIRED" : "Optional",
-        isDoNotEdit ? "DO NOT EDIT (Leave unchanged for sync; leave blank for new)" : "Yes",
-        info?.description || "",
-        info?.example || "",
-      ];
-    });
-    const instructionsSheetData: (string | number)[][] = [instructionsHeader, ...instructionsRows];
-    const instructionsColWidths = [32, 20, 36, 60, 35];
-
-    // Directories
+    // #1714 — generated exports go ONLY to the gitignored reports folder. Anything under `public/` is
+    // a static asset served with no sign-in; only the blank `*-template.*` files may be written there
+    // (`tests/public-no-generated-exports.test.ts`).
     const outDirPublic = join(process.cwd(), "public", "templates");
     mkdirSync(outDirPublic, { recursive: true });
 
     const outDirReports = join(process.cwd(), ".import-reports", "exports");
     mkdirSync(outDirReports, { recursive: true });
 
-    // 1. Write Standalone Product Stock Export (.xlsx with AutoFilter & Dropdowns)
-    const stockXlsx = "aheed-food-centre-stock-export.xlsx";
-    const universalValidations = buildColumnValidations(
-      UNIVERSAL_COLUMNS,
-      UNIVERSAL_DROPDOWN_RULES,
-      products.length + 50,
-    );
-    writeWorkbook(join(outDirPublic, stockXlsx), [
-      {
-        name: "Products",
-        rows: productSheetData,
-        widths: universalColWidths,
-        validations: universalValidations,
-      },
-    ]);
-    writeWorkbook(join(outDirReports, stockXlsx), [
-      {
-        name: "Products",
-        rows: productSheetData,
-        widths: universalColWidths,
-        validations: universalValidations,
-      },
-    ]);
+    // 1. Standalone Product Stock Export (.xlsx with AutoFilter & Dropdowns)
+    writeWorkbook(join(outDirReports, "stock-export.xlsx"), stockSheets);
     console.log(`✓ Wrote Standalone Stock Export (.xlsx) with AutoFilter and Dropdowns.`);
 
-    // 2. Write Master Multi-Sheet Export (.xlsx with AutoFilter on all sheets)
-    const masterXlsx = "aheed-food-centre-master-stock-export.xlsx";
-    writeWorkbook(join(outDirPublic, masterXlsx), [
-      {
-        name: "Products",
-        rows: productSheetData,
-        widths: universalColWidths,
-        validations: universalValidations,
-      },
-      { name: "Categories", rows: categorySheetData, widths: categoryColWidths },
-      { name: "Bundles", rows: bundleSheetData, widths: bundleColWidths },
-      { name: "Promotions", rows: promoSheetData, widths: promoColWidths },
-      { name: "Discount Codes", rows: discountSheetData, widths: discountColWidths },
-      { name: "Filters & Attributes", rows: filterSheetData, widths: filterColWidths },
-      { name: "Field Instructions", rows: instructionsSheetData, widths: instructionsColWidths },
-    ]);
-    writeWorkbook(join(outDirReports, masterXlsx), [
-      {
-        name: "Products",
-        rows: productSheetData,
-        widths: universalColWidths,
-        validations: universalValidations,
-      },
-      { name: "Categories", rows: categorySheetData, widths: categoryColWidths },
-      { name: "Bundles", rows: bundleSheetData, widths: bundleColWidths },
-      { name: "Promotions", rows: promoSheetData, widths: promoColWidths },
-      { name: "Discount Codes", rows: discountSheetData, widths: discountColWidths },
-      { name: "Filters & Attributes", rows: filterSheetData, widths: filterColWidths },
-      { name: "Field Instructions", rows: instructionsSheetData, widths: instructionsColWidths },
-    ]);
+    // 2. Master Multi-Sheet Export (.xlsx with AutoFilter on all sheets)
+    writeWorkbook(join(outDirReports, "master-stock-export.xlsx"), masterSheets);
     console.log(
-      `✓ Wrote Master Multi-Sheet Workbook (.xlsx) with 7 sheets, AutoFilters and Dropdowns.`,
+      `✓ Wrote Master Multi-Sheet Workbook (.xlsx) with ${masterSheets.length} sheets, AutoFilters and Dropdowns.`,
     );
 
-    // 3. Write Universal CSV
-    const csvDataRows = productRows.map((row) => UNIVERSAL_COLUMNS.map((col) => row[col] || ""));
-    const csvContent = formatCsvTable(UNIVERSAL_COLUMNS, csvDataRows);
-    writeFileSync(join(outDirPublic, "aheed-food-centre-stock-export.csv"), csvContent, "utf8");
-    writeFileSync(join(outDirReports, "aheed-food-centre-stock-export.csv"), csvContent, "utf8");
+    // 3. Universal CSV
+    const csvDataRows = products
+      .map((p) => productToUniversalRow(p))
+      .map((row) => UNIVERSAL_COLUMNS.map((col) => row[col] || ""));
+    writeFileSync(
+      join(outDirReports, "stock-export.csv"),
+      formatCsvTable(UNIVERSAL_COLUMNS, csvDataRows),
+      "utf8",
+    );
     console.log(`✓ Wrote Universal Stock Export (.csv).`);
 
-    // 4. Write Essential CSV & XLSX
-    const essentialRows = products.map((p) => productToEssentialRow(p));
-    const essentialDataRows = essentialRows.map((row) =>
-      ESSENTIAL_COLUMNS.map((col) => row[col] || ""),
-    );
-    const essentialCsv = formatCsvTable(ESSENTIAL_COLUMNS, essentialDataRows);
+    // 4. Essential CSV & XLSX
+    const essentialDataRows = products
+      .map((p) => productToEssentialRow(p))
+      .map((row) => ESSENTIAL_COLUMNS.map((col) => row[col] || ""));
     writeFileSync(
-      join(outDirPublic, "aheed-food-centre-essential-export.csv"),
-      essentialCsv,
+      join(outDirReports, "stock-essential-export.csv"),
+      formatCsvTable(ESSENTIAL_COLUMNS, essentialDataRows),
       "utf8",
     );
-    writeFileSync(
-      join(outDirReports, "aheed-food-centre-essential-export.csv"),
-      essentialCsv,
-      "utf8",
-    );
-    console.log(`✓ Wrote Essential Stock Export (.csv).`);
-
-    const essentialSheetData: (string | number)[][] = [
-      [...ESSENTIAL_COLUMNS],
-      ...essentialDataRows,
-    ];
-    const essentialColWidths = ESSENTIAL_COLUMNS.map((col) => {
-      if (col === "Product Name*") return 38;
-      if (col.startsWith("Product ID")) return 38;
-      return Math.max(col.length + 3, 14);
-    });
-    const essentialValidations = buildColumnValidations(
-      ESSENTIAL_COLUMNS,
-      ESSENTIAL_DROPDOWN_RULES,
-      products.length + 50,
-    );
-    const essentialXlsx = "aheed-food-centre-essential-export.xlsx";
-    writeWorkbook(join(outDirPublic, essentialXlsx), [
-      {
-        name: "Products",
-        rows: essentialSheetData,
-        widths: essentialColWidths,
-        validations: essentialValidations,
-      },
-    ]);
-    writeWorkbook(join(outDirReports, essentialXlsx), [
-      {
-        name: "Products",
-        rows: essentialSheetData,
-        widths: essentialColWidths,
-        validations: essentialValidations,
-      },
-    ]);
-    console.log(`✓ Wrote Essential Stock Export (.xlsx) with AutoFilter and Dropdowns.`);
+    writeWorkbook(join(outDirReports, "stock-essential-export.xlsx"), essentialSheets);
+    console.log(`✓ Wrote Essential Stock Export (.csv, .xlsx) with AutoFilter and Dropdowns.`);
+    console.log(`  Exports written to ${outDirReports} (gitignored; never commit them).`);
 
     // 5. Write Blank Operational Templates
     writeFileSync(
