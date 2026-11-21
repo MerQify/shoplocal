@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Reject redirects in licensed Image Hub downloads using Cloudflare Workers-compatible manual redirect handling.
+
 - Update OpenNext for the Next.js 16.4 preview manifest and verify runtime health and commit identity after both staging deploys.
 
 - Prepare the staging launch candidate with checkout privacy, verified Image Hub imports, dependency security updates, daily retention, delayed Stripe settlement, and faster homepage rendering. Record the audit and validation evidence in the internal KMS.

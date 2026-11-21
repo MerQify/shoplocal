@@ -30,7 +30,7 @@ export async function downloadDiscoveredImage(
   }
 
   const response = await fetchImage(url, {
-    redirect: "error",
+    redirect: "manual",
     signal,
     headers: {
       "User-Agent":
