@@ -57,12 +57,17 @@ reconciliation. If overall project state did not materially change, leave this f
       then add `--apply`; then the same with `secrets/merqify-production.vars`. Both files hold
       everything the script needs.
     - Auto mode refuses production database scripts, so hand over `! <command>`.
-  - **In flight: `#1705` nightly Image Hub sync** (owner: nightly only, no on-the-fly sync).
-    - Branch `feature/1705-nightly-hub-sync`, worktree `E:\GitRepositories\aheed-wt-1705` (real
-      `node_modules`).
-    - Built; validation next. Read `specs/2026-11-21-nightly-image-hub-sync/build-notes.md` first.
-    - Its top risk is hub-key tenant scope on the Merqify cell (SriMart).
-    - It needs owner GitHub `production` secrets before its post-promotion run.
+  - **`#1705` nightly Image Hub sync: MERGED TO STAGING** (PR #1707, `5e3399ea`), board In Review.
+    - Owner decision: nightly only, no on-the-fly sync.
+    - Validated in-session, not independently, against staging. Results are in
+      `specs/2026-11-21-nightly-image-hub-sync/validation.md`. The staging hub key covers both
+      stores (SriMart included); the production keys are untested.
+    - **Before promoting, the owner adds eight GitHub `production` secrets** (`IMAGE_HUB_URL`,
+      `IMAGE_HUB_API_KEY`, `AFC_IMAGE_HUB_API_KEY`, `AFC_S3_*`; table in `env-setup.md`). Promoting
+      first would make the 02:17 UTC run fail every night, naming the missing secrets. The
+      post-promotion checks are on `#1705`. Follow-up: `#1706`.
+    - Worktree `E:\GitRepositories\aheed-wt-1705` (real `node_modules`) can be removed once the
+      slice is promoted.
   - **GitHub schedules run hours late:** `fill-product-images.yml`'s 03:00 UTC cron started at
     about 11:00 UTC on 2026-11-18..20.
   - **Still parked:** `#1689`. Round-the-clock warm-up on AFC production stays on.

@@ -817,7 +817,11 @@ also true.
 
 #### Sanity check: nightly Image Hub sync
 
-Last run: not yet run. The workflow is not on `main`, and the owner has not added the secrets yet.
+Last run: 2026-11-21, quick checks only. Step 1: eight secrets missing (`IMAGE_HUB_URL`,
+`IMAGE_HUB_API_KEY`, `AFC_IMAGE_HUB_API_KEY` and the five `AFC_S3_*`), so the owner needs to add them.
+Step 2: not on `main` (merged to `staging` in PR #1707, not promoted). Steps 3–6 are owed. Pre-merge,
+the script was run against staging for both cells; results are in
+`specs/2026-11-21-nightly-image-hub-sync/validation.md`.
 
 1. `gh secret list --env production` lists all eight names in the `afc` column, plus
    `IMAGE_HUB_API_KEY` → expected: all present (names only; values are never shown).
