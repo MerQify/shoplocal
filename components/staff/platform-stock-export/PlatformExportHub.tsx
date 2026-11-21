@@ -11,7 +11,9 @@ export function PlatformExportHub({ categories = [] }: PlatformExportHubProps) {
   const [statusFilter, setStatusFilter] = useState<"active" | "all" | "archived">("active");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
 
-  const querySuffix = `?status=${statusFilter}${categoryFilter ? `&category=${encodeURIComponent(categoryFilter)}` : ""}`;
+  // #1714 — appended after `type=…&format=…`, so it starts with `&`. It began with `?` until #1714,
+  // which made every link send `format=csv?status=…` and the route answer 400.
+  const querySuffix = `&status=${statusFilter}${categoryFilter ? `&category=${encodeURIComponent(categoryFilter)}` : ""}`;
 
   const selectedCategoryName = categories.find((c) => c.slug === categoryFilter)?.name;
 
@@ -96,7 +98,7 @@ export function PlatformExportHub({ categories = [] }: PlatformExportHubProps) {
               All-In-One Master Spreadsheet
             </div>
             <h3 className="text-base font-bold text-slate-900">
-              Aheed Food Centre — Master Operational Workbook (.xlsx)
+              Master Operational Workbook (.xlsx)
             </h3>
             <p className="text-xs text-slate-600 max-w-2xl">
               Consolidated Excel spreadsheet with native AutoFilters enabled on every tab. Contains
@@ -105,10 +107,15 @@ export function PlatformExportHub({ categories = [] }: PlatformExportHubProps) {
               <strong>Promotions</strong>, <strong>Discount Codes</strong>,{" "}
               <strong>Filters &amp; Attributes</strong>, and <strong>Field Instructions</strong>.
             </p>
+            <p className="text-xs text-slate-600 max-w-2xl">
+              Built live from your database when you click. <strong>Products</strong> follows both
+              the status and category filters above; Categories, Bundles, Promotions and Discount
+              Codes follow the status filter only; Filters &amp; Attributes is always complete.
+            </p>
           </div>
           <a
-            href="/templates/aheed-food-centre-master-stock-export.xlsx"
-            download="aheed-food-centre-master-stock-export.xlsx"
+            href={`/staff/platform/stock-export/export?type=master&format=xlsx${querySuffix}`}
+            download
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs transition hover:bg-emerald-800 shrink-0"
           >
             <Icon name="download" className="h-4 w-4" />
@@ -161,7 +168,7 @@ export function PlatformExportHub({ categories = [] }: PlatformExportHubProps) {
                   CSV
                 </a>
                 <a
-                  href="/templates/aheed-food-centre-stock-export.xlsx"
+                  href={`/staff/platform/stock-export/export?type=stock&format=xlsx${querySuffix}`}
                   download
                   className="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 hover:bg-emerald-200"
                 >
@@ -186,7 +193,7 @@ export function PlatformExportHub({ categories = [] }: PlatformExportHubProps) {
                   CSV
                 </a>
                 <a
-                  href="/templates/aheed-food-centre-essential-export.xlsx"
+                  href={`/staff/platform/stock-export/export?type=essential&format=xlsx${querySuffix}`}
                   download
                   className="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 hover:bg-emerald-200"
                 >

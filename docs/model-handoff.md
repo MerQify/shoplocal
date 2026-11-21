@@ -2628,6 +2628,22 @@ Board Phase and GitHub milestone disagreed for #151, #422, #589, #602, #695, #69
 
 These are separate from, not a silent reordering of, the owner's High priorities:
 
+- **Catalogue export exposure (`#1714`, found 2026-11-21).**
+  - From 2026-11-17, generated stock exports under `public/templates/`, including a master workbook
+    with a Discount Codes sheet, were downloadable with no sign-in on every production host.
+  - `#1714` builds them live behind the platform-admin check and deletes the files. It was
+    **merged to staging on 2026-11-21** (PR #1715, `84bfb4e`) and verified there. **The files stay
+    downloadable on production until the promotion**, which the owner must OK. After the promotion,
+    rerun the sanity check in `docs/platform-admin-guide/platform-admin-guide.md` against production.
+    The repo (`sriahead/merqify`) is **public**, so the files stay in git history.
+  - **Owner actions, outside code:** rotate the discount codes that were active on 2026-11-17, and
+    decide on repo visibility. A private repo on GitHub's free plan loses the `staging`/`main`
+    rulesets.
+  - The same audit found no secrets in the tree or history, and every route handler guarded or
+    public by design.
+  - **Rule:** nothing generated from the database ever goes in `public/`
+    (`tests/public-no-generated-exports.test.ts`).
+
 - **`#1123` carries a hard date: 2026-11-03.** The `uk-location-reference` endpoint is a read
   replica while `UK_LOCATION_REF_DIRECT_URL` is the write path, so the monthly sync
   (`0 4 3 * *`) fails on that date. Nothing is broken before it, and the fix is one value the owner
