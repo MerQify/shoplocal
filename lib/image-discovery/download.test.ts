@@ -38,7 +38,7 @@ describe("downloadDiscoveredImage", () => {
     expect(fetchImage).toHaveBeenCalledWith(
       new URL(image.thumbnailUrl),
       expect.objectContaining({
-        redirect: "error",
+        redirect: "manual",
         signal,
       }),
     );
