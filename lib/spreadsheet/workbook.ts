@@ -10,7 +10,7 @@ import { strToU8, zipSync } from "fflate";
  * thin file-writing wrapper over `buildWorkbook`, so the offline export and the live download emit
  * the same bytes for the same sheets.
  *
- * No `node:` import and no `Buffer`: this runs on a V8 isolate.
+ * No `node:` import and no Node byte-buffer type: this runs on a V8 isolate.
  */
 
 export interface SheetDataValidation {

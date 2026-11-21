@@ -39,3 +39,32 @@ Run every command from the worktree root. Use `--maxWorkers=4` on vitest (`CLAUD
 | R13 | Unit / Security | `npx vitest run --maxWorkers=4 tests/health-route.test.ts` passes. With `getPrisma` mocked to throw `new Error("connect ECONNREFUSED ep-secret-host-123.neon.tech")`, it asserts: response status 503; `body.db` equals `{ ok: false, error: "database unavailable" }`; `JSON.stringify(body)` does not contain `ep-secret-host-123`; and `console.error` was called with the message. A second case does the same for a throwing `getReferenceStatus` and `"reference status unavailable"`. |
 | R14 | Gate 4 | `git diff origin/staging -- CHANGELOG.md` shows an `[Unreleased]` entry naming #1714. |
 | R15 | Gate 3 | `npm run lint`, `npm run typecheck`, `npm run format:check`, `npx vitest run --maxWorkers=4` (run alone) and `npm run build` all exit 0. On Windows, check a formatter complaint about an untouched file against `git show HEAD:<file>` before acting. |
+
+## Results (2026-11-21)
+
+**Not independent.** This was validated in the same session, on Opus, that built the slice. The
+owner skips the pre-validation Clear under ~60% context. Code at `a6211507`, plus the R1 comment
+fix in the commit that adds this section.
+
+Pre-flight: `lint` 0, `format:check` 0, `tsc --noEmit` 0, `npm run build` 0 (Safari 15.4 syntax check
+passed), and `npx vitest run --maxWorkers=4` 509 files / 7293 tests passed, 8 skipped. An earlier
+full run with the 64 MB `.open-next/` present had 3 transient failures in the tree-walking guards
+(`icon-imports`, `webp-converters`). They passed on re-run and are absent with `.open-next/` removed.
+
+| Req | Result |
+|-----|--------|
+| R1  | **PASS after `/fix`.** All seven exports are present. The grep first matched the word "Buffer" in a doc comment (line 13; no code use). The comment was reworded and the grep is now empty. |
+| R2  | PASS. `tests/spreadsheet-workbook.test.ts` asserts `PK`, the sheet order, `autoFilter` per multi-row sheet, and the list `dataValidation` with its `sqref`, from unzipped XML. It also round-trips through SheetJS. |
+| R3  | PASS. No writer internals and no duplicate definitions. `writeWorkbook` = `writeFileSync(path, buildWorkbook(sheets))`. |
+| R4  | PASS. Test green. No Prisma reference in `workbook-sheets.ts`. |
+| R5  | PASS. The five `join(outDirPublic, …)` hits are all `*-template.csv`. All three builders are used. |
+| R6  | PASS. Route tests green for stock/essential/master. `Response.redirect` remains only in the blank-template branch. |
+| R7  | PASS. Exact fetch arguments asserted for `?status=all&category=rice` and for no query. |
+| R8  | PASS. 401 and 403 asserted, with zero fetch calls. |
+| R9  | PASS. No tracked `*-export.*`. `public/templates/` has only the nine `*-template.*` files. The guard FAILED with a planted `x-export.csv` and passed after its removal. |
+| R10 | **PARTIAL. The rendered-HTML half is UNVERIFIED locally.** Source greps pass. The compiled client chunk `.next/static/chunks/app/(admin)/staff/platform/stock-export/page-*.js` holds the three `type=…&format=xlsx${suffix}` links, a `&status=` suffix, and no `aheed-food-centre-`. The `npm run preview` sign-in returned 500 because the dev database rejects the `.env`/`.dev.vars` password (`password authentication failed for user 'neondb_owner'`). This is an environment fault, outside this slice. Covered at Ship by R12's staging session, which loads the same page. |
+| R11 | PASS. Gzip 6109.26 → 6120.14 KiB (+10.88 KiB). Recorded in `build-notes.md`. |
+| R12 | **Not yet run. Ship-time row, staging only.** |
+| R13 | PASS. Unit test green. Also seen live under preview: `/api/health` returned 503 with `db: { ok: false, error: "database unavailable" }`, while the captured console log held the real Neon message. |
+| R14 | PASS. `[Unreleased]` → `### Security` entry naming #1714. |
+| R15 | PASS (pre-flight above). |
