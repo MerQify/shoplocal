@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Trial a tenant-keyed homepage promotions cache on Aheed staging with scheduled expiry (#439).
+
 - Trial streaming the homepage account and cart controls independently of the first render (#439).
 
 - Post-ship docs for #1730: roadmap row, staff-guide sanity check, and a `CLAUDE.md` rule for migration-timestamp collisions between parallel agents.
