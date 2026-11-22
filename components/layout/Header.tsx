@@ -103,15 +103,18 @@ export async function Header({
   // #1069 — the mark's 192px PNG for the header below `md`, or null.
   const markUrl = markUrls(profile?.markStorageKey, CDN_BASE_URL)?.icon192 ?? null;
 
-  const shopperControls = (
-    <HeaderShopperControls
-      initialData={shopperData}
-      profile={profile}
-      fulfilmentMethod={fulfilmentMethod}
-      localityName={localityName}
-      cdnBaseUrl={CDN_BASE_URL ?? ""}
-      isPortal={isPortal}
-    />
+  const shopperControlProps = {
+    initialData: shopperData,
+    profile,
+    fulfilmentMethod,
+    localityName,
+    cdnBaseUrl: CDN_BASE_URL ?? "",
+    isPortal,
+  };
+  const shopperControls = streamShopperControls ? (
+    <HeaderShopperControls {...shopperControlProps} />
+  ) : (
+    await HeaderShopperControls(shopperControlProps)
   );
 
   // #960 — three SIBLINGS, not one sticky <header> wrapping everything. The whole header used to
