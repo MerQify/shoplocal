@@ -1,3 +1,6 @@
+import { getOpenFoodFactsImage } from "@/lib/image-discovery/open-food-facts";
+import { getWikimediaImage } from "@/lib/image-discovery/wikimedia";
+import type { DiscoveredImage } from "@/lib/image-discovery/types";
 import { requireVendorRole, type VendorRbacResult, type VendorRole } from "@/lib/auth-rbac";
 import { getImageHubEnv } from "@/lib/config";
 import { getStorage } from "@/lib/storage";
@@ -694,12 +697,28 @@ export async function importDiscoveredImageToHub(
     };
   }
 
-  const results = await searchDiscoveredImages({
-    query: selection.query,
-    provider: selection.provider,
-    limit: 15,
-  });
-  const image = results.items.find((item) => item.id === selection.id);
+  let image: DiscoveredImage | null | undefined;
+  try {
+    if (selection.provider === "OPEN_FOOD_FACTS") {
+      image = await getOpenFoodFactsImage(selection.id);
+    } else if (selection.provider === "WIKIMEDIA") {
+      image = await getWikimediaImage(selection.id);
+    } else {
+      const results = await searchDiscoveredImages({
+        query: selection.query,
+        provider: selection.provider,
+        limit: 15,
+      });
+      image = results.items.find((item) => item.id === selection.id);
+    }
+  } catch {
+    return {
+      ok: false,
+      code: "discovery_source_unavailable",
+      status: 502,
+      message: "The image repository is temporarily unavailable. Try again later.",
+    };
+  }
   if (!image) {
     return {
       ok: false,
