@@ -94,7 +94,8 @@ export async function POST(req: Request) {
   // Beyond this point every outcome is a 200 — the signature proved it came from
   // Stripe, so retrying it would not help.
   switch (event.type) {
-    case "checkout.session.completed": {
+    case "checkout.session.completed":
+    case "checkout.session.async_payment_succeeded": {
       // completed != paid: asynchronous methods complete the session first and
       // settle later, so confirming here would mark an unpaid order CONFIRMED.
       if (event.paymentStatus !== "paid") break;

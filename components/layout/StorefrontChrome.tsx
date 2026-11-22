@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { timeStorefrontRender } from "@/lib/storefront-render-timing";
+import { Fragment, Suspense, type ReactNode } from "react";
 import { headers } from "next/headers";
-import { getAuth } from "@/lib/auth";
+import { getStorefrontSession } from "@/lib/storefront-session";
 import { getRewardsDataForUser } from "@/lib/rewards-service";
 import { Header } from "@/components/layout/Header";
 import { FloatingContact } from "@/components/layout/FloatingContact";
@@ -34,28 +35,30 @@ export async function StorefrontChrome({
   profile: VendorProfile;
   isLanding: boolean;
 }) {
-  const requestHeaders = await headers();
-  const session = await (await getAuth()).api.getSession({ headers: requestHeaders });
-  // #1323 — no hardcoded fallback host: a named store's host here would put another store's
-  // address into this store's referral link. Every real request carries `host`; without one the
-  // referral URL is merely unusable, never another store's.
+  const [requestHeaders, activeSlotIcons] = await Promise.all([
+    headers(),
+    timeStorefrontRender("chrome.icons", () => getActiveSlotAssetsForVendor(profile.id)).catch(
+      () => ({}),
+    ),
+  ]);
   const host = requestHeaders.get("host") ?? "";
   const proto = requestHeaders.get("x-forwarded-proto") ?? "https";
   const baseUrl = `${proto}://${host}`;
-  const initialRewardsData = await getRewardsDataForUser(session?.user?.id ?? null, baseUrl);
   // #1015 — from the profile already loaded above: no query added to the page render. One value for
   // both FloatingContact and the footer's channel row (#1060), so they always list the same set.
   const assistantAvailable = profile.assistantEnabled && profile.whatsappNumber !== null;
-  const activeSlotIcons = await getActiveSlotAssetsForVendor(profile.id).catch(() => ({}));
   const platformBranding = getPlatformBrandingEnv();
   // #1409 — judged from the host the shopper is on, so it costs no query. The platform domain is
   // EMAIL_FROM's, the same source the Client Setup sender suggestion uses.
   const platformDomain = emailDomain(readOptional(getEmailEnv)?.EMAIL_FROM ?? "") || undefined;
   const ownDomain = isOwnDomainHost(host.toLowerCase(), platformDomain);
 
+  // The homepage has no product tiles that open quick view.
+  const QuickViewBoundary = isLanding ? Fragment : QuickViewProvider;
+
   return (
     <ActiveSlotIconsProvider initialIcons={activeSlotIcons}>
-      <QuickViewProvider>
+      <QuickViewBoundary>
         <div style={brandStyle(profile.primitives)} className="flex min-h-screen flex-col">
           {/*
           #956 — inside the brand-style div, not around it: the feedback region
@@ -89,19 +92,24 @@ export async function StorefrontChrome({
               />
             </AssistantLauncherProvider>
             <CookieBanner />
-            <QuickViewDrawer />
-            {/*
-            #1023 — only for a vendor that runs a loyalty scheme. With loyalty off the panel still
-            promised points and linked to `/account/loyalty`, which 404s. This also stops `?ref=`
-            capture for that vendor, deliberately: referral codes are only issued from loyalty
-            surfaces, so such a vendor has none to capture.
-          */}
-            {initialRewardsData.loyaltyEnabled && (
-              <RewardsLauncher initialData={initialRewardsData} vendorName={profile.name} />
-            )}
+            {!isLanding && <QuickViewDrawer />}
+            <Suspense fallback={null}>
+              <StorefrontRewards baseUrl={baseUrl} vendorName={profile.name} />
+            </Suspense>
           </CartFeedbackProvider>
         </div>
-      </QuickViewProvider>
+      </QuickViewBoundary>
     </ActiveSlotIconsProvider>
   );
+}
+
+// The floating rewards control can arrive after the storefront has rendered.
+async function StorefrontRewards({ baseUrl, vendorName }: { baseUrl: string; vendorName: string }) {
+  const session = await getStorefrontSession();
+  const initialData = await timeStorefrontRender("chrome.rewards", () =>
+    getRewardsDataForUser(session?.user?.id ?? null, baseUrl),
+  );
+  if (!initialData.loyaltyEnabled) return null;
+
+  return <RewardsLauncher initialData={initialData} vendorName={vendorName} />;
 }

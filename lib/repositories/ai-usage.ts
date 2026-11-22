@@ -62,9 +62,11 @@ export async function recordAiUsage(
   prisma: Prisma,
   vendorId: string,
   entry: AiUsageEntry,
+  id?: string,
 ): Promise<void> {
   await prisma.aiUsageEvent.create({
     data: {
+      ...(id ? { id } : {}),
       vendorId,
       feature: entry.feature,
       model: entry.model,

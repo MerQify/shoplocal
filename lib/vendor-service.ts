@@ -1,3 +1,4 @@
+import { timeStorefrontRender } from "@/lib/storefront-render-timing";
 import { publishWarmupSchedule } from "@/lib/db-warmup-service";
 import { cache } from "react";
 import { getPrisma, getPrismaWs } from "@/lib/db";
@@ -44,8 +45,10 @@ import type { HoursOverrideRow } from "@/lib/footer-hours";
  * request — one query shared across layout/header/page/metadata.
  */
 export const getCurrentVendorProfile = cache(async (): Promise<VendorProfile | null> => {
-  const vendorId = await getCurrentVendorIdOrNull();
-  return vendorId ? fetchVendorProfileRepo(getPrisma(), vendorId) : null;
+  const vendorId = await timeStorefrontRender("vendor.host", getCurrentVendorIdOrNull);
+  return vendorId
+    ? timeStorefrontRender("vendor.profile", () => fetchVendorProfileRepo(getPrisma(), vendorId))
+    : null;
 });
 
 /**

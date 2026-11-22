@@ -1,54 +1,28 @@
-import { describe, expect, it } from "vitest";
-import { readCheckoutDetails, writeCheckoutDetails } from "@/lib/checkout-details-storage";
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it } from "vitest";
+import { clearStoredCheckoutDetails } from "@/lib/checkout-details-storage";
+import { CHECKOUT_DETAILS_KEY, LEGACY_CHECKOUT_DETAILS_KEY } from "@/lib/storage-keys";
 
-/**
- * #1080 R19 — the checkout form's remembered details move from the legacy `localStorage` key to
- * the vendor-neutral one, without losing what a returning shopper had saved.
- */
+afterEach(() => localStorage.clear());
 
-function memoryStorage(initial: Record<string, string> = {}): Storage {
-  const map = new Map(Object.entries(initial));
-  return {
-    get length() {
-      return map.size;
-    },
-    clear: () => map.clear(),
-    getItem: (key) => map.get(key) ?? null,
-    key: (index) => [...map.keys()][index] ?? null,
-    removeItem: (key) => void map.delete(key),
-    setItem: (key, value) => void map.set(key, String(value)),
-  };
-}
+describe("clearStoredCheckoutDetails", () => {
+  it("clears both checkout keys while preserving other preferences", () => {
+    localStorage.setItem(CHECKOUT_DETAILS_KEY, '{"email":"shopper@example.test"}');
+    localStorage.setItem(LEGACY_CHECKOUT_DETAILS_KEY, '{"phone":"00000000000"}');
+    localStorage.setItem("unrelated", "keep");
 
-describe("readCheckoutDetails (#1080 R19)", () => {
-  it("returns the new key's blob and leaves a legacy blob alone", () => {
-    const storage = memoryStorage({
-      store_checkout_details: '{"a":"new"}',
-      aheed_checkout_details: '{"a":"old"}',
-    });
-    expect(readCheckoutDetails(storage)).toBe('{"a":"new"}');
-    expect(storage.getItem("aheed_checkout_details")).toBe('{"a":"old"}');
+    clearStoredCheckoutDetails(() => localStorage);
+
+    expect(localStorage.getItem(CHECKOUT_DETAILS_KEY)).toBeNull();
+    expect(localStorage.getItem(LEGACY_CHECKOUT_DETAILS_KEY)).toBeNull();
+    expect(localStorage.getItem("unrelated")).toBe("keep");
   });
 
-  it("moves a legacy-only blob to the new key and removes the legacy key", () => {
-    const storage = memoryStorage({ aheed_checkout_details: '{"a":"old"}' });
-    expect(readCheckoutDetails(storage)).toBe('{"a":"old"}');
-    expect(storage.getItem("store_checkout_details")).toBe('{"a":"old"}');
-    expect(storage.getItem("aheed_checkout_details")).toBeNull();
-  });
-
-  it("returns null when nothing is saved", () => {
-    const storage = memoryStorage();
-    expect(readCheckoutDetails(storage)).toBeNull();
-    expect(storage.length).toBe(0);
-  });
-});
-
-describe("writeCheckoutDetails (#1080 R19)", () => {
-  it("writes the new key and removes the legacy one", () => {
-    const storage = memoryStorage({ aheed_checkout_details: '{"a":"old"}' });
-    writeCheckoutDetails(storage, '{"a":"typed"}');
-    expect(storage.getItem("store_checkout_details")).toBe('{"a":"typed"}');
-    expect(storage.getItem("aheed_checkout_details")).toBeNull();
+  it("allows checkout to continue when browser storage is blocked", () => {
+    expect(() =>
+      clearStoredCheckoutDetails(() => {
+        throw new DOMException("Storage blocked", "SecurityError");
+      }),
+    ).not.toThrow();
   });
 });

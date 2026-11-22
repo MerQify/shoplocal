@@ -2,6 +2,14 @@
 @plugin "@tailwindcss/typography";
 @import "../design-system/tokens/tokens.css";
 
+/* Keep examples, test fixtures and generated documentation out of the app stylesheet. */
+@source not "../.claude";
+@source not "../docs";
+@source not "../graft";
+@source not "../kms";
+@source not "../specs";
+@source not "../tests";
+
 /*
  * The storefront is a light-only design (no dark-mode styles yet). Declaring
  * `light dark` previously let a dark-mode browser paint a dark canvas, which

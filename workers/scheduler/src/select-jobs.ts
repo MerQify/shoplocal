@@ -18,6 +18,7 @@ import { decideWarmup, type WarmupReason } from "../../../lib/db-warmup/payload"
 
 export const SWEEP_PATH = "/api/jobs/reconcile-payments";
 export const REAPER_PATH = "/api/jobs/reap-guest-carts";
+export const DATA_RETENTION_PATH = "/api/jobs/sweep-data-retention";
 export const ERROR_RATE_PATH = "/api/jobs/check-error-rate";
 export const CONTACT_OUTBOX_PATH = "/api/jobs/retry-contact-outbox";
 export const NOTIFICATION_OUTBOX_PATH = "/api/jobs/retry-notification-outbox";
@@ -77,6 +78,7 @@ export function selectJobs(input: {
     return [
       SWEEP_PATH,
       REAPER_PATH,
+      DATA_RETENTION_PATH,
       ERROR_RATE_PATH,
       CONTACT_OUTBOX_PATH,
       NOTIFICATION_OUTBOX_PATH,
@@ -101,6 +103,7 @@ export function selectJobs(input: {
 export const ALL_JOB_PATHS: readonly string[] = [
   SWEEP_PATH,
   REAPER_PATH,
+  DATA_RETENTION_PATH,
   ERROR_RATE_PATH,
   CONTACT_OUTBOX_PATH,
   NOTIFICATION_OUTBOX_PATH,

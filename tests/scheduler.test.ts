@@ -6,6 +6,7 @@ import {
   CONTACT_OUTBOX_PATH,
   NOTIFICATION_OUTBOX_PATH,
   DAILY_CRON,
+  DATA_RETENTION_PATH,
   ERROR_RATE_PATH,
   REAPER_PATH,
   REFRESH_WARMUP_PATH,
@@ -95,6 +96,7 @@ describe("job scheduler", () => {
     expect(paths).toEqual([
       "/api/jobs/reconcile-payments",
       "/api/jobs/reap-guest-carts",
+      DATA_RETENTION_PATH,
       "/api/jobs/check-error-rate",
       "/api/jobs/retry-contact-outbox",
       "/api/jobs/retry-notification-outbox",
@@ -183,6 +185,7 @@ describe("selectJobs (#1324)", () => {
       ).toEqual([
         SWEEP_PATH,
         REAPER_PATH,
+        DATA_RETENTION_PATH,
         ERROR_RATE_PATH,
         CONTACT_OUTBOX_PATH,
         NOTIFICATION_OUTBOX_PATH,
@@ -321,7 +324,7 @@ describe("scheduled handler gating (#1324 R7)", () => {
     await scheduler.scheduled(TICK, { ...ENV, JOB_SIGNALS: kv({}) }, CTX);
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(tickLines()).toEqual([
-      `scheduler tick cron=*/15 * * * * ran=none skipped=${SWEEP_PATH},${REAPER_PATH},${ERROR_RATE_PATH},${CONTACT_OUTBOX_PATH},${NOTIFICATION_OUTBOX_PATH},${REFRESH_WARMUP_PATH}`,
+      `scheduler tick cron=*/15 * * * * ran=none skipped=${SWEEP_PATH},${REAPER_PATH},${DATA_RETENTION_PATH},${ERROR_RATE_PATH},${CONTACT_OUTBOX_PATH},${NOTIFICATION_OUTBOX_PATH},${REFRESH_WARMUP_PATH}`,
     ]);
   });
 

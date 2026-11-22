@@ -26,7 +26,7 @@ import {
 import type { HubAsset, HubPage, HubSearchSort, HubStatus } from "@/lib/image-hub/client";
 import type { UploadTicket } from "@/lib/product-image";
 import type {
-  DiscoveredImage,
+  DiscoveryImportSelection,
   DiscoverySearchParams,
   DiscoverySearchResult,
 } from "@/lib/image-discovery/types";
@@ -162,9 +162,9 @@ export async function searchDiscoveredImagesAction(
 
 /** #1697 — import an open-licensed discovered image into the Image Hub as PENDING_REVIEW. */
 export async function importDiscoveredImageAction(
-  image: DiscoveredImage,
+  selection: DiscoveryImportSelection,
 ): Promise<LibraryResult<HubAsset>> {
-  const result = await importDiscoveredImageToHub(image);
+  const result = await importDiscoveredImageToHub(selection);
   if (result.ok) revalidatePath("/staff/image-library");
   return result;
 }

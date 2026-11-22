@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { CHECKOUT_DETAILS_KEY, LEGACY_CHECKOUT_DETAILS_KEY } from "@/lib/storage-keys";
+import { CookieBanner } from "@/components/consent/CookieBanner";
 
 vi.mock("@/lib/db", () => ({ getPrisma: vi.fn(), getPrismaWs: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -38,12 +40,16 @@ const TYPED: Record<string, string> = {
 
 afterEach(() => {
   cleanup();
+  localStorage.removeItem(CHECKOUT_DETAILS_KEY);
+  localStorage.removeItem(LEGACY_CHECKOUT_DETAILS_KEY);
   vi.clearAllMocks();
 });
 
 describe("#1613 checkout keeps typed fields when an order is refused", () => {
   it("shows the refusal and leaves all six fields as typed, submitting the same FormData", async () => {
     placeOrderAction.mockResolvedValue({ error: REFUSAL });
+    localStorage.setItem(CHECKOUT_DETAILS_KEY, '{"email":"previous@example.test"}');
+    localStorage.setItem(LEGACY_CHECKOUT_DETAILS_KEY, '{"recipientName":"Previous shopper"}');
     render(
       <CheckoutPricingProvider
         basis={{ subtotalPence: 2000, deliveryFeePence: 349 }}
@@ -51,6 +57,7 @@ describe("#1613 checkout keeps typed fields when an order is refused", () => {
         prefilledCode={null}
         redeemable={null}
       >
+        <CookieBanner />
         <CheckoutForm
           signedInEmail={null}
           redeemable={null}
@@ -66,6 +73,10 @@ describe("#1613 checkout keeps typed fields when an order is refused", () => {
     );
 
     const field = (id: string) => document.getElementById(id) as HTMLInputElement;
+    expect(field("email").value).toBe("");
+    expect(field("recipientName").value).toBe("");
+    expect(localStorage.getItem(CHECKOUT_DETAILS_KEY)).toBeNull();
+    expect(localStorage.getItem(LEGACY_CHECKOUT_DETAILS_KEY)).toBeNull();
     await act(async () => {
       for (const [id, value] of Object.entries(TYPED)) {
         fireEvent.change(field(id), { target: { value } });
@@ -81,6 +92,8 @@ describe("#1613 checkout keeps typed fields when an order is refused", () => {
     for (const [id, value] of Object.entries(TYPED)) {
       expect(field(id).value, id).toBe(value);
     }
+    expect(localStorage.getItem(CHECKOUT_DETAILS_KEY)).toBeNull();
+    expect(localStorage.getItem(LEGACY_CHECKOUT_DETAILS_KEY)).toBeNull();
 
     expect(placeOrderAction).toHaveBeenCalledTimes(1);
     const submitted = placeOrderAction.mock.calls[0][1] as FormData;

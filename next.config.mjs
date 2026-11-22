@@ -1,3 +1,34 @@
+const discoveryImageSources = [
+  "https://api.openverse.org",
+  "https://live.staticflickr.com",
+  "https://farm1.staticflickr.com",
+  "https://upload.wikimedia.org",
+  "https://images.openfoodfacts.org",
+  "https://static.openfoodfacts.org",
+  "https://images.pexels.com",
+  "https://images.unsplash.com",
+];
+
+function contentSecurityPolicy(imageSources = []) {
+  return [
+    "default-src 'self'",
+    process.env.NODE_ENV === "development"
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    [
+      "img-src 'self' data: https://*.merqify.com https://*.aheedfoodcentre.co.uk",
+      ...imageSources,
+    ].join(" "),
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.r2.cloudflarestorage.com",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+  ].join("; ");
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Keep the app on the Node.js runtime (OpenNext/Workers) — do NOT set runtime: 'edge'.
@@ -49,18 +80,7 @@ const nextConfig = {
           // Worker) — a bare 'self' here would silently break image upload.
           {
             key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https://*.merqify.com https://*.aheedfoodcentre.co.uk",
-              "font-src 'self' data:",
-              "connect-src 'self' https://*.r2.cloudflarestorage.com",
-              "frame-ancestors 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "object-src 'none'",
-            ].join("; "),
+            value: contentSecurityPolicy(),
           },
         ],
       },
@@ -85,6 +105,16 @@ const nextConfig = {
           {
             key: "Cache-Control",
             value: "private, no-store, must-revalidate",
+          },
+        ],
+      },
+      // Discovery previews use third-party image origins only in the staff gallery.
+      {
+        source: "/staff/image-library",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: contentSecurityPolicy(discoveryImageSources),
           },
         ],
       },

@@ -23,6 +23,7 @@ export function ImageDiscoveryPanel({ onImported }: ImageDiscoveryPanelProps) {
   const [query, setQuery] = useState("");
   const [provider, setProvider] = useState<DiscoveryProvider | "ALL">("ALL");
   const [items, setItems] = useState<DiscoveredImage[]>([]);
+  const [resultQuery, setResultQuery] = useState("");
   const [errors, setErrors] = useState<Record<string, string> | null>(null);
   const [searching, startSearch] = useTransition();
   const [importingId, setImportingId] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export function ImageDiscoveryPanel({ onImported }: ImageDiscoveryPanelProps) {
       }
 
       setItems(res.value.items);
+      setResultQuery(q);
       setErrors(res.value.errors ?? null);
     });
   }
@@ -57,7 +59,11 @@ export function ImageDiscoveryPanel({ onImported }: ImageDiscoveryPanelProps) {
     setImportingId(img.id);
     setActionError(null);
 
-    const res = await importDiscoveredImageAction(img);
+    const res = await importDiscoveredImageAction({
+      id: img.id,
+      provider: img.provider,
+      query: resultQuery,
+    });
     setImportingId(null);
 
     if (!res.ok) {

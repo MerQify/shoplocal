@@ -64,7 +64,7 @@ export const stockImportProfileSchema = z
         promotion: column.optional(),
         vat: column.optional(),
         origin: column.optional(),
-        flags: z.record(z.enum(FLAG_KEYS), column).optional(),
+        flags: z.partialRecord(z.enum(FLAG_KEYS), column).optional(),
         /** Attribute name → column. The attribute and its options are created if missing. */
         attributes: z.record(z.string().min(1), column).optional(),
       })

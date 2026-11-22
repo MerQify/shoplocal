@@ -324,7 +324,7 @@ describe("RewardsPanel", () => {
 });
 
 describe("RewardsLauncher", () => {
-  it("renders launcher button with Aheed branding and opens panel with initialData", () => {
+  it("renders launcher button with Aheed branding and opens panel with initialData", async () => {
     render(
       <RewardsLauncher
         initialData={{
@@ -355,8 +355,8 @@ describe("RewardsLauncher", () => {
     // Click to open panel
     fireEvent.click(button);
 
-    // Initial data should immediately be rendered without 0 points flash
-    expect(screen.getByText("Your Loyalty Points")).toBeTruthy();
+    // The deferred panel opens with initial data and no zero-points flash.
+    expect(await screen.findByText("Your Loyalty Points")).toBeTruthy();
     expect(screen.getByText("Aheed Food Centre Club")).toBeTruthy();
     expect(screen.getByText("100419")).toBeTruthy();
     expect(screen.getByText("Points active")).toBeTruthy();

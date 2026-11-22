@@ -38,6 +38,7 @@ export async function searchOpenverse(
   )}&license_type=commercial&page_size=${limit}`;
 
   const res = await doFetch(url, {
+    signal: AbortSignal.timeout(10_000),
     headers: {
       "User-Agent":
         "AheedFoodCentre/1.0 (https://aheedfoodcentre.co.uk; info@aheedfoodcentre.co.uk)",
@@ -70,6 +71,7 @@ export async function searchOpenverse(
       title: hit.title?.trim() || "Untitled photo",
       thumbnailUrl: hit.thumbnail || hit.url,
       originalUrl: hit.foreign_landing_url || hit.url,
+      downloadUrl: hit.url,
       sourceSite: "Openverse",
       licence,
       attribution,

@@ -100,7 +100,7 @@ describe("a choice already under the new name (#1080 R13)", () => {
 });
 
 const BODY_TEXT =
-  "We use essential cookies and browser storage to keep you signed in, hold your basket, and remember your delivery choice and checkout details. One optional cookie remembers a referral code from a link you followed, and it is set only if you choose Accept All. Read our Privacy Policy and Terms of Service.";
+  "We use essential cookies and browser storage to keep you signed in, hold your basket, and remember your delivery choice. One optional cookie remembers a referral code from a link you followed, and it is set only if you choose Accept All. Read our Privacy Policy and Terms of Service.";
 
 const bodyText = () => {
   const heading = screen.getByText("We value your privacy");

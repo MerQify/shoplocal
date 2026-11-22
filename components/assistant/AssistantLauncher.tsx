@@ -1,7 +1,21 @@
 "use client";
 
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
-import { HelpAssistant } from "@/components/assistant/HelpAssistant";
+import {
+  Suspense,
+  createContext,
+  lazy,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+
+const HelpAssistant = lazy(() =>
+  import("@/components/assistant/HelpAssistant").then((module) => ({
+    default: module.HelpAssistant,
+  })),
+);
 
 /**
  * The help assistant's open/closed state, shared by every control that can open it (#1060).
@@ -51,7 +65,11 @@ export function AssistantLauncherProvider({
     <AssistantLauncherContext.Provider value={{ open }}>
       {children}
       {/* Mounted only while open: each open is a fresh conversation (#1014). */}
-      {isOpen && <HelpAssistant vendorName={vendorName} onClose={close} />}
+      {isOpen && (
+        <Suspense fallback={null}>
+          <HelpAssistant vendorName={vendorName} onClose={close} />
+        </Suspense>
+      )}
     </AssistantLauncherContext.Provider>
   );
 }
