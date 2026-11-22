@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapWikimediaLicence, searchWikimedia } from "./wikimedia";
+import { getWikimediaImage, mapWikimediaLicence, searchWikimedia } from "./wikimedia";
 
 describe("wikimedia provider", () => {
   it("maps valid Wikimedia licences", () => {
@@ -9,6 +9,8 @@ describe("wikimedia provider", () => {
     expect(mapWikimediaLicence("CC-BY-4.0")).toBe("CC_BY");
     expect(mapWikimediaLicence("CC BY-SA 3.0")).toBe("CC_BY_SA");
     expect(mapWikimediaLicence("All rights reserved")).toBeNull();
+    expect(mapWikimediaLicence("CC BY-NC 4.0")).toBeNull();
+    expect(mapWikimediaLicence("CC BY-ND 3.0")).toBeNull();
   });
 
   it("parses Wikimedia Commons search results and strips HTML", async () => {
@@ -26,7 +28,7 @@ describe("wikimedia provider", () => {
                 title: "File:Red Apple.jpg",
                 imageinfo: [
                   {
-                    url: "https://upload.wikimedia.org/apple.jpg",
+                    url: "https://upload.wikimedia.org/apple.jpg?utm_source=commons.wikimedia.org",
                     thumburl: "https://upload.wikimedia.org/apple-thumb.jpg",
                     width: 1200,
                     height: 900,
@@ -53,6 +55,7 @@ describe("wikimedia provider", () => {
       provider: "WIKIMEDIA",
       title: "Red Apple Fruit",
       thumbnailUrl: "https://upload.wikimedia.org/apple-thumb.jpg",
+      downloadUrl: "https://upload.wikimedia.org/apple.jpg",
       originalUrl: "https://commons.wikimedia.org/wiki/File:Red_Apple.jpg",
       sourceSite: "Wikimedia Commons",
       licence: "CC_BY_SA",
@@ -60,5 +63,22 @@ describe("wikimedia provider", () => {
       width: 1200,
       height: 900,
     });
+  });
+
+  it("uses a file-title lookup and reports API errors", async () => {
+    const fetchFn = async (input: URL | RequestInfo) => {
+      expect(String(input)).toContain("titles=File%3ABanana-Single.jpg");
+      return Response.json({ error: { code: "internal_api_error" } });
+    };
+    await expect(searchWikimedia("File:Banana-Single.jpg", { fetchFn })).rejects.toThrow(
+      "Wikimedia Commons returned an API error",
+    );
+  });
+
+  it("does not make a provider request for an invalid page ID", async () => {
+    const fetchFn = async () => {
+      throw new Error("unexpected fetch");
+    };
+    await expect(getWikimediaImage("wikimedia-42&other=1", fetchFn)).resolves.toBeNull();
   });
 });

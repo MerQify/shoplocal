@@ -21,6 +21,7 @@ interface WikimediaPage {
 }
 
 interface WikimediaResponse {
+  error?: unknown;
   query?: {
     pages?: Record<string, WikimediaPage>;
   };
@@ -45,8 +46,8 @@ export function mapWikimediaLicence(rawLicense?: string): DiscoveryLicence | nul
   ) {
     return "PDM";
   }
-  if (norm.includes("cc-by-sa") || norm.includes("cc by-sa")) return "CC_BY_SA";
-  if (norm.includes("cc-by") || norm.includes("cc by")) return "CC_BY";
+  if (/^cc[ -]by[ -]sa(?:[ -]\d+(?:\.\d+)?)?$/.test(norm)) return "CC_BY_SA";
+  if (/^cc[ -]by(?:[ -]\d+(?:\.\d+)?)?$/.test(norm)) return "CC_BY";
   return null;
 }
 
@@ -55,11 +56,28 @@ export async function searchWikimedia(
   options?: { limit?: number; fetchFn?: typeof fetch },
 ): Promise<DiscoveredImage[]> {
   const limit = Math.min(Math.max(options?.limit ?? 15, 1), 50);
-  const doFetch = options?.fetchFn ?? fetch;
+  const trimmed = query.trim();
+  const filter = /^File:/i.test(trimmed)
+    ? `titles=${encodeURIComponent(trimmed)}`
+    : `generator=search&gsrsearch=${encodeURIComponent(trimmed)}&gsrnamespace=6&gsrlimit=${limit}`;
+  return fetchWikimediaImages(filter, options?.fetchFn ?? fetch);
+}
 
-  const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(
-    query,
-  )}&gsrnamespace=6&gsrlimit=${limit}&prop=imageinfo&iiprop=url|size|extmetadata&format=json&origin=*`;
+export async function getWikimediaImage(
+  id: string,
+  fetchFn = fetch,
+): Promise<DiscoveredImage | null> {
+  const pageId = /^wikimedia-(\d{1,12})$/.exec(id)?.[1];
+  if (!pageId) return null;
+  const items = await fetchWikimediaImages(`pageids=${pageId}`, fetchFn);
+  return items.find((item) => item.id === id) ?? null;
+}
+
+async function fetchWikimediaImages(
+  filter: string,
+  doFetch: typeof fetch,
+): Promise<DiscoveredImage[]> {
+  const url = `https://commons.wikimedia.org/w/api.php?action=query&${filter}&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=360&format=json`;
 
   const res = await doFetch(url, {
     signal: AbortSignal.timeout(10_000),
@@ -75,6 +93,7 @@ export async function searchWikimedia(
   }
 
   const data = (await res.json()) as WikimediaResponse;
+  if (data.error) throw new Error("Wikimedia Commons returned an API error.");
   const pages = data.query?.pages;
   if (!pages) return [];
 
@@ -84,8 +103,9 @@ export async function searchWikimedia(
     const info = page.imageinfo?.[0];
     if (!info?.url) continue;
 
-    // Reject non-image media (PDFs, audio, video)
-    if (!/\.(jpe?g|png|webp|svg)$/i.test(info.url)) continue;
+    // Imageinfo appends attribution tracking parameters to the original URL.
+    const imageUrl = info.url.split(/[?#]/, 1)[0];
+    if (!/\.(jpe?g|png|webp)$/i.test(imageUrl)) continue;
 
     const rawLicense = info.extmetadata?.LicenseShortName?.value;
     const licence = mapWikimediaLicence(rawLicense);
@@ -104,9 +124,9 @@ export async function searchWikimedia(
       id: `wikimedia-${page.pageid}`,
       provider: "WIKIMEDIA",
       title: cleanTitle || "Wikimedia image",
-      thumbnailUrl: info.thumburl || info.url,
-      originalUrl: info.descriptionurl || info.url,
-      downloadUrl: info.url,
+      thumbnailUrl: info.thumburl || imageUrl,
+      originalUrl: info.descriptionurl || imageUrl,
+      downloadUrl: imageUrl,
       sourceSite: "Wikimedia Commons",
       licence,
       attribution,

@@ -42,3 +42,17 @@ describe("open-food-facts provider", () => {
     });
   });
 });
+
+it("resolves barcode searches from the exact provider product", async () => {
+  const code = "3017620422003";
+  const fetchFn = async (input: URL | RequestInfo) => {
+    expect(new URL(String(input)).pathname).toBe(`/api/v2/product/${code}`);
+    return Response.json({
+      status: 1,
+      product: { code, image_front_url: "https://images.openfoodfacts.org/front.jpg" },
+    });
+  };
+  await expect(searchOpenFoodFacts(code, { fetchFn })).resolves.toMatchObject([
+    { id: `off-${code}`, provider: "OPEN_FOOD_FACTS" },
+  ]);
+});
