@@ -103,8 +103,9 @@ async function fetchWikimediaImages(
     const info = page.imageinfo?.[0];
     if (!info?.url) continue;
 
-    // Reject non-image media (PDFs, audio, video)
-    if (!/\.(jpe?g|png|webp)$/i.test(info.url)) continue;
+    // Imageinfo appends attribution tracking parameters to the original URL.
+    const imageUrl = info.url.split(/[?#]/, 1)[0];
+    if (!/\.(jpe?g|png|webp)$/i.test(imageUrl)) continue;
 
     const rawLicense = info.extmetadata?.LicenseShortName?.value;
     const licence = mapWikimediaLicence(rawLicense);
@@ -123,9 +124,9 @@ async function fetchWikimediaImages(
       id: `wikimedia-${page.pageid}`,
       provider: "WIKIMEDIA",
       title: cleanTitle || "Wikimedia image",
-      thumbnailUrl: info.thumburl || info.url,
-      originalUrl: info.descriptionurl || info.url,
-      downloadUrl: info.url,
+      thumbnailUrl: info.thumburl || imageUrl,
+      originalUrl: info.descriptionurl || imageUrl,
+      downloadUrl: imageUrl,
       sourceSite: "Wikimedia Commons",
       licence,
       attribution,

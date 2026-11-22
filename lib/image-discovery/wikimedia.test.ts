@@ -28,7 +28,7 @@ describe("wikimedia provider", () => {
                 title: "File:Red Apple.jpg",
                 imageinfo: [
                   {
-                    url: "https://upload.wikimedia.org/apple.jpg",
+                    url: "https://upload.wikimedia.org/apple.jpg?utm_source=commons.wikimedia.org",
                     thumburl: "https://upload.wikimedia.org/apple-thumb.jpg",
                     width: 1200,
                     height: 900,
@@ -55,6 +55,7 @@ describe("wikimedia provider", () => {
       provider: "WIKIMEDIA",
       title: "Red Apple Fruit",
       thumbnailUrl: "https://upload.wikimedia.org/apple-thumb.jpg",
+      downloadUrl: "https://upload.wikimedia.org/apple.jpg",
       originalUrl: "https://commons.wikimedia.org/wiki/File:Red_Apple.jpg",
       sourceSite: "Wikimedia Commons",
       licence: "CC_BY_SA",
