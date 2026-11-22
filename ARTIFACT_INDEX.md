@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-21T19:00:34.522Z` · commit `4ac92d52` · `391` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-22T11:30:12.879Z` · commit `f3e0ab56` · `392` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -375,6 +375,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Image library — reject an approved image (plan)](specs/2026-11-20-reject-approved-image/plan.md) | spec | 1.0.0 | 2026-11-20 | draft | internal | Lets store admins reject an already-approved Image Hub image from /staff/image-library, with a plain-words refusal when the image is still used on a product or category. |
 | [Live Excel Stock Exports Behind Auth; No Generated Exports in public/ (plan)](specs/2026-11-21-live-xlsx-stock-export/plan.md) | spec | 1.0.0 | 2026-11-21 | approved | internal | Build the Universal, Essential and Master xlsx downloads live from the database behind the platform-admin check, honouring filters, and remove the generated export files that were publicly served from public/templates/. |
 | [Nightly Image Hub sync for both production cells (plan)](specs/2026-11-21-nightly-image-hub-sync/plan.md) | spec | 1.0.0 | 2026-11-21 | draft | internal | A scheduled GitHub Actions job runs the |
+| [Unpaid checkout cancellations told apart from real cancellations (plan)](specs/2026-11-22-unpaid-checkout-cancellations/plan.md) | spec | 1.0.0 | 2026-11-22 | approved | internal | Slice A of checkout recovery (#1730). Records why every order was cancelled, hides never-paid checkouts from My orders and the default staff list, and words old unpaid links as "Payment not completed". |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
 | [ADR-002 — Authentication Library](specs/decisions/ADR-002-auth-library.md) | adr | 1.0.0 | 2026-08-06 | approved | internal | Decision to use Better Auth (self-hosted, bearer tokens, RBAC) for email/password and Google Sign-In, rejecting hosted IdPs like Clerk/Auth0 for the MVP. |
