@@ -10,6 +10,19 @@ every branch merges.
 
 - Allow Wikimedia thumbnails in the staff Image Library image policy.
 
+- **Unpaid checkouts no longer show as cancelled orders; every cancellation records why (#1730).**
+  - A shopper who goes to pay and then presses back, changes their basket or lets the payment link
+    expire no longer sees a "Cancelled" order in My orders. Opening its link says "Payment not
+    completed. You haven't been charged." A paid order the store cancelled still shows as cancelled.
+  - New `CancellationOrigin` on the CANCELLED status event (`CHECKOUT_CHANGED`, `PAYMENT_EXPIRED`,
+    `PAYMENT_FAILED`, `CHECKOUT_ABANDONED`, `PROVIDER_UNAVAILABLE`, `STAFF`), required by
+    `releaseOrder`. Hand-authored migration `20261122120000_cancellation_origin` backfills only
+    exact historical notes; anything else stays "Reason not recorded".
+  - "Unpaid" is read from `Payment` (no SUCCEEDED/REFUNDED payment), not from the reason, so it is
+    right for old orders and can never hide a paid one. `/staff/orders` hides unpaid checkouts by
+    default ("Show unpaid checkouts", `?unpaid=1`) and labels every cancelled order.
+  - Stock hold and release are unchanged. Spec: `specs/2026-11-22-unpaid-checkout-cancellations/`.
+
 - Resolve Wikimedia and Open Food Facts imports by provider ID and add exact file and barcode searches.
 
 - Defer optional storefront panels and restore standard script priority on Aheed staging.

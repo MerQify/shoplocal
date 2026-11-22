@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-22T11:30:12.879Z` · commit `f3e0ab56` · `392` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-22T13:13:05.512Z` · commit `83a5c24d` · `392` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -414,7 +414,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Cloudflare for SaaS Client Onboarding Runbook](docs/platform-admin-guide/cloudflare-saas-onboarding-runbook.md) | runbook | 1.2.0 | 2026-11-10 | approved | internal | Standard operating procedure for SaaS client onboarding from Cloudflare account creation, zone configuration, custom hostnames, Neon database mapping, to edge validation. |
 | [Platform & Technical Admin Guide](docs/platform-admin-guide/platform-admin-guide.md) | guide | 1.18.0 | 2026-11-21 | approved | internal | A guide for Platform Administrators managing the multi-tenant infrastructure, onboarding new vendors, and configuring global platform settings. |
 | [SaaS Scaling, Cost Analysis & Resource Isolation Architecture](docs/platform-admin-guide/saas-scaling-cost-and-isolation-architecture.md) | doc | 1.0.0 | 2026-11-09 | approved | internal | Comprehensive technical and economic analysis of the multi-client SaaS platform: Cloudflare for SaaS custom hostnames, Workers compute scaling costs, noisy-neighbor isolation, R2 dedicated image storage segregation, and transactional email routing. |
-| [Staff Daily Operations Playbook](docs/staff-playbook/staff-tabs-guide.md) | runbook | 2.24.0 | 2026-11-20 | approved | internal | How to use every page in the Staff Panel: picking and dispatching orders, managing catalogue products, categories, brands, filters, bundles, promotions, inventory, search dictionary, customer feedback, enquiries & inbox, and runbooks. One section per menu item. |
+| [Staff Daily Operations Playbook](docs/staff-playbook/staff-tabs-guide.md) | runbook | 2.25.0 | 2026-11-22 | approved | internal | How to use every page in the Staff Panel: picking and dispatching orders, managing catalogue products, categories, brands, filters, bundles, promotions, inventory, search dictionary, customer feedback, enquiries & inbox, and runbooks. One section per menu item. |
 | [Store Admin Management Guide](docs/store-admin-guide/admin-tabs-guide.md) | runbook | 2.29.0 | 2026-11-18 | approved | internal | How to use every owner-only page in the Store Admin Panel: discounts, loyalty, storefront configuration, delivery areas, reports, customers, payment issues, and team access. |
 | [Merqify KMS — Knowledge Architecture, Governance and Validation (plan)](specs/2026-11-02-merqify-kms-architecture-governance/plan.md) | spec | 1.0.0 | 2026-11-02 | draft | internal | Review, redesign, and reorganise Merqify KMS into an authoritative single source of truth across 13 canonical domains, with C4 alignment, automated link integrity testing, and Nextra portal restructuring. |
 | [ADR-009 — Platform Cell and Dedicated Client Cells: Runtime Isolation, Lockstep CI & Data Autonomy](specs/decisions/ADR-009-dedicated-client-cells.md) | adr | 1.0.0 | 2026-11-09 | approved | internal | Architecture decision codifying dual topology: multi-tenant platform cell for marketplace stores alongside dedicated client cells (starting with Aheed Food Centre) with separate Workers, Neon databases, and R2 buckets, deployed in lockstep by CI. |
@@ -423,4 +423,4 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 
 | Artifact | Type | Ver | Updated | Status | Vis | Summary |
 |---|---|---|---|---|---|---|
-| [Shopping Guide & Help Center](docs/shopper-help/shopping-guide.md) | guide | 1.10.0 | 2026-11-15 | approved | public | A complete guide for customers on how to browse, place orders, and manage their account. |
+| [Shopping Guide & Help Center](docs/shopper-help/shopping-guide.md) | guide | 1.11.0 | 2026-11-22 | approved | public | A complete guide for customers on how to browse, place orders, and manage their account. |

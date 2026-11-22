@@ -4,8 +4,8 @@ title: "Staff Daily Operations Playbook"
 audience: [staff]
 type: runbook
 status: approved
-version: "2.24.0"
-updated: "2026-11-20"
+version: "2.25.0"
+updated: "2026-11-22"
 visibility: internal
 summary: "How to use every page in the Staff Panel: picking and dispatching orders, managing catalogue products, categories, brands, filters, bundles, promotions, inventory, search dictionary, customer feedback, enquiries & inbox, and runbooks. One section per menu item."
 tags: ["staff", "guide", "ui", "fulfillment", "inventory", "catalogue", "synonyms", "feedback", "enquiries", "inbox"]
@@ -129,6 +129,25 @@ awaiting action** — delivered and cancelled orders are hidden so the queue sta
 anything else you must choose a status explicitly, including "All statuses". The search box matches
 an order number or a customer email. Results are paged 20 at a time, and the page link carries your
 current filter with it.
+
+**Unpaid checkouts are hidden (`#1730`):** when a shopper goes to pay and then presses back, changes
+their basket or lets the payment link expire, the order is cancelled to give the stock back. Those
+**unpaid checkouts** were never paid, so they are hidden from this page by default, even when you
+filter by *Cancelled*. Tick **Show unpaid checkouts** and press **Apply** to see them (the address
+gains `unpaid=1`). Shoppers no longer see them in *My orders* either.
+
+**Why an order was cancelled:** every cancelled order shows one of these labels, on the list and on
+the order's page, and the order page also says whether money was ever taken:
+
+| Label | What happened |
+|---|---|
+| **Changed at checkout** | The shopper pressed back from the payment page and chose *Change my order* |
+| **Payment link expired** | The shopper never finished on the payment page and it timed out |
+| **Payment failed** | A bank or other delayed payment failed, or never settled |
+| **Checkout abandoned** | No payment page was ever opened for the order |
+| **Payment service unavailable** | The payment provider couldn't be reached when the order was placed |
+| **Cancelled by store** | A store admin cancelled a paid order (see *Cancelling a paid order*) |
+| **Reason not recorded** | An older cancellation from before reasons were recorded |
 
 **New orders appear by themselves (`#1435`):**
 - **Refreshing:** while the page is open and on screen, it refreshes every 30 seconds, so you do not need to reload it.
