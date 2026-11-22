@@ -1,3 +1,5 @@
+import { UNPAID_CHECKOUT_STATUS_LABEL } from "@/lib/cancellation-origin";
+import { UnpaidCheckoutNotice } from "@/components/orders/UnpaidCheckoutNotice";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -67,7 +69,9 @@ export default async function OrderConfirmationPage({
           <h1 className="text-xl font-bold text-primary">
             {order.status === "CONFIRMED" && "Thanks — your order is confirmed"}
             {order.status === "PENDING_PAYMENT" && "Confirming your payment…"}
-            {order.status === "CANCELLED" && "This order was not completed"}
+            {/* #1730 — a never-paid checkout vs. a paid order the store cancelled. */}
+            {order.status === "CANCELLED" &&
+              (order.neverPaid ? UNPAID_CHECKOUT_STATUS_LABEL : "Your order was cancelled")}
             {!["CONFIRMED", "PENDING_PAYMENT", "CANCELLED"].includes(order.status) && "Your order"}
           </h1>
           <p className="text-sm text-primary-muted">
@@ -89,16 +93,11 @@ export default async function OrderConfirmationPage({
         </p>
       )}
 
-      {order.status === "CANCELLED" && (
-        <p className="mb-5 rounded-2xl bg-danger-tint px-4 py-3 text-sm text-danger">
-          Payment wasn&apos;t completed, so this order was cancelled and the items were returned to
-          stock. Nothing has been charged.
-        </p>
-      )}
+      {order.status === "CANCELLED" && order.neverPaid && <UnpaidCheckoutNotice />}
 
       {/* #1435 R21/R22 — the order's progress, kept current while the tab is open: an unpaid order
           moves to confirmed here without a reload once the payment clears. */}
-      {order.status !== "CANCELLED" && (
+      {!(order.status === "CANCELLED" && order.neverPaid) && (
         <OrderProgressTracker
           orderNumber={order.orderNumber}
           status={order.status}

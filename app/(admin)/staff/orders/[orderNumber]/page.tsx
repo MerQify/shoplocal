@@ -1,3 +1,4 @@
+import { cancellationOriginLabel } from "@/lib/cancellation-origin";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -89,6 +90,15 @@ export default async function StaffOrderDetailPage({
         </div>
         <OrderStatusBadge status={order.status} />
       </div>
+      {order.status === "CANCELLED" && (
+        // #1730 — why it was cancelled, and whether money was ever taken.
+        <p className="-mt-2 mb-4 text-sm text-primary-muted">
+          <span className="font-bold text-primary">
+            {cancellationOriginLabel(order.cancellationOrigin)}
+          </span>
+          {order.neverPaid ? " · never paid, nothing was charged" : " · this order was paid"}
+        </p>
+      )}
 
       {/* The same single-rung control as the queue, driving the same action —
           legality is decided by the service against the persisted status, so

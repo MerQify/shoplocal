@@ -85,6 +85,7 @@ export async function cancelOrder(formData: FormData): Promise<void> {
         const cancelled = await getOrderCancelService().cancelUnpaid(
           orderNumber,
           "Shopper cancelled payment at checkout",
+          "CHECKOUT_CHANGED", // #1730 — "Change my order", not a cancellation of a real order
         );
 
         // #957 — and say what could not go back (a product deactivated since the order was placed,

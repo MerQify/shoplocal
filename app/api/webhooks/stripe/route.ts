@@ -124,6 +124,8 @@ export async function POST(req: Request) {
         event.type === "checkout.session.expired"
           ? "Checkout session expired; stock released."
           : "Payment failed; stock released.",
+        // #1730 — the same split, as the structured reason.
+        event.type === "checkout.session.expired" ? "PAYMENT_EXPIRED" : "PAYMENT_FAILED",
       );
       if (!failed.ok) {
         reportRefusal(failed.reason, event, event.orderNumber);

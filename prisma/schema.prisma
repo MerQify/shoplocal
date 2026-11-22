@@ -1873,6 +1873,12 @@ model OrderStatusEvent {
   cancellationMessage CancellationMessage?
   customerMessage     String?
 
+  // #1730 — WHY a CANCELLED event happened: which code path released the order. Set on every
+  // CANCELLED event from #1730 on; backfilled only where the historical note proves it, so NULL
+  // means "reason not recorded", never a guess. Null on every non-CANCELLED event. Whether an order
+  // was ever paid is NOT read from here — that is a fact on Payment (`UNPAID_CHECKOUT_WHERE`).
+  cancellationOrigin  CancellationOrigin?
+
   @@index([orderId])
 }
 
@@ -1888,6 +1894,17 @@ enum CancellationMessage {
   REFUNDED
   NOT_REFUNDED
   CUSTOM
+}
+
+/// #1730 — which path cancelled an order. Every value except STAFF is a never-paid checkout
+/// leaving PENDING_PAYMENT through `releaseOrder`; STAFF is `cancelConfirmedOrder`.
+enum CancellationOrigin {
+  CHECKOUT_CHANGED
+  CHECKOUT_ABANDONED
+  PAYMENT_EXPIRED
+  PAYMENT_FAILED
+  PROVIDER_UNAVAILABLE
+  STAFF
 }
 
 // ---- P5a — loyalty points (#135, specs/2026-08-11-p5a-loyalty-points/) --------
