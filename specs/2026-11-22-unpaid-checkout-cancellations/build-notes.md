@@ -9,7 +9,7 @@ reverted by regenerating the main checkout's client from its own schema.
 ## What changed and why
 
 - **Schema + migration (R1-R3).** `CancellationOrigin` enum and nullable
-  `OrderStatusEvent.cancellationOrigin`. `prisma/migrations/20261122120000_cancellation_origin/`
+  `OrderStatusEvent.cancellationOrigin`. `prisma/migrations/20261122130000_cancellation_origin/`
   is hand-authored (#895); its DDL is Prisma's own `migrate diff` output against the staging
   schema, and the backfill is `UPDATE`s on exact note equality (seven notes) plus
   `cancellationReason IS NOT NULL` → `STAFF`. No `LIKE`, no catch-all.
@@ -55,6 +55,12 @@ reverted by regenerating the main checkout's client from its own schema.
   paid" beneath; staff need the true status, customers need the plain wording.
 - **Toggle is a checkbox in the existing GET form** (applies with **Apply**), not a separate link:
   no client JS, and the URL stays shareable like the rest of the filter.
+
+- **Migration renamed to `20261122130000_cancellation_origin`** during validation (2026-11-22).
+  Staging gained `20261122120000_product_allergen_declarations` (#1735) with the identical
+  timestamp; the branch was rebased onto it and this (never-applied) migration moved one hour later
+  so the apply order is unambiguous. `migrate diff` against the new staging schema still emits
+  exactly this migration's DDL.
 
 ## Deviations from the spec
 

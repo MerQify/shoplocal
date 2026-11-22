@@ -16,7 +16,7 @@ every branch merges.
     completed. You haven't been charged." A paid order the store cancelled still shows as cancelled.
   - New `CancellationOrigin` on the CANCELLED status event (`CHECKOUT_CHANGED`, `PAYMENT_EXPIRED`,
     `PAYMENT_FAILED`, `CHECKOUT_ABANDONED`, `PROVIDER_UNAVAILABLE`, `STAFF`), required by
-    `releaseOrder`. Hand-authored migration `20261122120000_cancellation_origin` backfills only
+    `releaseOrder`. Hand-authored migration `20261122130000_cancellation_origin` backfills only
     exact historical notes; anything else stays "Reason not recorded".
   - "Unpaid" is read from `Payment` (no SUCCEEDED/REFUNDED payment), not from the reason, so it is
     right for old orders and can never hide a paid one. `/staff/orders` hides unpaid checkouts by
