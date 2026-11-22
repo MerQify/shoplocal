@@ -1,3 +1,4 @@
+import { getShopperAllergenDeclaration } from "@/lib/repositories/product-allergen-declarations";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -120,6 +121,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const tierLabel = multiBuyLabel(product.basePrice, product.tier);
 
   const profile = await getCurrentVendorProfile();
+  const allergenDeclaration = profile
+    ? await getShopperAllergenDeclaration(profile.id, product.id)
+    : null;
   const canonicalOrigin = profile?.canonicalHost
     ? `https://${profile.canonicalHost}`
     : "https://www.aheedfoodcentre.co.uk";
@@ -263,6 +267,32 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               />
             </div>
 
+            {allergenDeclaration && (
+              <section
+                aria-label="Product ingredients and allergens"
+                className="space-y-2 rounded-2xl border border-black/10 px-4 py-3 text-sm"
+              >
+                <h2 className="font-bold">Ingredients and allergens</h2>
+                {allergenDeclaration.ingredients && (
+                  <p className="whitespace-pre-line">
+                    <strong>Ingredients </strong>
+                    {allergenDeclaration.ingredients}
+                  </p>
+                )}
+                {allergenDeclaration.contains && (
+                  <p className="whitespace-pre-line">
+                    <strong>Contains </strong>
+                    {allergenDeclaration.contains}
+                  </p>
+                )}
+                {allergenDeclaration.mayContain && (
+                  <p className="whitespace-pre-line">
+                    <strong>May contain </strong>
+                    {allergenDeclaration.mayContain}
+                  </p>
+                )}
+              </section>
+            )}
             {/* #1656 — "ask us about allergens", before the shopper commits to the order. */}
             {profile?.showAllergenNotice && (
               <AllergenNotice phone={profile.contactPhone} email={profile.contactEmail} />

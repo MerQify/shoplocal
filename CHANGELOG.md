@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Add manual product allergen declarations and reviewed barcode lookup.
+
 - Allow Wikimedia thumbnails in the staff Image Library image policy.
 
 - Resolve Wikimedia and Open Food Facts imports by provider ID and add exact file and barcode searches.

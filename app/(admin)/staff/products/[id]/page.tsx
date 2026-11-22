@@ -1,3 +1,5 @@
+import { ProductAllergenForm } from "@/components/staff/ProductAllergenForm";
+import { getProductAllergenEditorData } from "@/lib/repositories/product-allergen-declarations";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { requireVendorRole } from "@/lib/auth-rbac";
@@ -51,7 +53,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     );
   }
 
-  const [product, categories, brands, profile, attributes, audit] = await Promise.all([
+  const [product, categories, brands, profile, attributes, audit, allergens] = await Promise.all([
     getProductForAdmin(auth.vendorId, id),
     listCategoriesForAdmin(auth.vendorId),
     getBrandRepository().listSummaries(),
@@ -59,6 +61,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     listAttributeDefinitions(auth.vendorId),
     // #1211 — vendor-scoped, so another vendor's id returns nothing (and notFound() below fires).
     listRestrictionAudit(auth.vendorId, id),
+    getProductAllergenEditorData(auth.vendorId, id),
   ]);
   if (!product) notFound();
 
@@ -95,6 +98,11 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         attributes={attributes}
         imageUrls={imageUrls}
         imageLibrary={imageLibrary}
+      />
+      <ProductAllergenForm
+        productId={product.id}
+        barcode={allergens?.barcode ?? null}
+        saved={allergens?.allergenDeclaration ?? null}
       />
       <ProductRestrictionPanel
         productId={product.id}
