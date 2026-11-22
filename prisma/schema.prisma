@@ -1126,6 +1126,7 @@ model Product {
   // Aheed catalogue import safeguards (PLU / barcode matching & manual edit protection)
   plu                       String?
   barcode                   String?
+  allergenDeclaration       ProductAllergenDeclaration?
   importBatchId             String?
   importSourceRow           Int?
   isManuallyEdited          Boolean                      @default(false)
@@ -1198,6 +1199,16 @@ model Product {
 /// No startsAt/endsAt: date windowing would re-open the hardcoded vendor
 /// timezone (#363), which P8.5f had just finished fixing a campaign date bug
 /// over. isActive only until #363 is resolved.
+model ProductAllergenDeclaration {
+  productId   String    @id
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredients String
+  contains    String
+  mayContain  String
+  source      String
+  verifiedAt  DateTime?
+}
+
 model ProductPriceTier {
   id              String   @id @default(uuid())
   vendorId        String
