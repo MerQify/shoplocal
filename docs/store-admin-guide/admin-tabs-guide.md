@@ -671,20 +671,30 @@ Nothing on this page happens automatically: you review, you choose, you send.
 5. **Send email**. If one has already gone, **Send again** appears only with a tick-box confirmation;
    use it sparingly.
 
-**Who can be emailed:** this is a **marketing** email (PECR), so only when all of these hold — the row
-says why not otherwise:
+**Important fields and filters:** the email is **marketing** (PECR), so it can be sent only when all
+of these hold — the row says why not otherwise:
 - the customer was **signed in** (guests never agreed to marketing);
 - their newest marketing choice is **yes** and their email is **verified**;
 - it is **within 7 days** of the checkout ending;
 - it isn't marked **Don't contact** or already **Recovered**.
 
-**What the customer gets:** their own items with pictures and today's prices (anything no longer
+**What happens after changes are saved:** every action is recorded with who did it and when. A sent
+email goes straight away from your store's sender (retried for up to 24 hours if the provider is
+down) and the row shows **Email sent**. The customer gets their own items with pictures and today's prices (anything no longer
 available is marked), today's total, any incentive, the sentence "Your payment wasn't completed, so
 you haven't been charged.", one **Return to your basket** button and a **Stop marketing emails** link.
 No countdowns, invented deadlines or "only 2 left" claims — UK law bans them. The button opens a page
 showing the basket; **Restore my basket** puts what's available back in their basket at today's prices,
 says what couldn't go back, and reminds them of their code. The link works for 14 days. Nothing is held
 for them: stock was released when the checkout ended.
+
+**Common mistakes and limitations:**
+- Don't try to reach guests or non-opted-in customers some other way: the consent rule is the law,
+  not a preference.
+- An incentive code works only for that customer, once; a forwarded link restores the items for
+  someone else but the code won't apply for them.
+- Prices shown are each product's current price; offers and multi-buys still apply at checkout.
+- Stock isn't held for a recovery, so items can sell out before the customer comes back.
 
 **Typical workflow:** Look in once a day. Review the new rows, mark anyone you shouldn't approach as
 **Don't contact**, and email the opted-in customers from the last few days. Add an incentive only when
