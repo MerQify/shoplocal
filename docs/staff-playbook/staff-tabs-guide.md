@@ -149,6 +149,17 @@ the order's page, and the order page also says whether money was ever taken:
 | **Cancelled by store** | A store admin cancelled a paid order (see *Cancelling a paid order*) |
 | **Reason not recorded** | An older cancellation from before reasons were recorded |
 
+**Checking it still works (post-ship sanity check, `#1730`).** Last run: 2026-11-22, on staging.
+1. Health: `curl -s https://<store-host>/api/health` → `db.ok` is `true` and `commit` is the
+   deployed merge.
+2. Guest lookup of an unpaid checkout (`/orders/lookup?orderNumber=<number>&email=<email>`) → the
+   status reads **Payment not completed** with "Payment not completed. You haven't been charged.",
+   and the word "Cancelled" does not appear.
+3. As a store admin, `/staff/orders?status=CANCELLED` → unpaid checkouts are absent.
+4. Tick **Show unpaid checkouts** → **Apply** → they appear, each labelled with its reason and
+   "· not paid" (for example **Payment link expired · not paid**).
+5. As a signed-in shopper, **My orders** → no unpaid checkout is listed.
+
 **New orders appear by themselves (`#1435`):**
 - **Refreshing:** while the page is open and on screen, it refreshes every 30 seconds, so you do not need to reload it.
 - **The notice:** when a paid order arrives after you opened the page, a notice says **"1 new order since you opened this page"** (or "N new orders"). It counts every new *Confirmed* order, whatever filter you are looking at. Press **Dismiss** to clear the count.
