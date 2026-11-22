@@ -22,7 +22,7 @@
 
 import type { BulkAddKind } from "@/lib/cart-rules";
 
-export type RestoreSource = "reorder" | "cancelled" | "list";
+export type RestoreSource = "reorder" | "cancelled" | "list" | "recovered";
 export type RestoreEntryKind = "u" | "p" | "h" | "s" | "m";
 
 export interface RestoreEntry {
@@ -128,7 +128,8 @@ export function parseRestoreNotice(params: {
   lines?: string;
 }): RestoreNotice | null {
   const source = params.restored;
-  if (source !== "reorder" && source !== "cancelled" && source !== "list") return null;
+  if (source !== "reorder" && source !== "cancelled" && source !== "list" && source !== "recovered")
+    return null;
 
   const entries = (params.lines ?? "")
     .split(ENTRY_SEPARATOR)

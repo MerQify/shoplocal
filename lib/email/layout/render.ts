@@ -24,7 +24,13 @@ export type EmailBlock =
   | { kind: "facts"; rows: readonly { label: string; value: string }[] }
   | {
       kind: "items";
-      rows: readonly { label: string; note?: string | null; amount: string }[];
+      rows: readonly {
+        label: string;
+        note?: string | null;
+        amount: string;
+        /** #1733 — an absolute product image URL; omitted rows render exactly as before. */
+        imageUrl?: string | null;
+      }[];
       totals: readonly { label: string; amount: string; strong?: boolean }[];
     }
   | {
@@ -94,7 +100,11 @@ function blockHtml(block: EmailBlock, brand: EmailBrand): string {
       const rows = block.rows
         .map(
           (row) =>
-            `<tr><td class="em-text" style="padding:10px 0;border-bottom:1px solid ${BORDER};font-family:${FONT};font-size:15px;line-height:21px;color:${TEXT};">${escapeHtml(row.label)}${
+            `<tr><td class="em-text" style="padding:10px 0;border-bottom:1px solid ${BORDER};font-family:${FONT};font-size:15px;line-height:21px;color:${TEXT};">${
+              row.imageUrl && /^https:\/\//.test(row.imageUrl)
+                ? `<img src="${escapeHtml(row.imageUrl)}" alt="" width="48" height="48" style="display:inline-block;width:48px;height:48px;object-fit:cover;border-radius:6px;vertical-align:middle;margin:0 10px 0 0;border:0;">`
+                : ""
+            }${escapeHtml(row.label)}${
               row.note
                 ? `<br><span class="em-muted" style="font-size:13px;color:${MUTED};">Note: ${escapeHtml(row.note)}</span>`
                 : ""

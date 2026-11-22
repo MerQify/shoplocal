@@ -39,6 +39,8 @@ export default async function CartPage({
     restored?: string;
     of?: string;
     lines?: string;
+    /** #1733 — the recovery incentive code to remind the shopper of, after a restore link. */
+    code?: string;
   }>;
 }) {
   const [identity, vendor, params] = await Promise.all([
@@ -59,6 +61,11 @@ export default async function CartPage({
   const unavailable = parseUnavailableNames(params.unavailable);
   // #957 — the same, for a reorder or a cancelled unpaid order put back into the cart.
   const restoreNotice = parseRestoreNotice(params);
+  // #1733 — shown only in the code's own shape; it is a reminder, never applied from the URL.
+  const recoveryCode =
+    params.restored === "recovered" && params.code && /^[A-Z0-9-]{3,40}$/.test(params.code)
+      ? params.code
+      : null;
 
   return (
     <PageContainer width="standard" padY="tight">
@@ -103,6 +110,15 @@ export default async function CartPage({
       )}
 
       {restoreNotice && <RestoreNotice notice={restoreNotice} />}
+      {recoveryCode && (
+        <p
+          role="status"
+          className="mb-4 rounded-2xl border border-action/30 bg-action/10 px-4 py-3 text-sm text-primary"
+        >
+          Your basket is back. Your code <strong>{recoveryCode}</strong> is ready: enter it at
+          checkout.
+        </p>
+      )}
 
       {summary.mergePending && (
         <MergePrompt

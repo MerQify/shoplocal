@@ -127,6 +127,7 @@ const EXPECTED: Record<string, { width: string; padY: string }> = {
     padY: "default",
   },
   "app/(storefront)/cart/page.tsx": { width: "standard", padY: "tight" },
+  "app/(storefront)/recover/[token]/page.tsx": { width: "narrow", padY: "default" },
   "app/(storefront)/icon-credits/page.tsx": { width: "standard", padY: "default" },
   "app/(storefront)/products/[slug]/page.tsx": { width: "standard", padY: "default" },
   // #1305 — checkout was `narrow` (672px), which squeezed its form + summary columns; it now shares

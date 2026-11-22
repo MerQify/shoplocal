@@ -10,6 +10,22 @@ every branch merges.
 
 - Post-ship docs for #1730: roadmap row, staff-guide sanity check, and a `CLAUDE.md` rule for migration-timestamp collisions between parallel agents.
 
+- **Staff-controlled checkout recovery (#1732, #1733).**
+  - `/staff/abandoned-checkouts` now lists every checkout a customer didn't pay for, with why (slice A's
+    reason), each item's availability and today's price, a recovery status (Pending, Reviewed, Email
+    sent, Recovered, Expired, Don't contact) and "Bought later".
+  - Admins review, mark "Don't contact", allocate a single-use incentive locked to that customer
+    (% off, £ off, or the new **free delivery** discount kind), preview the exact email, and send it
+    themselves; a second email needs an explicit confirmation. Nothing is automatic.
+  - The email shows product images and today's prices, says the payment wasn't taken, and links to a
+    `/recover/<token>` page that restores the basket at today's prices (only the token's SHA-256 is
+    stored; 14-day expiry; opening the link changes nothing).
+  - A payment within 14 days of the email marks the checkout **Recovered** with the new order number,
+    inside `confirmPayment`'s transaction.
+  - Migration `20261122140000_checkout_recovery`: `CheckoutRecovery`, `CheckoutRecoveryEvent`,
+    `DiscountKind.FREE_DELIVERY`, `DiscountCode.restrictedToUserId`; #1554's `AbandonedCheckoutReminder`
+    rows are copied over and the table dropped. Spec: `specs/2026-11-22-checkout-recovery/`.
+
 - Add manual product allergen declarations and reviewed barcode lookup.
 
 - Allow Wikimedia thumbnails in the staff Image Library image policy.

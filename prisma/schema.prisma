@@ -105,7 +105,8 @@ model User {
   feedbackModerated    CustomerFeedback[]           @relation("FeedbackModerator")
   netContentReviews    NetContentSuggestion[]       @relation("NetContentReviewer")
   favourites           Favourite[]
-  remindersSent        AbandonedCheckoutReminder[]
+  recoveryEvents       CheckoutRecoveryEvent[]
+  restrictedCodes      DiscountCode[]               @relation("DiscountCodeRestrictedTo")
   emailTemplatesEdited EmailTemplateOverride[]
   stockImportRuns      StockImportRun[]
   stockImportDecisions StockImportLine[]            @relation("StockImportDecider")
@@ -235,7 +236,8 @@ model Vendor {
   hoursOverrides            VendorHoursOverride[]
   paymentBadges             VendorPaymentBadge[]
   categoryAssets            CategoryAsset[]
-  abandonedReminders        AbandonedCheckoutReminder[]
+  checkoutRecoveries        CheckoutRecovery[]
+  checkoutRecoveryEvents    CheckoutRecoveryEvent[]
   emailTemplateOverrides    EmailTemplateOverride[]
   stockImportSettings       StockImportSettings?
   stockImportBrandAliases   StockImportBrandAlias[]
@@ -1750,44 +1752,44 @@ model Address {
 // carries the full rationale. Consequence: `prisma migrate diff` may report drift
 // that is not drift, and `prisma migrate dev` may propose DROPPING them. Keep them.
 model Order {
-  id                   String                     @id @default(uuid())
+  id                   String                  @id @default(uuid())
   vendorId             String
-  vendor               Vendor                     @relation(fields: [vendorId], references: [id])
-  orderNumber          String                     @unique
+  vendor               Vendor                  @relation(fields: [vendorId], references: [id])
+  orderNumber          String                  @unique
   // P9.1 (#427/#428) — a guest order's actual credential. The order number is
   // NOT one: it appears in emails, shared links, browser history and support
   // threads, so knowing it must not return a name and a residential address.
   // Nullable because every order placed before this migration has none; those
   // guests fall back to /orders/lookup (order number + email). Never selected
   // into OrderSummary — see findOrderForViewer.
-  confirmationToken    String?                    @unique
+  confirmationToken    String?                 @unique
   userId               String?
-  user                 User?                      @relation(fields: [userId], references: [id])
+  user                 User?                   @relation(fields: [userId], references: [id])
   guestEmail           String?
   addressId            String
-  address              Address                    @relation(fields: [addressId], references: [id])
-  fulfilmentMethod     FulfilmentMethod           @default(DELIVERY)
+  address              Address                 @relation(fields: [addressId], references: [id])
+  fulfilmentMethod     FulfilmentMethod        @default(DELIVERY)
   fulfilmentSlotId     String?
-  fulfilmentSlot       VendorFulfilmentSlot?      @relation(fields: [fulfilmentSlotId], references: [id])
+  fulfilmentSlot       VendorFulfilmentSlot?   @relation(fields: [fulfilmentSlotId], references: [id])
   fulfilmentDate       DateTime?
-  isExpress            Boolean                    @default(false)
-  targetFulfilmentTime DateTime?                  @db.Timestamptz(3)
-  status               OrderStatus                @default(PENDING_PAYMENT)
-  currency             String                     @default("GBP")
+  isExpress            Boolean                 @default(false)
+  targetFulfilmentTime DateTime?               @db.Timestamptz(3)
+  status               OrderStatus             @default(PENDING_PAYMENT)
+  currency             String                  @default("GBP")
   subtotalPence        Int
   // P5a (#135) — a GENERIC discount column, not a points-specific one: P5b's
   // discount codes reduce the same total and must not need a second column and a
   // second arithmetic rule. The order money identity is
   // subtotalPence - discountPence + deliveryFeePence = totalPence.
-  discountPence        Int                        @default(0)
+  discountPence        Int                     @default(0)
   deliveryFeePence     Int
   totalPence           Int
   // VAT breakdown (pence) snapshot at checkout
-  vatTotalPence        Int                        @default(0)
-  vatStandardPence     Int                        @default(0)
-  vatZeroPence         Int                        @default(0)
-  createdAt            DateTime                   @default(now())
-  updatedAt            DateTime                   @updatedAt
+  vatTotalPence        Int                     @default(0)
+  vatStandardPence     Int                     @default(0)
+  vatZeroPence         Int                     @default(0)
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
   items                OrderItem[]
   payment              Payment?
   statusEvents         OrderStatusEvent[]
@@ -1795,7 +1797,8 @@ model Order {
   discountUse          DiscountRedemption?
   bindingRefusals      PaymentBindingRefusal[]
   reconciliation       PaymentReconciliation?
-  abandonedReminder    AbandonedCheckoutReminder?
+  checkoutRecovery     CheckoutRecovery?       @relation("RecoveryOfOrder")
+  recoveredRecovery    CheckoutRecovery?       @relation("RecoveryResultOrder")
 
   @@index([vendorId, createdAt])
   @@index([vendorId, status, createdAt])
@@ -1877,7 +1880,7 @@ model OrderStatusEvent {
   // CANCELLED event from #1730 on; backfilled only where the historical note proves it, so NULL
   // means "reason not recorded", never a guess. Null on every non-CANCELLED event. Whether an order
   // was ever paid is NOT read from here — that is a fact on Payment (`UNPAID_CHECKOUT_WHERE`).
-  cancellationOrigin  CancellationOrigin?
+  cancellationOrigin CancellationOrigin?
 
   @@index([orderId])
 }
@@ -2020,6 +2023,8 @@ model LoyaltyAccount {
 enum DiscountKind {
   PERCENTAGE
   FIXED_AMOUNT
+  /// #1733 — worth exactly the checkout's delivery fee; delivery orders only; `value` unused (0).
+  FREE_DELIVERY
 }
 
 /// A vendor's discount code. Codes are per-vendor data for the same reason the
@@ -2072,6 +2077,12 @@ model DiscountCode {
   /// other shoppers' order history. An ownerless code still redeems and credits nobody.
   referrerUserId String?
   referrer       User?   @relation("ReferralCodeOwner", fields: [referrerUserId], references: [id], onDelete: SetNull)
+
+  /// #1733 — a code only this customer may redeem (a checkout-recovery incentive). Cascade, not
+  /// SetNull: erasing the customer must not turn their personal code into one anyone can use.
+  restrictedToUserId String?
+  restrictedTo       User?             @relation("DiscountCodeRestrictedTo", fields: [restrictedToUserId], references: [id], onDelete: Cascade)
+  recovery           CheckoutRecovery?
 
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
@@ -2681,23 +2692,76 @@ model VendorPaymentBadge {
   @@unique([vendorId, method])
 }
 
-// #1554 - the one recovery email a store admin may send for an abandoned checkout (an order the
-// checkout-session expiry cancelled before payment). `orderId` is unique, so a checkout can be
-// reminded at most once, ever: the row is claimed BEFORE the email is sent. `discountCode` is a
-// snapshot of the code text the email carried, not a foreign key: the record is what was sent, and
-// a later edit or deactivation of the code must not rewrite it.
-model AbandonedCheckoutReminder {
-  id           String   @id @default(uuid())
-  vendorId     String
-  vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  orderId      String   @unique
-  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  sentByUserId String?
-  sentBy       User?    @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
-  discountCode String?
-  sentAt       DateTime @default(now())
+// #1732/#1733 - a staff-controlled recovery for one abandoned checkout (an order cancelled before
+// payment; slice A's `cancellationOrigin`). Created on the FIRST staff action, never on a page view.
+// The cancelled order's own lines are the basket snapshot. Status is independent of the order's.
+// Replaces #1554's `AbandonedCheckoutReminder` (rows migrated as EMAIL_SENT).
+enum CheckoutRecoveryStatus {
+  PENDING
+  REVIEWED
+  EMAIL_SENT
+  RECOVERED
+  /// Never written by a job: the staff page derives "Expired" from dates (no automation).
+  EXPIRED
+  SUPPRESSED
+}
 
-  @@index([vendorId, sentAt])
+enum CheckoutRecoveryEventKind {
+  REVIEWED
+  INCENTIVE_ALLOCATED
+  INCENTIVE_REMOVED
+  EMAIL_SENT
+  EMAIL_RESENT
+  RESTORED
+  RECOVERED
+  SUPPRESSED
+  UNSUPPRESSED
+}
+
+model CheckoutRecovery {
+  id               String                  @id @default(uuid())
+  vendorId         String
+  vendor           Vendor                  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  /// The abandoned order: its lines are the basket, its customer is who we may contact.
+  orderId          String                  @unique
+  order            Order                   @relation("RecoveryOfOrder", fields: [orderId], references: [id], onDelete: Cascade)
+  status           CheckoutRecoveryStatus  @default(PENDING)
+  /// Compare-and-set anchor for sending: a send claims `emailCount = n` → `n + 1`.
+  emailCount       Int                     @default(0)
+  lastEmailedAt    DateTime?
+  /// The single-use, customer-locked code allocated to this recovery, if any.
+  discountCodeId   String?                 @unique
+  discountCode     DiscountCode?           @relation(fields: [discountCodeId], references: [id], onDelete: SetNull)
+  /// SHA-256 (hex) of the restore-link token; the raw token is never stored.
+  tokenHash        String?                 @unique
+  tokenExpiresAt   DateTime?
+  restoredAt       DateTime?
+  recoveredOrderId String?                 @unique
+  recoveredOrder   Order?                  @relation("RecoveryResultOrder", fields: [recoveredOrderId], references: [id], onDelete: SetNull)
+  recoveredAt      DateTime?
+  suppressReason   String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  events           CheckoutRecoveryEvent[]
+
+  @@index([vendorId, status])
+}
+
+/// Append-only audit log of a recovery. `discountCode` is a text snapshot of what was offered.
+model CheckoutRecoveryEvent {
+  id           String                    @id @default(uuid())
+  recoveryId   String
+  recovery     CheckoutRecovery          @relation(fields: [recoveryId], references: [id], onDelete: Cascade)
+  vendorId     String
+  vendor       Vendor                    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  kind         CheckoutRecoveryEventKind
+  actorUserId  String?
+  actor        User?                     @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  discountCode String?
+  note         String?
+  createdAt    DateTime                  @default(now())
+
+  @@index([recoveryId, createdAt])
 }
 
 // #1564 part 2 - a store's edited wording for one customer email template. One row per store per

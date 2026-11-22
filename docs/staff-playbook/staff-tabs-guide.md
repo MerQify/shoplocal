@@ -51,7 +51,7 @@ the [notification matrix](../developer-portal/notification-matrix.md).
 | You cancel it | A cancellation email whose wording follows the two choices you make when cancelling (see below) |
 | Their payment failed | An email saying no money was taken |
 | They sent a **Contact us** message | An automatic "we've received your message" email, which promises only that someone will reply |
-| Their checkout expired | Nothing, unless a store admin sends a reminder from **Abandoned checkouts** |
+| They didn't pay for their checkout | Nothing automatic; a store admin may send one from **Abandoned checkouts** |
 
 **Cancelling a paid order** (store admins, at the bottom of the order's page, `#1691`). The
 **Reason** you type is for your records only and is not shown to the customer. Two more

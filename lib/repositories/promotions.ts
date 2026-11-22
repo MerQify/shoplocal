@@ -51,7 +51,7 @@ export interface PromotionRow {
   discountCode?: {
     id: string;
     code: string;
-    kind: "PERCENTAGE" | "FIXED_AMOUNT";
+    kind: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_DELIVERY";
     value: number;
     minSubtotalPence: number;
   } | null;
