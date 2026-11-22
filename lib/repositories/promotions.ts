@@ -218,6 +218,20 @@ export async function listLivePromotions(
   return rows as PromotionRow[];
 }
 
+/** First scheduled change after the current hero query's time. */
+export async function findNextPromotionStart(
+  prisma: ReturnType<typeof getPrisma>,
+  vendorId: string,
+  now: Date,
+): Promise<Date | null> {
+  const row = await prisma.promotion.findFirst({
+    where: { vendorId, isActive: true, startsAt: { gt: now } },
+    select: { startsAt: true },
+    orderBy: { startsAt: "asc" },
+  });
+  return row?.startsAt ?? null;
+}
+
 /**
  * Create a new promotion for a vendor.
  */
