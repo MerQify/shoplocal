@@ -1,5 +1,6 @@
 import { timeStorefrontRender } from "@/lib/storefront-render-timing";
 import Link from "next/link";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 
 import { getStorefrontSession } from "@/lib/storefront-session";
@@ -10,6 +11,7 @@ import { markUrls } from "@/lib/vendor-icons";
 import { isDiallablePhone, telHref } from "@/lib/footer-contact-form";
 import { HeaderBrand } from "./HeaderBrand";
 import { getCurrentVendorProfile } from "@/lib/vendor-service";
+import type { VendorProfile } from "@/lib/repositories/vendor";
 import { getRequestCartSummary } from "@/lib/cart-summary";
 import { isPostcodeDeliverable } from "@/lib/delivery-eligibility-service";
 import { DELIVERY_POSTCODE_COOKIE } from "@/lib/delivery-cookie";
@@ -35,63 +37,25 @@ import { IconMedallion } from "@/components/icons/IconMedallion";
 
 export async function Header({
   isPortal = false,
+  isLanding = false,
 }: {
   isPortal?: boolean;
-  /**
-   * P8.5f: whether this is the storefront's landing route (`/`). #1131: the
-   * header no longer renders differently there — the "Shop List" link it used
-   * to hide is the landing page's Quick Shop entry now — so `Header` reads
-   * nothing from it. It stays on the props because it is the route groups'
-   * seam into the header (`StorefrontChrome`), and re-deriving it later would
-   * mean re-plumbing three layouts. Passed explicitly by whichever layout
-   * renders `Header` — `app/(landing)/layout.tsx` passes `true`,
-   * `app/(storefront)/layout.tsx` and `app/(admin)/layout.tsx` don't, same
-   * pattern `isPortal` already uses. Not derived from a request header: a
-   * layout in the App Router cannot see which page it wraps, and the earlier
-   * approach (a root `proxy.ts` annotating the request) is unbuildable on this
-   * project's pinned `@opennextjs/cloudflare` — Next 16 forces Proxy files onto
-   * the Node.js runtime and forbids opting out, and the Cloudflare adapter
-   * rejects any Node-runtime middleware outright (`process.exit(1)`, confirmed
-   * against both `npm run preview` and a real `staging` deploy). See
-   * `specs/architecture.md` §2.1.
-   */
+  /** Stream request-specific account and cart controls on the landing page. */
   isLanding?: boolean;
 } = {}) {
-  // These reads are independent. The cart and rewards reuse the render's session lookup.
-  const [session, cookieStore, profile, fulfilmentMethod, cartSummary, searchDepartments] =
+  const streamShopperControls = isLanding && !isPortal;
+  const [cookieStore, profile, fulfilmentMethod, searchDepartments, shopperData] =
     await Promise.all([
-      getStorefrontSession(),
       cookies(),
       getCurrentVendorProfile(),
       getFulfilmentMethod(),
-      timeStorefrontRender("header.cart", getRequestCartSummary),
       isPortal
         ? []
         : timeStorefrontRender("header.departments", () =>
             getCategoryRepository().listTree().then(toSearchDepartments),
           ),
+      streamShopperControls ? null : getHeaderShopperData(),
     ]);
-  const user = session?.user as { name: string } | undefined;
-  const firstName = user?.name?.split(" ")[0];
-
-  let isStaffOrAdmin = false;
-  let canSeeAdmin = false;
-  if (user) {
-    const staffCheck = await requireVendorRole("STAFF", "ADMIN");
-    isStaffOrAdmin = staffCheck.ok;
-    canSeeAdmin =
-      staffCheck.ok && (staffCheck.via === "platform-admin" || staffCheck.via === "ADMIN");
-  }
-
-  let currentTier: "staff" | "admin" = "staff";
-  if (canSeeAdmin) {
-    const saved = cookieStore.get("admin-tier")?.value;
-    if (saved === "admin" || saved === "staff") {
-      currentTier = saved;
-    } else {
-      currentTier = "admin";
-    }
-  }
 
   const name = profile?.name ?? "";
   const localityName = profile?.localityName ?? "";
@@ -120,14 +84,9 @@ export async function Header({
   // longer drift apart, which is the failure this consolidation exists to prevent.
   const deliveryPrefixes = profile?.deliveryPrefixes ?? [];
   const storedPostcode = cookieStore.get(DELIVERY_POSTCODE_COOKIE)?.value ?? null;
-  const [deliverable, deliveryRules] = await Promise.all([
-    storedPostcode
-      ? timeStorefrontRender("header.postcode", () => isPostcodeDeliverable(storedPostcode))
-      : null,
-    timeStorefrontRender("header.delivery-rules", () =>
-      getShopperDeliveryRules(profile, fulfilmentMethod),
-    ),
-  ]);
+  const deliverable = storedPostcode
+    ? await timeStorefrontRender("header.postcode", () => isPostcodeDeliverable(storedPostcode))
+    : null;
   const offerCollection = profile?.offerCollection ?? false;
   // #239: this fallback was itself Aheed copy ("vine tomatoes, halal lamb
   // chops, basmati, lentils"). It only fires when no vendor resolves at all —
@@ -143,6 +102,17 @@ export async function Header({
 
   // #1069 — the mark's 192px PNG for the header below `md`, or null.
   const markUrl = markUrls(profile?.markStorageKey, CDN_BASE_URL)?.icon192 ?? null;
+
+  const shopperControls = (
+    <HeaderShopperControls
+      initialData={shopperData}
+      profile={profile}
+      fulfilmentMethod={fulfilmentMethod}
+      localityName={localityName}
+      cdnBaseUrl={CDN_BASE_URL ?? ""}
+      isPortal={isPortal}
+    />
+  );
 
   // #960 — three SIBLINGS, not one sticky <header> wrapping everything. The whole header used to
   // be sticky, and at phone widths that pinned 234px (a third of the screen) over the product
@@ -287,69 +257,14 @@ export async function Header({
               </>
             )}
 
-            {/* Account / Sign In & Sign Out Controls */}
-            {user ? (
-              <Link
-                href="/account"
-                prefetch={false}
-                title={`My Account (${firstName || "Profile"})`}
-                className="flex h-10 min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 px-2 sm:px-3 rounded-xl border border-black/10 transition-colors text-xs font-bold text-black/80 hover:text-primary"
+            {streamShopperControls ? (
+              <Suspense
+                fallback={<span aria-hidden="true" className="h-11 w-[94px] shrink-0 sm:w-36" />}
               >
-                <IconMedallion
-                  icon3d="user-profile"
-                  dataIcon="user"
-                  size={24}
-                  className="-my-0.5"
-                  decorative
-                />
-                <span className="hidden sm:inline">{firstName}</span>
-              </Link>
+                {shopperControls}
+              </Suspense>
             ) : (
-              <Link
-                href="/login"
-                prefetch={false}
-                title="Sign in to your account"
-                className="flex h-10 min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-2 sm:px-3 rounded-xl text-xs font-bold transition border border-black/10"
-              >
-                {/* #1173, #1251 — 3D user-profile symbol replacing Lucide/letter avatar */}
-                <IconMedallion
-                  icon3d="user-profile"
-                  dataIcon="circle-user-round"
-                  size={24}
-                  className="-my-0.5"
-                  decorative
-                />
-                <span className="hidden sm:inline">Sign In</span>
-              </Link>
-            )}
-
-            {/* Cart Trigger */}
-            {!isPortal && (
-              <CartDrawerShell
-                itemCount={cartSummary.itemCount}
-                subtotalPence={cartSummary.subtotalPence}
-              >
-                <CartContents
-                  summary={cartSummary}
-                  method={fulfilmentMethod}
-                  minimumOrderPence={deliveryRules.minimumOrderPence}
-                  freeDeliveryThresholdPence={deliveryRules.freeDeliveryThresholdPence}
-                  localityName={localityName}
-                  cdnBaseUrl={CDN_BASE_URL ?? ""}
-                  showViewCartLink
-                />
-              </CartDrawerShell>
-            )}
-
-            {/* View Switcher (Anchored Far Right) */}
-            {isStaffOrAdmin && (
-              <div className="border-l border-black/10 pl-2 ml-1">
-                <ViewSwitcher
-                  canSeeAdmin={canSeeAdmin}
-                  currentTier={currentTier}
-                  isPortal={isPortal}
-                />
-              </div>
+              shopperControls
             )}
           </nav>
         </div>
@@ -380,6 +295,123 @@ export async function Header({
             offerCollection={offerCollection}
             method={fulfilmentMethod}
           />
+        </div>
+      )}
+    </>
+  );
+}
+
+function getHeaderShopperData() {
+  return Promise.all([
+    getStorefrontSession(),
+    cookies(),
+    timeStorefrontRender("header.cart", getRequestCartSummary),
+  ]);
+}
+
+async function HeaderShopperControls({
+  initialData,
+  profile,
+  fulfilmentMethod,
+  localityName,
+  cdnBaseUrl,
+  isPortal,
+}: {
+  initialData: Awaited<ReturnType<typeof getHeaderShopperData>> | null;
+  profile: VendorProfile | null;
+  fulfilmentMethod: Awaited<ReturnType<typeof getFulfilmentMethod>>;
+  localityName: string;
+  cdnBaseUrl: string;
+  isPortal: boolean;
+}) {
+  const [[session, cookieStore, cartSummary], deliveryRules] = await Promise.all([
+    initialData ?? getHeaderShopperData(),
+    timeStorefrontRender("header.delivery-rules", () =>
+      getShopperDeliveryRules(profile, fulfilmentMethod),
+    ),
+  ]);
+  const user = session?.user as { name: string } | undefined;
+  const firstName = user?.name?.split(" ")[0];
+
+  let isStaffOrAdmin = false;
+  let canSeeAdmin = false;
+  if (user) {
+    const staffCheck = await requireVendorRole("STAFF", "ADMIN");
+    isStaffOrAdmin = staffCheck.ok;
+    canSeeAdmin =
+      staffCheck.ok && (staffCheck.via === "platform-admin" || staffCheck.via === "ADMIN");
+  }
+
+  let currentTier: "staff" | "admin" = "staff";
+  if (canSeeAdmin) {
+    const saved = cookieStore.get("admin-tier")?.value;
+    if (saved === "admin" || saved === "staff") {
+      currentTier = saved;
+    } else {
+      currentTier = "admin";
+    }
+  }
+
+  return (
+    <>
+      {/* Account / Sign In & Sign Out Controls */}
+      {user ? (
+        <Link
+          href="/account"
+          prefetch={false}
+          title={`My Account (${firstName || "Profile"})`}
+          className="flex h-10 min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 px-2 sm:px-3 rounded-xl border border-black/10 transition-colors text-xs font-bold text-black/80 hover:text-primary"
+        >
+          <IconMedallion
+            icon3d="user-profile"
+            dataIcon="user"
+            size={24}
+            className="-my-0.5"
+            decorative
+          />
+          <span className="hidden sm:inline">{firstName}</span>
+        </Link>
+      ) : (
+        <Link
+          href="/login"
+          prefetch={false}
+          title="Sign in to your account"
+          className="flex h-10 min-h-tap min-w-tap justify-center lg:min-h-0 lg:min-w-0 items-center gap-1.5 bg-surface-muted hover:bg-black/5 text-black/80 px-2 sm:px-3 rounded-xl text-xs font-bold transition border border-black/10"
+        >
+          {/* #1173, #1251 — 3D user-profile symbol replacing Lucide/letter avatar */}
+          <IconMedallion
+            icon3d="user-profile"
+            dataIcon="circle-user-round"
+            size={24}
+            className="-my-0.5"
+            decorative
+          />
+          <span className="hidden sm:inline">Sign In</span>
+        </Link>
+      )}
+
+      {/* Cart Trigger */}
+      {!isPortal && (
+        <CartDrawerShell
+          itemCount={cartSummary.itemCount}
+          subtotalPence={cartSummary.subtotalPence}
+        >
+          <CartContents
+            summary={cartSummary}
+            method={fulfilmentMethod}
+            minimumOrderPence={deliveryRules.minimumOrderPence}
+            freeDeliveryThresholdPence={deliveryRules.freeDeliveryThresholdPence}
+            localityName={localityName}
+            cdnBaseUrl={cdnBaseUrl}
+            showViewCartLink
+          />
+        </CartDrawerShell>
+      )}
+
+      {/* View Switcher (Anchored Far Right) */}
+      {isStaffOrAdmin && (
+        <div className="border-l border-black/10 pl-2 ml-1">
+          <ViewSwitcher canSeeAdmin={canSeeAdmin} currentTier={currentTier} isPortal={isPortal} />
         </div>
       )}
     </>
