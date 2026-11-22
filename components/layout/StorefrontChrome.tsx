@@ -1,5 +1,5 @@
 import { timeStorefrontRender } from "@/lib/storefront-render-timing";
-import { Suspense, type ReactNode } from "react";
+import { Fragment, Suspense, type ReactNode } from "react";
 import { headers } from "next/headers";
 import { getStorefrontSession } from "@/lib/storefront-session";
 import { getRewardsDataForUser } from "@/lib/rewards-service";
@@ -53,9 +53,12 @@ export async function StorefrontChrome({
   const platformDomain = emailDomain(readOptional(getEmailEnv)?.EMAIL_FROM ?? "") || undefined;
   const ownDomain = isOwnDomainHost(host.toLowerCase(), platformDomain);
 
+  // The homepage has no product tiles that open quick view.
+  const QuickViewBoundary = isLanding ? Fragment : QuickViewProvider;
+
   return (
     <ActiveSlotIconsProvider initialIcons={activeSlotIcons}>
-      <QuickViewProvider>
+      <QuickViewBoundary>
         <div style={brandStyle(profile.primitives)} className="flex min-h-screen flex-col">
           {/*
           #956 — inside the brand-style div, not around it: the feedback region
@@ -89,13 +92,13 @@ export async function StorefrontChrome({
               />
             </AssistantLauncherProvider>
             <CookieBanner />
-            <QuickViewDrawer />
+            {!isLanding && <QuickViewDrawer />}
             <Suspense fallback={null}>
               <StorefrontRewards baseUrl={baseUrl} vendorName={profile.name} />
             </Suspense>
           </CartFeedbackProvider>
         </div>
-      </QuickViewProvider>
+      </QuickViewBoundary>
     </ActiveSlotIconsProvider>
   );
 }

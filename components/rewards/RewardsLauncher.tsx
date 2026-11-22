@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { RewardsPanel, type RewardsData } from "@/components/rewards/RewardsPanel";
+import { Suspense, lazy, useEffect, useState } from "react";
+import type { RewardsData } from "@/components/rewards/RewardsPanel";
 import {
   CONSENT_CHANGE_EVENT,
   expireBrowserCookie,
@@ -13,6 +13,10 @@ import {
 } from "@/lib/storage-keys";
 import { Icon } from "@/components/icons/Icon";
 import { IconMedallion } from "@/components/icons/IconMedallion";
+
+const RewardsPanel = lazy(() =>
+  import("@/components/rewards/RewardsPanel").then((module) => ({ default: module.RewardsPanel })),
+);
 
 /**
  * `vendorName` comes from the storefront layout (`StorefrontChrome`) as a prop — CLAUDE.md rules
@@ -123,12 +127,16 @@ export function RewardsLauncher({
         </button>
       </div>
 
-      <RewardsPanel
-        open={open}
-        onClose={() => setOpen(false)}
-        data={rewardsData}
-        vendorName={vendorName}
-      />
+      {open && (
+        <Suspense fallback={null}>
+          <RewardsPanel
+            open={open}
+            onClose={() => setOpen(false)}
+            data={rewardsData}
+            vendorName={vendorName}
+          />
+        </Suspense>
+      )}
     </>
   );
 }
