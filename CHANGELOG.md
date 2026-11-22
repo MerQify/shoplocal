@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Resolve Wikimedia and Open Food Facts imports by provider ID and add exact file and barcode searches.
+
 - Defer optional storefront panels and restore standard script priority on Aheed staging.
 - Add a root `AGENTS.md` pointing Codex, OpenCode and other agents to `CLAUDE.md`, so every AI agent loads the same project constitution, whatever the provider (#1725).
 
