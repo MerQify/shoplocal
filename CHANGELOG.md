@@ -7,6 +7,7 @@ every branch merges.
 ## [Unreleased]
 
 - Defer optional storefront panels and restore standard script priority on Aheed staging.
+- Add a root `AGENTS.md` pointing Codex, OpenCode and other agents to `CLAUDE.md`, so every AI agent loads the same project constitution, whatever the provider (#1725).
 
 - Trial lower startup-script fetch priority on the Aheed staging homepage.
 
