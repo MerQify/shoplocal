@@ -4,8 +4,8 @@ title: "Store Admin Management Guide"
 audience: [store-admin]
 type: runbook
 status: approved
-version: "2.29.0"
-updated: 2026-11-18
+version: "2.30.0"
+updated: 2026-11-22
 visibility: internal
 summary: "How to use every owner-only page in the Store Admin Panel: discounts, loyalty, storefront configuration, delivery areas, reports, customers, payment issues, and team access."
 tags: ["admin", "guide", "ui", "configuration", "vendor", "payments", "team"]
@@ -637,41 +637,59 @@ or adjust their points.
 
 ## Abandoned checkouts — `/staff/abandoned-checkouts`
 
-**Purpose:** See the checkouts that expired before the customer paid, and win some of them back
-with one honest reminder email (`#1554`).
+**Purpose:** See every checkout a customer didn't pay for, decide who to approach and with what, and
+win some of them back with one honest, personal recovery email (`#1554`, rebuilt by `#1732`/`#1733`).
+Nothing on this page happens automatically: you review, you choose, you send.
 
 **Who can access:** Store admins only
 
-**What you can do:** Read the list of the last 30 days' abandoned checkouts (when it expired, the
-order number, guest or customer, whether they agreed to marketing, items and total). For a checkout
-that qualifies, choose an active discount code or **No discount code**, then press **Send reminder**.
+**What you see for each checkout (last 30 days):**
+- the order number (links to the order), the customer or "Guest", their email and whether they agreed
+  to marketing;
+- **why** it wasn't paid: *Changed at checkout*, *Payment link expired*, *Payment failed*, *Checkout
+  abandoned* or *Payment service unavailable* (orders the store cancelled never appear here);
+- every item with its quantity, whether it can still be bought (**Available**, **Only N left**,
+  **No longer available**) and its price then and now;
+- bundles the basket already qualifies for (information only);
+- a **status**: **Pending** (nobody has looked yet), **Reviewed**, **Email sent**, **Recovered** (the
+  customer paid within 14 days of your email; the new order number is shown), **Expired** (past the
+  7-day window unsent, or the email's restore link has run out) or **Don't contact**;
+- **Bought later** with the order number, when the customer paid another order afterwards, emailed or not.
 
-**Typical workflow:** Look in once a day. Remind the opted-in customers from the last few days,
-adding a code only when the basket is worth it: a code on every reminder teaches customers to
-abandon their checkout to get one.
+**What you can do:**
+1. **Mark reviewed** once you have looked at a checkout.
+2. **Don't contact** (with an optional reason) for anyone you shouldn't email; **Allow contact** undoes
+   it. A "Don't contact" checkout can't be emailed and its restore link stops working.
+3. **Allocate** an incentive, for signed-in customers only: **% off** (1-50%), **£ off** (from £0.50 up
+   to the basket value) or **Free delivery** (delivery orders with a fee). It creates a personal code
+   (`BACK-…`) that only this customer can use, once, for the days you choose (14 by default), with an
+   optional minimum spend. **Remove** switches it off. You can still pick one of your store's existing
+   codes when you send instead.
+4. **Preview email** shows exactly what will be sent — recipient, subject, items with pictures, today's
+   prices, the incentive — and why it couldn't be sent, if it couldn't. The real restore link is made
+   only when you send.
+5. **Send email**. If one has already gone, **Send again** appears only with a tick-box confirmation;
+   use it sparingly.
 
-**Important fields and filters:** A checkout can be reminded only when all of these hold. If not,
-the row says why instead of showing the button:
-
+**Who can be emailed:** this is a **marketing** email (PECR), so only when all of these hold — the row
+says why not otherwise:
 - the customer was **signed in** (guests never agreed to marketing);
 - their newest marketing choice is **yes** and their email is **verified**;
-- it expired **within the last 7 days**;
-- it has **not been reminded before** (one reminder per checkout, ever).
+- it is **within 7 days** of the checkout ending;
+- it isn't marked **Don't contact** or already **Recovered**.
 
-**Common mistakes and limitations:**
-- This is a **marketing** email, so the consent rule is the law (PECR), not a preference. Do not try
-  to reach guests or non-opted-in customers some other way.
-- The email lists the customer's own items, the real total and the code if you chose one, with one
-  **Return to your basket** button and a **Stop marketing emails** link. It never uses countdowns,
-  invented deadlines or "only 2 left" claims, which UK law bans.
-- The items are not held: stock was released when the checkout expired, and the email says so.
-- Only checkouts that **expired** appear. A customer who pressed Cancel, or whose payment failed, is
-  not listed (a failed payment has its own automatic email).
+**What the customer gets:** their own items with pictures and today's prices (anything no longer
+available is marked), today's total, any incentive, the sentence "Your payment wasn't completed, so
+you haven't been charged.", one **Return to your basket** button and a **Stop marketing emails** link.
+No countdowns, invented deadlines or "only 2 left" claims — UK law bans them. The button opens a page
+showing the basket; **Restore my basket** puts what's available back in their basket at today's prices,
+says what couldn't go back, and reminds them of their code. The link works for 14 days. Nothing is held
+for them: stock was released when the checkout ended.
 
-**What happens after changes are saved:** The email is sent straight away from your store's
-sender. The row then shows when it went, who sent it and any code. If the email provider is down, the
-email is retried automatically for up to 24 hours. The reminder cannot be sent a second time.
-
+**Typical workflow:** Look in once a day. Review the new rows, mark anyone you shouldn't approach as
+**Don't contact**, and email the opted-in customers from the last few days. Add an incentive only when
+the basket is worth it: an incentive on every email teaches customers to abandon checkouts to get one.
+Check back for **Recovered** and **Bought later** to see what worked.
 
 ## Email templates — `/staff/email-templates`
 

@@ -28,7 +28,7 @@ R4. The abandoned-checkout list selects orders whose latest CANCELLED event has
     appear; `ABANDONED_NOTE_PREFIX` is no longer used to select.
 R5. Each row shows: customer name or "Guest", email, abandonment date, reason label, items with
     quantities, basket value, original order number (linked to its staff order page), status, and
-    "Bought later: <order number>" when the same signed-in customer has a paid order placed after
+    "Bought later" with the order number when the same signed-in customer has a paid order placed after
     the abandonment.
 R6. Each line shows its availability — "Available", "Only N left" (tracked stock below the basket
     quantity), or "No longer available" (product inactive or deleted) — and its current unit price

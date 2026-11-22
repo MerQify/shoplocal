@@ -82,7 +82,7 @@ product variants, so there are none to snapshot.
    recovery in `EMAIL_SENT` whose email went out within the last 14 days, the newest becomes
    `RECOVERED` with `recoveredOrderId` and a `RECOVERED` event. Idempotent with confirm's own
    compare-and-set: a duplicate or delayed webhook confirms nothing and so recovers nothing.
-   The page also shows **Bought later: <order>** for any checkout whose customer paid a later
+   The page also shows **Bought later** with the order number for any checkout whose customer paid a later
    order, emailed or not.
 10. **Staff order management.** `/staff/orders` keeps hiding unpaid checkouts (slice A); its "Show
     unpaid checkouts" line links to `/staff/abandoned-checkouts`. Docs: store-admin guide section
