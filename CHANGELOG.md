@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Defer optional storefront panels and restore standard script priority on Aheed staging.
+
 - Trial lower startup-script fetch priority on the Aheed staging homepage.
 
 - Add opt-in server render timings on Aheed staging for homepage performance investigation.
