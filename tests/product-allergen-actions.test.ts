@@ -13,7 +13,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/auth-rbac", () => ({
   requireVendorRole: async () => ({ ok: true, vendorId: "tenant-a" }),
 }));
-vi.mock("@/lib/repositories/product-allergen-declarations", () => ({
+vi.mock("@/lib/product-allergen-service", () => ({
   getProductAllergenEditorData: mocks.find,
   saveProductAllergenDeclaration: mocks.save,
 }));

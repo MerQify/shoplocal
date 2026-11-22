@@ -1,4 +1,4 @@
-import { getShopperAllergenDeclaration } from "@/lib/repositories/product-allergen-declarations";
+import { getShopperAllergenDeclaration } from "@/lib/product-allergen-service";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";

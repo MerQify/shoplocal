@@ -10,7 +10,7 @@ import {
   getProductAllergenEditorData,
   hideProductAllergenDeclaration,
   saveProductAllergenDeclaration,
-} from "@/lib/repositories/product-allergen-declarations";
+} from "@/lib/product-allergen-service";
 
 export async function fetchProductAllergenDraft(productId: string) {
   const auth = await requireVendorRole("STAFF", "ADMIN");

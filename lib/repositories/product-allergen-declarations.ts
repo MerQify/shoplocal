@@ -1,7 +1,9 @@
-import { getPrisma } from "@/lib/db";
+import type { getPrisma } from "@/lib/db";
 
-export function getProductAllergenEditorData(vendorId: string, productId: string) {
-  return getPrisma().product.findFirst({
+type Client = ReturnType<typeof getPrisma>;
+
+export function getProductAllergenEditorData(prisma: Client, vendorId: string, productId: string) {
+  return prisma.product.findFirst({
     where: { vendorId, id: productId },
     select: {
       barcode: true,
@@ -11,27 +13,28 @@ export function getProductAllergenEditorData(vendorId: string, productId: string
   });
 }
 
-export function getShopperAllergenDeclaration(vendorId: string, productId: string) {
-  return getPrisma().productAllergenDeclaration.findFirst({
+export function getShopperAllergenDeclaration(prisma: Client, vendorId: string, productId: string) {
+  return prisma.productAllergenDeclaration.findFirst({
     where: { productId, verifiedAt: { not: null }, product: { vendorId } },
     select: { ingredients: true, contains: true, mayContain: true },
   });
 }
 
 export function saveProductAllergenDeclaration(
+  prisma: Client,
   productId: string,
   declaration: { ingredients: string; contains: string; mayContain: string; source: string },
 ) {
   const values = { ...declaration, verifiedAt: new Date() };
-  return getPrisma().productAllergenDeclaration.upsert({
+  return prisma.productAllergenDeclaration.upsert({
     where: { productId },
     update: values,
     create: { ...values, productId },
   });
 }
 
-export function hideProductAllergenDeclaration(productId: string) {
-  return getPrisma().productAllergenDeclaration.update({
+export function hideProductAllergenDeclaration(prisma: Client, productId: string) {
+  return prisma.productAllergenDeclaration.update({
     where: { productId },
     data: { verifiedAt: null },
   });

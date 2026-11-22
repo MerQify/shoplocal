@@ -1,5 +1,5 @@
 import { ProductAllergenForm } from "@/components/staff/ProductAllergenForm";
-import { getProductAllergenEditorData } from "@/lib/repositories/product-allergen-declarations";
+import { getProductAllergenEditorData } from "@/lib/product-allergen-service";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { requireVendorRole } from "@/lib/auth-rbac";
