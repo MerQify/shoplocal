@@ -62,6 +62,7 @@ export const MODEL_PLAN: Record<string, { class: Classification; reason: string 
   Product: { class: "copy-filtered", reason: "10% sample: hand-seeded plus every tenth gen-" },
   ProductImage: { class: "copy-filtered", reason: "only for copied products" },
   ProductPriceTier: { class: "copy-filtered", reason: "only for copied products" },
+  ProductAllergenDeclaration: { class: "copy-filtered", reason: "only for copied products" },
   ProductAttributeValue: { class: "copy-filtered", reason: "only for copied products" },
   Inventory: { class: "copy-filtered", reason: "only for copied products" },
   Bundle: { class: "copy-filtered", reason: "only when at least one item's product is copied" },
