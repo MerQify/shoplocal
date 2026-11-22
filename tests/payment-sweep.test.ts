@@ -135,11 +135,16 @@ function world(
       orderNumber: string,
       _binding: PaymentBinding,
       _reason: string,
+      _origin: string,
     ): Promise<FailPaymentResult> => transition(orderNumber, "CANCELLED"),
   );
   const cancelUnpaid = vi.fn(
-    async (_vendorId: string, orderNumber: string, _reason: string): Promise<boolean> =>
-      transition(orderNumber, "CANCELLED").ok,
+    async (
+      _vendorId: string,
+      orderNumber: string,
+      _reason: string,
+      _origin: string,
+    ): Promise<boolean> => transition(orderNumber, "CANCELLED").ok,
   );
   const sendConfirmation = vi.fn(async (_orderNumber: string): Promise<void> => {});
 
@@ -383,6 +388,8 @@ describe("runPaymentSweep — the decision table", () => {
     const summary = await w.run();
 
     expect(w.fail).toHaveBeenCalledTimes(1);
+    // #1730 — the expired session is recorded as PAYMENT_EXPIRED.
+    expect(w.fail.mock.calls[0][3]).toBe("PAYMENT_EXPIRED");
     expect(w.confirm).not.toHaveBeenCalled();
     expect(w.rows.get(o.orderId)?.lastOutcome).toBe("RELEASED");
     expect(summary).toMatchObject({ released: 1 });
@@ -418,6 +425,8 @@ describe("runPaymentSweep — the decision table", () => {
     const w2 = world([aged], { answer: session({ status: "complete" }) });
     const summary = await w2.run();
     expect(w2.fail).toHaveBeenCalledTimes(1);
+    // #1730 — a complete session that never settled: PAYMENT_FAILED.
+    expect(w2.fail.mock.calls[0][3]).toBe("PAYMENT_FAILED");
     expect(w2.rows.get(aged.orderId)?.lastOutcome).toBe("RELEASED");
     expect(summary).toMatchObject({ released: 1 });
   });
@@ -439,6 +448,8 @@ describe("runPaymentSweep — the decision table", () => {
     const s2 = await w2.run();
     expect(w2.retrieveSession).not.toHaveBeenCalled();
     expect(w2.cancelUnpaid).toHaveBeenCalledTimes(1);
+    // #1730 — no payment session was ever created: CHECKOUT_ABANDONED.
+    expect(w2.cancelUnpaid.mock.calls[0][3]).toBe("CHECKOUT_ABANDONED");
     expect(w2.fail).not.toHaveBeenCalled();
     expect(w2.rows.get(aged.orderId)?.lastOutcome).toBe("RELEASED");
     expect(s2).toMatchObject({ released: 1 });

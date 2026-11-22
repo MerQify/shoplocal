@@ -59,6 +59,7 @@ describe("Stripe webhook payment failure (#1552 R2)", () => {
     event = checkoutEvent("checkout.session.async_payment_failed");
     fail.mockResolvedValue({ ok: true });
     expect((await post()).status).toBe(200);
+    expect(fail.mock.calls[0][3]).toBe("PAYMENT_FAILED"); // #1730
     expect(notifyOrderEvent).toHaveBeenCalledTimes(1);
     expect(notifyOrderEvent).toHaveBeenCalledWith(
       { orderNumber: "SHO-1", vendorId: "v1" },
@@ -71,6 +72,7 @@ describe("Stripe webhook payment failure (#1552 R2)", () => {
     fail.mockResolvedValue({ ok: true });
     expect((await post()).status).toBe(200);
     expect(fail).toHaveBeenCalledTimes(1);
+    expect(fail.mock.calls[0][3]).toBe("PAYMENT_EXPIRED"); // #1730
     expect(notifyOrderEvent).not.toHaveBeenCalled();
   });
 

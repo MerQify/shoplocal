@@ -110,7 +110,7 @@ describe("fail — refusal persistence", () => {
   it("records a binding-mismatch refusal from the cancellation path too", async () => {
     failPayment.mockResolvedValue({ ok: false, reason: "binding-mismatch" });
 
-    await getWebhookOrderService().fail(ORDER_NUMBER, BINDING, "Checkout session expired.");
+    await getWebhookOrderService().fail(ORDER_NUMBER, BINDING, "Checkout session expired.", "PAYMENT_EXPIRED");
 
     expect(recordPaymentBindingRefusal).toHaveBeenCalledTimes(1);
   });
@@ -118,7 +118,7 @@ describe("fail — refusal persistence", () => {
   it("records nothing for already-processed", async () => {
     failPayment.mockResolvedValue({ ok: false, reason: "already-processed" });
 
-    await getWebhookOrderService().fail(ORDER_NUMBER, BINDING, "Checkout session expired.");
+    await getWebhookOrderService().fail(ORDER_NUMBER, BINDING, "Checkout session expired.", "PAYMENT_EXPIRED");
 
     expect(recordPaymentBindingRefusal).not.toHaveBeenCalled();
   });

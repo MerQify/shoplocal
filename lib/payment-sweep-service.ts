@@ -58,9 +58,10 @@ export function getPaymentSweepService() {
           payments: getPaymentService(),
           orders: {
             confirm: (orderNumber, binding) => orders.confirm(orderNumber, binding),
-            fail: (orderNumber, binding, reason) => orders.fail(orderNumber, binding, reason),
-            cancelUnpaid: (vendorId, orderNumber, reason) =>
-              cancelUnpaidOrder(prismaWs, vendorId, orderNumber, reason),
+            fail: (orderNumber, binding, reason, origin) =>
+              orders.fail(orderNumber, binding, reason, origin),
+            cancelUnpaid: (vendorId, orderNumber, reason, origin) =>
+              cancelUnpaidOrder(prismaWs, vendorId, orderNumber, reason, origin),
           },
           reconciliation: {
             claim: (vendorId, orderId, claimedAt, leaseUntil) =>

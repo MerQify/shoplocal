@@ -56,6 +56,7 @@ import { NOTE_ACCEPTANCE_SELECT, productAcceptsNote } from "@/lib/custom-note";
 import { slotLabel } from "@/lib/order-notifications/slot";
 import { isSlotBookable } from "@/lib/slot-cutoff";
 import { CLOSED_DAY_MESSAGE, effectiveDayHours, slotFitsOverride } from "@/lib/slot-closure";
+import type { CancellationOriginValue } from "@/lib/cancellation-origin";
 
 /**
  * Order read/write path (P3b, #96) — the ONLY DB access for orders. Pages,
@@ -768,6 +769,7 @@ export async function placeOrder(
       vendorId,
       created.orderId,
       "Payment provider unavailable; order cancelled and stock released.",
+      "PROVIDER_UNAVAILABLE",
     );
     // The message below tells the shopper to try again, so the basket they were
     // about to buy has to still exist (P7.5a, #234). The transaction above
@@ -809,6 +811,8 @@ async function releaseOrder(
   vendorId: string,
   orderId: string,
   note: string,
+  // #1730 — required, so no future release path can leave the reason unrecorded.
+  origin: CancellationOriginValue,
   binding?: { provider: string; providerReference: string },
 ): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
@@ -874,7 +878,7 @@ async function releaseOrder(
 
     await tx.payment.updateMany({ where: { orderId }, data: { status: "FAILED" } });
     await tx.orderStatusEvent.create({
-      data: { orderId, vendorId, status: "CANCELLED", note },
+      data: { orderId, vendorId, status: "CANCELLED", note, cancellationOrigin: origin },
     });
 
     // Give back any points this checkout was holding. Only a REDEEM is ever
@@ -2254,13 +2258,14 @@ export async function failPayment(
   orderNumber: string,
   binding: PaymentBinding,
   reason: string,
+  origin: CancellationOriginValue,
 ): Promise<FailPaymentResult> {
   if (binding.providerReference === null) return { ok: false, reason: "unbindable" };
 
   const order = await findOrderForWebhook(prisma, orderNumber);
   if (!order) return { ok: false, reason: "not-found" };
 
-  const released = await releaseOrder(prisma, order.vendorId, order.id, reason, {
+  const released = await releaseOrder(prisma, order.vendorId, order.id, reason, origin, {
     provider: binding.provider,
     providerReference: binding.providerReference,
   });
@@ -2292,13 +2297,14 @@ export async function cancelUnpaidOrder(
   vendorId: string,
   orderNumber: string,
   reason: string,
+  origin: CancellationOriginValue,
 ): Promise<boolean> {
   const order = await prisma.order.findFirst({
     where: { orderNumber, vendorId },
     select: { id: true },
   });
   if (!order) return false;
-  return releaseOrder(prisma, vendorId, order.id, reason);
+  return releaseOrder(prisma, vendorId, order.id, reason, origin);
 }
 
 /**
@@ -2415,6 +2421,7 @@ export async function cancelConfirmedOrder(
         status: "CANCELLED",
         note: reason,
         createdByUserId: actorUserId,
+        cancellationOrigin: "STAFF", // #1730
         // #1691 — what the customer is told; null leaves the original wording.
         cancellationReason: choices?.reason ?? null,
         cancellationMessage: choices?.message ?? null,

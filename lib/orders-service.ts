@@ -27,6 +27,7 @@ import {
 import { recordPaymentBindingRefusal } from "@/lib/repositories/payment-binding-refusals";
 import { markPaymentSweepDue } from "@/lib/job-signals";
 import { CHECKOUT_SWEEP_DELAY_MS } from "@/lib/job-signal-keys";
+import type { CancellationOriginValue } from "@/lib/cancellation-origin";
 
 /**
  * Request-scoped wrappers around `lib/repositories/orders.ts` (#252) — the three
@@ -178,8 +179,13 @@ export function getWebhookOrderService() {
       if (!result.ok) await persistRefusal(orderNumber, result.reason, binding);
       return result;
     },
-    fail: async (orderNumber: string, binding: PaymentBinding, reason: string) => {
-      const result = await failPayment(prisma, orderNumber, binding, reason);
+    fail: async (
+      orderNumber: string,
+      binding: PaymentBinding,
+      reason: string,
+      origin: CancellationOriginValue,
+    ) => {
+      const result = await failPayment(prisma, orderNumber, binding, reason, origin);
       if (!result.ok) await persistRefusal(orderNumber, result.reason, binding);
       return result;
     },
@@ -230,8 +236,8 @@ export function getOrderRecoveryService() {
  */
 export function getOrderCancelService() {
   return {
-    cancelUnpaid: async (orderNumber: string, reason: string) =>
-      cancelUnpaidOrder(getPrismaWs(), await getCurrentVendorId(), orderNumber, reason),
+    cancelUnpaid: async (orderNumber: string, reason: string, origin: CancellationOriginValue) =>
+      cancelUnpaidOrder(getPrismaWs(), await getCurrentVendorId(), orderNumber, reason, origin),
 
     /**
      * Staff cancellation of a PAID order (P9.2, #696). Takes an order NUMBER

@@ -971,6 +971,15 @@ describe("placeOrder — payment provider unavailable", () => {
     await expect(placeOrder(fakePrisma(), VENDOR, input())).rejects.toBeInstanceOf(CheckoutError);
   });
 
+  it("records the cancellation as PROVIDER_UNAVAILABLE (#1730)", async () => {
+    failProvider();
+    await expect(placeOrder(fakePrisma(), VENDOR, input())).rejects.toThrow();
+
+    expect(created.statusEvent).toContainEqual(
+      expect.objectContaining({ status: "CANCELLED", cancellationOrigin: "PROVIDER_UNAVAILABLE" }),
+    );
+  });
+
   it("puts the cart back, matching the cancelled order's lines exactly", async () => {
     failProvider();
     await expect(placeOrder(fakePrisma(), VENDOR, input())).rejects.toThrow();
@@ -1222,6 +1231,7 @@ describe("confirmPayment / failPayment — payment binding (#429)", () => {
   function fakeDb(row: Row) {
     const writes: string[] = [];
     const inventoryIncrements: unknown[] = [];
+    const events: Record<string, unknown>[] = [];
 
     // findOrderForWebhook's wide select and classifyNoMatch's `{ status: true }`
     // are both served by this one object: the first destructures it, the second
@@ -1268,8 +1278,9 @@ describe("confirmPayment / failPayment — payment binding (#429)", () => {
         },
       },
       orderStatusEvent: {
-        create: async () => {
+        create: async (args: { data: Record<string, unknown> }) => {
           writes.push("statusEvent");
+          events.push(args.data);
           return {};
         },
       },
@@ -1292,7 +1303,7 @@ describe("confirmPayment / failPayment — payment binding (#429)", () => {
       $transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
     } as never;
 
-    return { prisma, writes, inventoryIncrements, row };
+    return { prisma, writes, inventoryIncrements, row, events };
   }
 
   const paid = (): Row => ({
@@ -1419,10 +1430,34 @@ describe("confirmPayment / failPayment — payment binding (#429)", () => {
   describe("failPayment", () => {
     it("cancels and releases stock when the event corresponds to the stored payment", async () => {
       const db = fakeDb(paid());
-      await expect(failPayment(db.prisma, ORDER_NUMBER, binding(), "expired")).resolves.toEqual({
+      await expect(
+        failPayment(db.prisma, ORDER_NUMBER, binding(), "expired", "PAYMENT_EXPIRED"),
+      ).resolves.toEqual({
         ok: true,
       });
       expect(db.row.status).toBe("CANCELLED");
+      expect(db.inventoryIncrements).toHaveLength(1);
+    });
+
+    // #1730 R4/R12 — the origin lands on the CANCELLED event, and a duplicate or delayed event
+    // (Stripe retries; the sweep can race the webhook) releases nothing a second time.
+    it("records the origin once and releases stock once when the same release runs twice", async () => {
+      const db = fakeDb(paid());
+      await failPayment(db.prisma, ORDER_NUMBER, binding(), "expired", "PAYMENT_EXPIRED");
+      const second = await failPayment(
+        db.prisma,
+        ORDER_NUMBER,
+        binding(),
+        "expired",
+        "PAYMENT_EXPIRED",
+      );
+
+      expect(second).toEqual({ ok: false, reason: "already-processed" });
+      expect(db.events).toHaveLength(1);
+      expect(db.events[0]).toMatchObject({
+        status: "CANCELLED",
+        cancellationOrigin: "PAYMENT_EXPIRED",
+      });
       expect(db.inventoryIncrements).toHaveLength(1);
     });
 
@@ -1434,6 +1469,7 @@ describe("confirmPayment / failPayment — payment binding (#429)", () => {
           ORDER_NUMBER,
           binding({ providerReference: "cs_test_other" }),
           "expired",
+          "PAYMENT_EXPIRED",
         ),
       ).resolves.toEqual({ ok: false, reason: "binding-mismatch" });
       expect(db.row.status).toBe("PENDING_PAYMENT");
@@ -1451,6 +1487,7 @@ describe("confirmPayment / failPayment — payment binding (#429)", () => {
           ORDER_NUMBER,
           binding({ amountPence: null, currency: null }),
           "expired",
+          "PAYMENT_EXPIRED",
         ),
       ).resolves.toEqual({ ok: true });
       expect(db.row.status).toBe("CANCELLED");
@@ -1632,6 +1669,14 @@ describe("cancelConfirmedOrder (#696)", () => {
 
     return { db: db as unknown as Parameters<typeof cancelConfirmedOrder>[0], calls };
   }
+
+  it("records the STAFF origin on the CANCELLED event (#1730 R5)", async () => {
+    const { db, calls } = fakeCancelDb({ updatedCount: 1 });
+
+    await cancelConfirmedOrder(db, VENDOR, ORDER_ID, "customer called", "staff-1");
+
+    expect(calls.events[0]).toMatchObject({ status: "CANCELLED", cancellationOrigin: "STAFF" });
+  });
 
   it("guards on the two cancellable statuses and the vendor", async () => {
     const { db, calls } = fakeCancelDb({ updatedCount: 1 });
