@@ -107,7 +107,11 @@ export const MODEL_PLAN: Record<string, { class: Classification; reason: string 
   VendorEnquiryReply: { class: "skip", reason: "replies to a skipped VendorEnquiry (#1482)" },
   DbWarmupConfig: { class: "skip", reason: "per-environment warm-up setting (#1491)" },
   NotificationOutbox: { class: "skip", reason: "failed-send queue, deleted once sent (#1435)" },
-  AbandonedCheckoutReminder: { class: "skip", reason: "reminders for skipped test orders (#1554)" },
+  CheckoutRecovery: { class: "skip", reason: "recoveries of skipped test orders (#1732)" },
+  CheckoutRecoveryEvent: {
+    class: "skip",
+    reason: "recovery audit log of skipped test orders (#1732)",
+  },
   EmailTemplateOverride: { class: "copy", reason: "store email wording (#1564)" },
   // #1578 — a store's import settings travel; import runs are history of the old database.
   StockImportSettings: { class: "copy", reason: "store stock-import settings (#1578)" },

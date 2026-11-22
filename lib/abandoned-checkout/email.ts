@@ -32,19 +32,34 @@ import {
 
 export interface RecoveryCode {
   code: string;
-  kind: "PERCENTAGE" | "FIXED_AMOUNT";
+  kind: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_DELIVERY";
   /** Basis points for PERCENTAGE (1000 = 10%), pence for FIXED_AMOUNT. */
   value: number;
   minSubtotalPence: number;
   endsAt: Date | null;
 }
 
+export interface RecoveryEmailItem {
+  productName: string;
+  quantity: number;
+  /** #1733 — the line at TODAY's price (quantity × current unit price). */
+  lineTotalPence: number;
+  /** #1733 — absolute https product image URL, or null. */
+  imageUrl?: string | null;
+  /** #1733 — false when the product can no longer be bought; shown, but not counted in the total. */
+  available?: boolean;
+}
+
+/** #1733 R16 — always present, never editable: the customer was not charged. */
+export const NOT_CHARGED_SENTENCE = "Your payment wasn't completed, so you haven't been charged.";
+
 export interface RecoveryEmailInput {
   storeName: string;
   firstName: string | null;
-  items: readonly { productName: string; quantity: number; lineTotalPence: number }[];
+  items: readonly RecoveryEmailItem[];
+  /** #1733 — the basket total at today's prices, available lines only. */
   totalPence: number;
-  /** Where "Return to your basket" goes (the order page, with its Reorder button), or null. */
+  /** #1733 — the restore link (`/recover/<token>`); was the order page before. Null hides the button. */
   orderHref: string | null;
   /** Where the customer changes their marketing choice, or null without a canonical host. */
   preferencesHref: string | null;
@@ -57,6 +72,7 @@ export interface RecoveryEmailInput {
 export const MAX_ITEMS_SHOWN = 6;
 
 export function codeBenefit(code: RecoveryCode): string {
+  if (code.kind === "FREE_DELIVERY") return "free delivery";
   if (code.kind === "PERCENTAGE") {
     const percent = code.value / 100;
     return `${Number.isInteger(percent) ? percent : percent.toFixed(1)}% off`;
@@ -92,11 +108,15 @@ export function buildRecoveryEmail(input: RecoveryEmailInput): RenderedEmail {
   const more = input.items.length - shown.length;
   const rows = shown.map((item) => ({
     label: `${item.quantity} × ${item.productName}`,
-    amount: formatPrice(item.lineTotalPence),
+    amount: item.available === false ? "" : formatPrice(item.lineTotalPence),
+    note: item.available === false ? "No longer available" : null,
+    imageUrl: item.imageUrl ?? null,
   }));
-  if (more > 0) rows.push({ label: `and ${more} more`, amount: "" });
+  if (more > 0) rows.push({ label: `and ${more} more`, amount: "", note: null, imageUrl: null });
 
   const blocks: EmailBlock[] = [
+    // #1733 R16 — locked: says plainly that nothing was taken, whatever the template's wording.
+    { kind: "paragraph", text: NOT_CHARGED_SENTENCE },
     {
       kind: "items",
       rows,

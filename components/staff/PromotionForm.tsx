@@ -40,7 +40,7 @@ export function PromotionForm({
     id: string;
     code: string;
     description: string | null;
-    kind?: "PERCENTAGE" | "FIXED_AMOUNT";
+    kind?: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_DELIVERY";
     value?: number;
   }[];
   currentImageUrl?: string | null;
@@ -579,7 +579,7 @@ export function PromotionForm({
                       <option key={d.id} value={d.id}>
                         {d.code}
                         {d.kind && typeof d.value === "number"
-                          ? ` — ${d.kind === "PERCENTAGE" ? `${d.value / 100}% off` : `£${(d.value / 100).toFixed(2)} off`}`
+                          ? ` — ${d.kind === "FREE_DELIVERY" ? "Free delivery" : d.kind === "PERCENTAGE" ? `${d.value / 100}% off` : `£${(d.value / 100).toFixed(2)} off`}`
                           : ""}
                         {d.description ? ` (${d.description})` : ""}
                       </option>

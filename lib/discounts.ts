@@ -10,7 +10,7 @@
 
 import { MIN_PAYABLE_PENCE } from "@/lib/loyalty";
 
-export type DiscountKind = "PERCENTAGE" | "FIXED_AMOUNT";
+export type DiscountKind = "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_DELIVERY";
 
 /**
  * Why a code did not apply. Every one of these becomes a message the shopper
@@ -50,7 +50,10 @@ export type CodeRefusalReason =
   /**
    * Promotion scoped to a department/product where the cart contains no eligible items.
    */
-  | "NO_ELIGIBLE_ITEMS";
+  | "NO_ELIGIBLE_ITEMS"
+  // #1733 — a recovery incentive locked to one customer, and free delivery on an order with none.
+  | "RESTRICTED_TO_ANOTHER_CUSTOMER"
+  | "DELIVERY_ONLY";
 
 export type CodeEvaluation =
   { ok: true; discountPence: number } | { ok: false; reason: CodeRefusalReason };
@@ -78,7 +81,14 @@ export interface CodeValueInput {
  * Floors rather than rounds: a rounded percentage can hand out a penny the
  * arithmetic didn't earn, and every other money rule in this codebase floors.
  */
-export function computeCodeDiscountPence({ kind, value, subtotalPence }: CodeValueInput): number {
+export function computeCodeDiscountPence({
+  kind,
+  value,
+  subtotalPence,
+  deliveryFeePence = 0,
+}: CodeValueInput & { deliveryFeePence?: number }): number {
+  // #1733 — free delivery is worth exactly the delivery fee; `value` is unused.
+  if (kind === "FREE_DELIVERY") return Math.max(0, deliveryFeePence);
   if (kind === "PERCENTAGE") {
     return Math.floor((Math.max(0, subtotalPence) * Math.max(0, value)) / 10000);
   }
@@ -98,6 +108,8 @@ export interface EvaluateCodeInput {
   /** null = no per-customer cap, which is also what makes a code guest-usable. */
   maxPerCustomer: number | null;
   isActive: boolean;
+  /** #1733 — set on a customer-locked code (a checkout-recovery incentive); absent = anyone. */
+  restrictedToUserId?: string | null;
 
   // ---- this particular checkout
   subtotalPence: number;
@@ -141,6 +153,11 @@ export function evaluateCode(input: EvaluateCodeInput): CodeEvaluation {
   if (input.remainingRedemptions !== null && input.remainingRedemptions <= 0) {
     return refuse("USAGE_LIMIT_REACHED");
   }
+  // #1733 — a customer-locked code: only its customer, and never a guest.
+  if (input.restrictedToUserId) {
+    if (input.userId === null) return refuse("SIGN_IN_REQUIRED");
+    if (input.userId !== input.restrictedToUserId) return refuse("RESTRICTED_TO_ANOTHER_CUSTOMER");
+  }
   // A per-customer cap is uncountable without an identity, so it implies sign-in.
   // A guest's cart is identified by P3a's guestToken, which is a cart, not a person.
   if (input.maxPerCustomer !== null && input.userId === null) {
@@ -160,6 +177,16 @@ export function evaluateCode(input: EvaluateCodeInput): CodeEvaluation {
       : input.subtotalPence;
 
   if (eligibleBase < input.minSubtotalPence) return refuse("BELOW_MINIMUM");
+
+  // #1733 — free delivery: worth the delivery fee, never goods, and refused when there is no fee
+  // (a collection order, or delivery already free). Still bounded by the minimum-payable headroom.
+  if (input.kind === "FREE_DELIVERY") {
+    if (input.deliveryFeePence <= 0) return refuse("DELIVERY_ONLY");
+    const deliveryHeadroom = input.subtotalPence + input.deliveryFeePence - MIN_PAYABLE_PENCE;
+    const freeDeliveryPence = Math.min(input.deliveryFeePence, Math.max(0, deliveryHeadroom));
+    if (freeDeliveryPence <= 0) return refuse("NO_HEADROOM");
+    return { ok: true, discountPence: freeDeliveryPence };
+  }
 
   const face = computeCodeDiscountPence({
     kind: input.kind,
@@ -213,5 +240,9 @@ export function refusalMessage(reason: CodeRefusalReason): string {
       return "Too many code attempts. Please try again in a minute.";
     case "NO_ELIGIBLE_ITEMS":
       return "This discount code only applies to selected department products.";
+    case "RESTRICTED_TO_ANOTHER_CUSTOMER":
+      return "That discount code belongs to another customer's account.";
+    case "DELIVERY_ONLY":
+      return "That free delivery code only applies to orders with a delivery charge.";
   }
 }

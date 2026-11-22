@@ -142,7 +142,10 @@ export default async function StaffOrdersPage({
           <input type="checkbox" name="unpaid" value="1" defaultChecked={query.includeUnpaid} />
           Show unpaid checkouts
           <span className="text-xs text-primary-muted">
-            (cancelled before payment — nothing was charged)
+            (cancelled before payment — nothing was charged) ·{" "}
+            <Link href="/staff/abandoned-checkouts" className="underline">
+              Recover them
+            </Link>
           </span>
         </label>
       </form>

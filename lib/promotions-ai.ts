@@ -32,7 +32,7 @@ export interface PromotionAiInput {
     multiBuyQuantity?: number | null;
     multiBuyPricePence?: number | null;
     multiBuySavingsPence?: number | null;
-    discountKind?: "PERCENTAGE" | "FIXED_AMOUNT";
+    discountKind?: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_DELIVERY";
     discountValue?: number;
     bundleItems?: Array<{ name: string; quantity: number; pricePence: number }>;
   } | null;

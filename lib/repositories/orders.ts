@@ -58,6 +58,10 @@ import { slotLabel } from "@/lib/order-notifications/slot";
 import { isSlotBookable } from "@/lib/slot-cutoff";
 import { CLOSED_DAY_MESSAGE, effectiveDayHours, slotFitsOverride } from "@/lib/slot-closure";
 import {
+  markRecoveredInTransaction,
+  type RecoveryTx,
+} from "@/lib/repositories/abandoned-checkouts";
+import {
   UNPAID_CHECKOUT_STATUS_LABEL,
   type CancellationOriginValue,
 } from "@/lib/cancellation-origin";
@@ -2328,6 +2332,17 @@ export async function confirmPayment(
     );
     if (referrerUserId) {
       await awardReferralBonusPoints(tx, order.vendorId, referrerUserId, REFERRAL_REWARD_POINTS);
+    }
+
+    // #1733 R22 — "Recovered": the paying customer's recent recovery email led here. Inside this
+    // transaction and behind the count===0 guard above, so a duplicate or delayed webhook (which
+    // confirms nothing) recovers nothing. The `in` guard keeps older test doubles working.
+    if ("checkoutRecovery" in tx && tx.checkoutRecovery) {
+      await markRecoveredInTransaction(tx as unknown as RecoveryTx, order.vendorId, {
+        orderId: order.id,
+        userId: order.userId,
+        now: new Date(),
+      });
     }
 
     return { ok: true as const };
