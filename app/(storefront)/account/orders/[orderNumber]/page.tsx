@@ -1,3 +1,4 @@
+import { UnpaidCheckoutNotice } from "@/components/orders/UnpaidCheckoutNotice";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -104,7 +105,7 @@ export default async function AccountOrderPage({
           <h1 className="text-xl font-bold text-primary">Order {order.orderNumber}</h1>
           <p className="text-sm text-primary-muted">Placed {formatOrderDate(order.createdAt)}</p>
         </div>
-        <OrderStatusBadge status={order.status} />
+        <OrderStatusBadge status={order.status} neverPaid={order.neverPaid} />
       </div>
 
       {/* #1589 — "Awaiting payment" always has a next step: reopen the order's own Stripe session,
@@ -124,14 +125,18 @@ export default async function AccountOrderPage({
       )}
 
       {/* #1435 R21/R22 — every step of the order's path, kept current while the tab is open. */}
-      <OrderProgressTracker
-        orderNumber={order.orderNumber}
-        status={order.status}
-        fulfilmentMethod={order.fulfilmentMethod}
-        timeline={order.timeline}
-        slotLabel={order.slotLabel}
-        cancellation={order.cancellation}
-      />
+      {order.neverPaid ? (
+        <UnpaidCheckoutNotice />
+      ) : (
+        <OrderProgressTracker
+          orderNumber={order.orderNumber}
+          status={order.status}
+          fulfilmentMethod={order.fulfilmentMethod}
+          timeline={order.timeline}
+          slotLabel={order.slotLabel}
+          cancellation={order.cancellation}
+        />
+      )}
       <LiveRefresh active={!isFinalStatus(order.status)} />
 
       <OrderPointsNote

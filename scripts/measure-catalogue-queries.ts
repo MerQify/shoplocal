@@ -249,7 +249,7 @@ async function main() {
     await time("staff order list, no search (listOrdersForStaff)", samples, () =>
       listOrdersForStaff(prisma as never, aheed.id, {
         take: 20,
-        filter: { statuses: [], search: null },
+        filter: { statuses: [], search: null, includeUnpaid: false },
       }),
     ),
   );

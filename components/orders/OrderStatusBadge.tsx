@@ -1,3 +1,4 @@
+import { UNPAID_CHECKOUT_STATUS_LABEL } from "@/lib/cancellation-origin";
 import { orderStatusLabel } from "@/lib/order-status";
 
 /**
@@ -14,14 +15,24 @@ const TONE: Record<string, string> = {
 
 const DEFAULT_TONE = "bg-surface-muted text-primary";
 
-export function OrderStatusBadge({ status }: { status: string }) {
+/**
+ * #1730 — `neverPaid` (cancelled, never paid) reads "Payment not completed" in a neutral tone: the
+ * customer never placed a paid order, so it is not shown as a red "Cancelled".
+ */
+export function OrderStatusBadge({
+  status,
+  neverPaid = false,
+}: {
+  status: string;
+  neverPaid?: boolean;
+}) {
   return (
     <span
       className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
-        TONE[status] ?? DEFAULT_TONE
+        neverPaid ? DEFAULT_TONE : (TONE[status] ?? DEFAULT_TONE)
       }`}
     >
-      {orderStatusLabel(status)}
+      {neverPaid ? UNPAID_CHECKOUT_STATUS_LABEL : orderStatusLabel(status)}
     </span>
   );
 }

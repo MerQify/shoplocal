@@ -1,3 +1,4 @@
+import { cancellationOriginLabel } from "@/lib/cancellation-origin";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -48,9 +49,9 @@ const PAGE_SIZE = 20;
 export default async function StaffOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cursor?: string; status?: string; q?: string }>;
+  searchParams: Promise<{ cursor?: string; status?: string; q?: string; unpaid?: string }>;
 }) {
-  const { cursor, status, q } = await searchParams;
+  const { cursor, status, q, unpaid } = await searchParams;
   const auth = await requireVendorRole("STAFF", "ADMIN");
   if (!auth.ok) {
     if (auth.status === 401) redirect("/login");
@@ -63,7 +64,7 @@ export default async function StaffOrdersPage({
     );
   }
 
-  const query = parseStaffOrdersQuery({ status, q });
+  const query = parseStaffOrdersQuery({ status, q, unpaid });
   const [{ items, nextCursor }, confirmedOrderNumbers] = await Promise.all([
     getOrderRepository().listForStaff({
       take: PAGE_SIZE,
@@ -135,6 +136,15 @@ export default async function StaffOrdersPage({
           <Icon name="search" className="h-4 w-4" />
           Apply
         </button>
+
+        {/* #1730 — never-paid checkouts are hidden unless asked for, even under "Cancelled". */}
+        <label className="flex w-full items-center gap-2 text-sm text-primary">
+          <input type="checkbox" name="unpaid" value="1" defaultChecked={query.includeUnpaid} />
+          Show unpaid checkouts
+          <span className="text-xs text-primary-muted">
+            (cancelled before payment — nothing was charged)
+          </span>
+        </label>
       </form>
 
       {items.length === 0 ? (
@@ -200,6 +210,12 @@ export default async function StaffOrdersPage({
                     )}{" "}
                     <OrderStatusBadge status={order.status} />
                   </div>
+                  {order.status === "CANCELLED" && (
+                    <p className="mb-2 text-xs font-bold text-primary-muted">
+                      {cancellationOriginLabel(order.cancellationOrigin)}
+                      {order.neverPaid && " · not paid"}
+                    </p>
+                  )}
 
                   <p className="mb-2 truncate text-sm text-primary-muted">
                     {order.previewItems
