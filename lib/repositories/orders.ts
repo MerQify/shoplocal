@@ -25,6 +25,7 @@ import {
   STAFF_QUEUE_STATUSES,
   type OrderStatusValue,
   type StaffTimelineEntry,
+  type StatusEventInput,
   type TimelineEntry,
 } from "@/lib/order-status";
 import { Prisma } from "@prisma/client";
@@ -56,6 +57,14 @@ import { NOTE_ACCEPTANCE_SELECT, productAcceptsNote } from "@/lib/custom-note";
 import { slotLabel } from "@/lib/order-notifications/slot";
 import { isSlotBookable } from "@/lib/slot-cutoff";
 import { CLOSED_DAY_MESSAGE, effectiveDayHours, slotFitsOverride } from "@/lib/slot-closure";
+import {
+  markRecoveredInTransaction,
+  type RecoveryTx,
+} from "@/lib/repositories/abandoned-checkouts";
+import {
+  UNPAID_CHECKOUT_STATUS_LABEL,
+  type CancellationOriginValue,
+} from "@/lib/cancellation-origin";
 
 /**
  * Order read/write path (P3b, #96) — the ONLY DB access for orders. Pages,
@@ -768,6 +777,7 @@ export async function placeOrder(
       vendorId,
       created.orderId,
       "Payment provider unavailable; order cancelled and stock released.",
+      "PROVIDER_UNAVAILABLE",
     );
     // The message below tells the shopper to try again, so the basket they were
     // about to buy has to still exist (P7.5a, #234). The transaction above
@@ -809,6 +819,8 @@ async function releaseOrder(
   vendorId: string,
   orderId: string,
   note: string,
+  // #1730 — required, so no future release path can leave the reason unrecorded.
+  origin: CancellationOriginValue,
   binding?: { provider: string; providerReference: string },
 ): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
@@ -874,7 +886,7 @@ async function releaseOrder(
 
     await tx.payment.updateMany({ where: { orderId }, data: { status: "FAILED" } });
     await tx.orderStatusEvent.create({
-      data: { orderId, vendorId, status: "CANCELLED", note },
+      data: { orderId, vendorId, status: "CANCELLED", note, cancellationOrigin: origin },
     });
 
     // Give back any points this checkout was holding. Only a REDEEM is ever
@@ -998,6 +1010,8 @@ export function toProvenance(row: {
 export interface OrderSummary {
   orderNumber: string;
   status: string;
+  /** #1730 — cancelled and never paid; pages word it "Payment not completed", not "Cancelled". */
+  neverPaid: boolean;
   fulfilmentMethod: "DELIVERY" | "COLLECTION";
   createdAt: Date;
   subtotalPence: number;
@@ -1076,6 +1090,10 @@ export interface OrderListItem {
    * cannot be missed by someone packing from the list; the note text stays on the detail page.
    */
   hasItemNotes: boolean;
+  /** #1730 — cancelled and never paid (`isUnpaidCheckout`). */
+  neverPaid: boolean;
+  /** #1730 — the latest CANCELLED event's origin; null when none is recorded or not cancelled. */
+  cancellationOrigin: string | null;
 }
 
 export interface OrderListPage {
@@ -1104,6 +1122,8 @@ export interface OrderDetail extends OrderSummary {
 export interface StaffOrderDetail extends OrderSummary {
   buyerEmail: string | null;
   timeline: StaffTimelineEntry[];
+  /** #1730 — the latest CANCELLED event's origin; null when none is recorded or not cancelled. */
+  cancellationOrigin: string | null;
 }
 
 /** Filter for the staff dashboard's list (P6a, #158). */
@@ -1112,9 +1132,60 @@ export interface StaffOrderFilter {
   statuses: readonly OrderStatusValue[];
   /** Case-insensitive substring over order number and buyer email; null = no search. */
   search: string | null;
+  /** #1730 — include unpaid checkouts (`UNPAID_CHECKOUT_WHERE`); hidden by default. */
+  includeUnpaid: boolean;
 }
 
 const ORDER_PREVIEW_ITEMS = 3;
+
+/**
+ * #1730 — an UNPAID CHECKOUT: an order that was cancelled and never paid for. The one definition
+ * every list uses (`listOrdersForUser`, `staffOrderWhere`), alongside `isUnpaidCheckout` for rows
+ * already loaded.
+ *
+ * Read from `Payment`, a fact, not from `OrderStatusEvent.cancellationOrigin`, a reason: it works for
+ * historical orders whose reason was never recorded, and it cannot hide an order the customer paid
+ * for. `releaseOrder` only cancels `PENDING_PAYMENT` and marks the payment FAILED; the staff cancel
+ * (`cancelConfirmedOrder`) leaves a SUCCEEDED payment alone, and a refund makes it REFUNDED.
+ * An order with no `Payment` row at all (provider unreachable at placement) matches too.
+ */
+const PAID_PAYMENT_STATUSES: ("SUCCEEDED" | "REFUNDED")[] = ["SUCCEEDED", "REFUNDED"];
+
+export const UNPAID_CHECKOUT_WHERE = {
+  status: "CANCELLED",
+  NOT: { payment: { is: { status: { in: PAID_PAYMENT_STATUSES } } } },
+} satisfies Prisma.OrderWhereInput;
+
+export function isUnpaidCheckout(
+  status: string,
+  paymentStatus: string | null | undefined,
+): boolean {
+  return status === "CANCELLED" && !PAID_PAYMENT_STATUSES.includes(paymentStatus as "SUCCEEDED");
+}
+
+/** The latest CANCELLED event's origin, or null (none recorded, or not cancelled). */
+function latestCancellationOrigin(
+  events: { status: string; createdAt: Date; cancellationOrigin: string | null }[],
+): string | null {
+  let latest: { createdAt: Date; cancellationOrigin: string | null } | null = null;
+  for (const event of events) {
+    if (event.status !== "CANCELLED") continue;
+    if (!latest || event.createdAt > latest.createdAt) latest = event;
+  }
+  return latest?.cancellationOrigin ?? null;
+}
+
+/**
+ * #1730 R8 — a customer never sees "Cancelled" for a checkout they never paid for: the CANCELLED
+ * timeline entry reads "Payment not completed" instead. Paid-then-cancelled orders are untouched.
+ */
+function customerTimeline(events: StatusEventInput[], neverPaid: boolean): TimelineEntry[] {
+  const timeline = buildTimeline(events);
+  if (!neverPaid) return timeline;
+  return timeline.map((entry) =>
+    entry.status === "CANCELLED" ? { ...entry, label: UNPAID_CHECKOUT_STATUS_LABEL } : entry,
+  );
+}
 
 /**
  * The columns both order lists need. Shared so the customer history (P4a) and
@@ -1135,6 +1206,12 @@ const ORDER_LIST_SELECT = {
     select: { productName: true, quantity: true, customNote: true },
     orderBy: { productName: "asc" },
   },
+  // #1730 — what `neverPaid` and the staff origin label are derived from.
+  payment: { select: { status: true } },
+  statusEvents: {
+    where: { status: "CANCELLED" },
+    select: { status: true, createdAt: true, cancellationOrigin: true },
+  },
 } as const;
 
 type OrderListRow = {
@@ -1147,6 +1224,8 @@ type OrderListRow = {
   isExpress: boolean;
   targetFulfilmentTime: Date | null;
   items: { productName: string; quantity: number; customNote: string | null }[];
+  payment: { status: string } | null;
+  statusEvents: { status: string; createdAt: Date; cancellationOrigin: string | null }[];
 };
 
 /**
@@ -1171,6 +1250,8 @@ function toOrderListPage(rows: OrderListRow[], take: number): OrderListPage {
       isExpress: order.isExpress,
       targetFulfilmentTime: order.targetFulfilmentTime,
       hasItemNotes: order.items.some((item) => item.customNote !== null),
+      neverPaid: isUnpaidCheckout(order.status, order.payment?.status),
+      cancellationOrigin: latestCancellationOrigin(order.statusEvents),
     })),
     nextCursor: hasMore ? page[page.length - 1].id : null,
   };
@@ -1192,6 +1273,8 @@ function staffOrderWhere(vendorId: string, filter: StaffOrderFilter) {
   return {
     vendorId,
     status: { in: [...filter.statuses] },
+    // #1730 — never-paid checkouts stay out of the queue unless asked for.
+    ...(filter.includeUnpaid ? {} : { NOT: UNPAID_CHECKOUT_WHERE }),
     ...(search
       ? {
           OR: [
@@ -1333,6 +1416,7 @@ export async function findOrderForViewer(
       },
       ...ORDER_PROVENANCE_SELECT,
       ...ORDER_TRACKER_SELECT,
+      payment: { select: { status: true } }, // #1730
     },
   });
   if (!order) return null;
@@ -1373,14 +1457,17 @@ export async function findOrderForViewer(
     fulfilmentDate,
     fulfilmentSlot,
     statusEvents,
+    payment,
     ...summary
   } = order;
+  const neverPaid = isUnpaidCheckout(summary.status, payment?.status);
   return {
     ...summary,
     ...toProvenance({ discountUse, loyaltyEntries }),
+    neverPaid,
     hasAccount: ownerId !== null,
     customerEmail: guestEmail ?? user?.email ?? null,
-    timeline: buildTimeline(statusEvents),
+    timeline: customerTimeline(statusEvents, neverPaid),
     cancellation: latestCancellationNotice(statusEvents),
     slotLabel: slotLabel(fulfilmentDate, fulfilmentSlot),
   };
@@ -1400,12 +1487,14 @@ export async function listOrdersForUser(
   // ONE query for the page: items arrive via a nested select, so ten orders
   // are ten rows of one result, not eleven round trips.
   //
-  // Deliberately NOT filtered by status. An abandoned PENDING_PAYMENT order
-  // and a CANCELLED one are both visible history — hiding them would leave a
-  // shopper wondering where their attempted order went.
+  // #1730 — unpaid checkouts are hidden. This reverses the earlier decision to show every
+  // attempted order: the owner judged that a checkout the shopper never paid for (pressed back,
+  // changed the basket, let the payment link expire) is not an order they cancelled, and listing
+  // it as "Cancelled" misled them. PENDING_PAYMENT orders stay visible — the shopper may still be
+  // paying — and so does every paid order, including one staff later cancelled.
   const rows = await runKeysetPage(keysetCursorArgs(cursor), (pageArgs) =>
     prisma.order.findMany({
-      where: { vendorId, userId },
+      where: { vendorId, userId, NOT: UNPAID_CHECKOUT_WHERE },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: take + 1,
       ...pageArgs,
@@ -1462,6 +1551,7 @@ export async function findOrderForUser(
       },
       ...ORDER_PROVENANCE_SELECT,
       ...ORDER_TRACKER_SELECT,
+      payment: { select: { status: true } }, // #1730
     },
   });
   if (!order) return null;
@@ -1473,15 +1563,18 @@ export async function findOrderForUser(
     user,
     fulfilmentDate,
     fulfilmentSlot,
+    payment,
     ...summary
   } = order;
+  const neverPaid = isUnpaidCheckout(summary.status, payment?.status);
   return {
     ...summary,
     ...toProvenance({ discountUse, loyaltyEntries }),
+    neverPaid,
     // `userId` is in this method's WHERE, so a row here is always a member's.
     hasAccount: true,
     customerEmail: user?.email ?? null,
-    timeline: buildTimeline(statusEvents),
+    timeline: customerTimeline(statusEvents, neverPaid),
     cancellation: latestCancellationNotice(statusEvents),
     slotLabel: slotLabel(fulfilmentDate, fulfilmentSlot),
   };
@@ -1591,18 +1684,31 @@ export async function findOrderForStaff(
           createdAt: true,
           note: true,
           createdBy: { select: { name: true } },
+          cancellationOrigin: true, // #1730
         },
       },
       ...ORDER_PROVENANCE_SELECT,
+      payment: { select: { status: true } }, // #1730
     },
   });
   if (!order) return null;
 
-  const { statusEvents, guestEmail, user, userId, discountUse, loyaltyEntries, ...summary } = order;
+  const {
+    statusEvents,
+    guestEmail,
+    user,
+    userId,
+    discountUse,
+    loyaltyEntries,
+    payment,
+    ...summary
+  } = order;
   const buyerEmail = guestEmail ?? user?.email ?? null;
   return {
     ...summary,
     ...toProvenance({ discountUse, loyaltyEntries }),
+    neverPaid: isUnpaidCheckout(summary.status, payment?.status),
+    cancellationOrigin: latestCancellationOrigin(statusEvents),
     hasAccount: userId !== null,
     customerEmail: buyerEmail,
     buyerEmail,
@@ -2228,6 +2334,17 @@ export async function confirmPayment(
       await awardReferralBonusPoints(tx, order.vendorId, referrerUserId, REFERRAL_REWARD_POINTS);
     }
 
+    // #1733 R22 — "Recovered": the paying customer's recent recovery email led here. Inside this
+    // transaction and behind the count===0 guard above, so a duplicate or delayed webhook (which
+    // confirms nothing) recovers nothing. The `in` guard keeps older test doubles working.
+    if ("checkoutRecovery" in tx && tx.checkoutRecovery) {
+      await markRecoveredInTransaction(tx as unknown as RecoveryTx, order.vendorId, {
+        orderId: order.id,
+        userId: order.userId,
+        now: new Date(),
+      });
+    }
+
     return { ok: true as const };
   });
 }
@@ -2254,13 +2371,14 @@ export async function failPayment(
   orderNumber: string,
   binding: PaymentBinding,
   reason: string,
+  origin: CancellationOriginValue,
 ): Promise<FailPaymentResult> {
   if (binding.providerReference === null) return { ok: false, reason: "unbindable" };
 
   const order = await findOrderForWebhook(prisma, orderNumber);
   if (!order) return { ok: false, reason: "not-found" };
 
-  const released = await releaseOrder(prisma, order.vendorId, order.id, reason, {
+  const released = await releaseOrder(prisma, order.vendorId, order.id, reason, origin, {
     provider: binding.provider,
     providerReference: binding.providerReference,
   });
@@ -2292,13 +2410,14 @@ export async function cancelUnpaidOrder(
   vendorId: string,
   orderNumber: string,
   reason: string,
+  origin: CancellationOriginValue,
 ): Promise<boolean> {
   const order = await prisma.order.findFirst({
     where: { orderNumber, vendorId },
     select: { id: true },
   });
   if (!order) return false;
-  return releaseOrder(prisma, vendorId, order.id, reason);
+  return releaseOrder(prisma, vendorId, order.id, reason, origin);
 }
 
 /**
@@ -2415,6 +2534,7 @@ export async function cancelConfirmedOrder(
         status: "CANCELLED",
         note: reason,
         createdByUserId: actorUserId,
+        cancellationOrigin: "STAFF", // #1730
         // #1691 — what the customer is told; null leaves the original wording.
         cancellationReason: choices?.reason ?? null,
         cancellationMessage: choices?.message ?? null,
@@ -2465,6 +2585,8 @@ export interface GuestLookupOrder {
   timeline: TimelineEntry[];
   /** #1691 — as `OrderDetail.cancellation`. */
   cancellation: CancellationNotice | null;
+  /** #1730 — as `OrderSummary.neverPaid`. */
+  neverPaid: boolean;
 }
 
 /**
@@ -2495,15 +2617,19 @@ export async function findOrderForGuestLookup(
       items: { select: { productName: true, quantity: true, lineTotalPence: true } },
       fulfilmentMethod: true,
       ...ORDER_TRACKER_SELECT,
+      payment: { select: { status: true } }, // #1730
     },
   });
   if (!order) return null;
-  const { fulfilmentMethod, fulfilmentDate, fulfilmentSlot, statusEvents, ...rest } = order;
+  const { fulfilmentMethod, fulfilmentDate, fulfilmentSlot, statusEvents, payment, ...rest } =
+    order;
+  const neverPaid = isUnpaidCheckout(rest.status, payment?.status);
   return {
     ...rest,
+    neverPaid,
     fulfilmentMethod: fulfilmentMethod as "DELIVERY" | "COLLECTION",
     slotLabel: slotLabel(fulfilmentDate, fulfilmentSlot),
-    timeline: buildTimeline(statusEvents),
+    timeline: customerTimeline(statusEvents, neverPaid),
     cancellation: latestCancellationNotice(statusEvents),
   };
 }

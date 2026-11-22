@@ -24,7 +24,7 @@ export interface DiscountForExport {
   id: string;
   code: string;
   description: string | null;
-  kind: "PERCENTAGE" | "FIXED_AMOUNT";
+  kind: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_DELIVERY";
   value: number;
   minSubtotalPence: number;
   startsAt: Date | string;
@@ -50,7 +50,11 @@ export function discountToExportRow(d: DiscountForExport): Record<DiscountExport
   }
 
   const valueDisplay =
-    d.kind === "PERCENTAGE" ? `${(d.value / 100).toFixed(0)}%` : formatPenceToGbp(d.value);
+    d.kind === "FREE_DELIVERY"
+      ? "Free delivery"
+      : d.kind === "PERCENTAGE"
+        ? `${(d.value / 100).toFixed(0)}%`
+        : formatPenceToGbp(d.value);
 
   const startsAtStr = d.startsAt
     ? typeof d.startsAt === "string"

@@ -5,36 +5,49 @@ import {
   REMINDER_BLOCK_COPY,
   REMINDER_WINDOW_DAYS,
 } from "@/lib/abandoned-checkout/eligibility";
-import { buildRecoveryEmail, codeBenefit, type RecoveryCode } from "@/lib/abandoned-checkout/email";
 import {
+  buildRecoveryEmail,
+  codeBenefit,
+  NOT_CHARGED_SENTENCE,
+  type RecoveryCode,
+} from "@/lib/abandoned-checkout/email";
+import {
+  basketAtTodaysPrices,
+  PREVIEW_RESTORE_PATH,
+  previewRecoveryEmail,
   REMIND_COPY,
-  sendAbandonedCheckoutReminder,
+  sendRecoveryEmail,
   type RemindDeps,
   type StoreCode,
 } from "@/lib/abandoned-checkout/remind";
 import type { NotificationMessage } from "@/lib/notifications/dispatch";
-import type { AbandonedCheckoutRow } from "@/lib/repositories/abandoned-checkouts";
+import type {
+  AbandonedCheckoutRow,
+  AbandonedLine,
+  RecoveryState,
+} from "@/lib/repositories/abandoned-checkouts";
 
-/** #1554 — abandoned checkouts: eligibility, the recovery email and the "Send reminder" action. */
+/** #1554, extended for #1733 — eligibility, the recovery email, Preview and Send. */
 
 const NOW = new Date("2026-11-13T12:00:00.000Z");
 const DAY = 24 * 60 * 60 * 1000;
 
 const eligible = {
   abandonedAt: new Date(NOW.getTime() - DAY),
-  userId: "user-1",
-  email: "sam@example.com",
+  userId: "user-1" as string | null,
+  email: "sam@example.com" as string | null,
   hasConsent: true,
-  reminderSentAt: null,
+  emailCount: 0,
+  status: null as string | null,
 };
 
-describe("reminderBlock (R2)", () => {
-  it("an opted-in member within the window may be reminded", () => {
+describe("reminderBlock (#1554 R2, #1733 R17/R18)", () => {
+  it("an opted-in member within the window may be emailed", () => {
     expect(reminderBlock(eligible, NOW)).toBeNull();
   });
 
   it.each([
-    ["already sent", { reminderSentAt: NOW }, "already-sent"],
+    ["already sent", { emailCount: 1 }, "already-sent"],
     ["a guest", { userId: null }, "guest"],
     ["no email", { email: null }, "no-email"],
     ["no consent", { hasConsent: false }, "no-consent"],
@@ -43,15 +56,27 @@ describe("reminderBlock (R2)", () => {
       { abandonedAt: new Date(NOW.getTime() - (REMINDER_WINDOW_DAYS + 1) * DAY) },
       "too-old",
     ],
+    ["suppressed", { status: "SUPPRESSED" }, "suppressed"],
+    ["recovered", { status: "RECOVERED" }, "recovered"],
   ] as const)("%s is blocked", (_label, change, reason) => {
     expect(reminderBlock({ ...eligible, ...change }, NOW)).toBe(reason);
     expect(REMINDER_BLOCK_COPY[reason]).toBeTruthy();
   });
 
-  it("already-sent wins over every other reason", () => {
-    expect(reminderBlock({ ...eligible, userId: null, reminderSentAt: NOW }, NOW)).toBe(
-      "already-sent",
+  it("a second send needs explicit confirmation, and still obeys consent", () => {
+    const sent = { ...eligible, emailCount: 1, status: "EMAIL_SENT" };
+    expect(reminderBlock(sent, NOW, { confirmResend: true })).toBeNull();
+    expect(reminderBlock({ ...sent, hasConsent: false }, NOW, { confirmResend: true })).toBe(
+      "no-consent",
     );
+  });
+
+  it("suppressed wins over a confirmed resend", () => {
+    expect(
+      reminderBlock({ ...eligible, emailCount: 1, status: "SUPPRESSED" }, NOW, {
+        confirmResend: true,
+      }),
+    ).toBe("suppressed");
   });
 });
 
@@ -69,30 +94,39 @@ describe("isOfferableCode (R3)", () => {
   });
 });
 
-const items = [
-  { productName: "Basmati <Rice>", quantity: 2, lineTotalPence: 1198 },
-  { productName: "Chana Dal", quantity: 1, lineTotalPence: 249 },
+const emailItems = [
+  {
+    productName: "Basmati <Rice>",
+    quantity: 2,
+    lineTotalPence: 1198,
+    imageUrl: "https://cdn.test/rice.webp",
+    available: true,
+  },
+  { productName: "Chana Dal", quantity: 1, lineTotalPence: 249, available: false },
 ];
 
-describe("buildRecoveryEmail (R4)", () => {
+describe("buildRecoveryEmail (#1554 R4, #1733 R16)", () => {
   const input = {
     storeName: "Corner Shop",
     firstName: "Sam",
-    items,
-    totalPence: 1447,
-    orderHref: "https://s.test/account/orders/SHO-1",
+    items: emailItems,
+    totalPence: 1198,
+    orderHref: "https://s.test/recover/tok",
     preferencesHref: "https://s.test/account/data",
     code: null,
   };
 
-  it("lists the customer's own items, the real total, one button and the opt-out", () => {
-    const { subject, html } = buildRecoveryEmail(input);
+  it("lists items with images, today's total, the not-charged sentence, one button and the opt-out", () => {
+    const { subject, html, text } = buildRecoveryEmail(input);
     expect(subject).toBe("Your basket is waiting for you");
     expect(html).toContain("Hi Sam,");
     expect(html).toContain("Basmati &lt;Rice&gt;");
-    expect(html).toContain("£14.47");
+    expect(html).toContain('src="https://cdn.test/rice.webp"');
+    expect(html).toContain("£11.98");
+    expect(html).toContain("No longer available");
+    expect(text).toContain(NOT_CHARGED_SENTENCE);
     expect(html.match(/Return to your basket/g)).toHaveLength(1);
-    expect(html).toContain('href="https://s.test/account/data"');
+    expect(html).toContain('href="https://s.test/recover/tok"');
     expect(html).toContain("Stop marketing emails");
   });
 
@@ -111,10 +145,19 @@ describe("buildRecoveryEmail (R4)", () => {
     }
   });
 
+  it("never renders a non-https image", () => {
+    const { html } = buildRecoveryEmail({
+      ...input,
+      items: [{ ...emailItems[0], imageUrl: "javascript:alert(1)" }],
+    });
+    expect(html).not.toContain("<img");
+  });
+
   it.each([
     [{ kind: "PERCENTAGE", value: 1000 }, "10% off"],
     [{ kind: "PERCENTAGE", value: 1250 }, "12.5% off"],
     [{ kind: "FIXED_AMOUNT", value: 500 }, "£5.00 off"],
+    [{ kind: "FREE_DELIVERY", value: 0 }, "free delivery"],
   ] as const)("code %o reads %s", (change, benefit) => {
     expect(codeBenefit({ code: "X", minSubtotalPence: 0, endsAt: null, ...change })).toBe(benefit);
   });
@@ -140,6 +183,40 @@ describe("buildRecoveryEmail (R4)", () => {
   });
 });
 
+function line(overrides: Partial<AbandonedLine> = {}): AbandonedLine {
+  return {
+    productId: "p-1",
+    productName: "Basmati Rice",
+    quantity: 2,
+    unitPricePence: 599,
+    lineTotalPence: 1198,
+    product: {
+      isActive: true,
+      currentPricePence: 649,
+      stockMode: "TRACKED",
+      stockQuantity: 10,
+      imageKey: "products/rice.webp",
+    },
+    ...overrides,
+  };
+}
+
+function recovery(overrides: Partial<RecoveryState> = {}): RecoveryState {
+  return {
+    id: "rec-1",
+    status: "REVIEWED",
+    emailCount: 0,
+    lastEmailedAt: null,
+    tokenExpiresAt: null,
+    restoredAt: null,
+    recoveredAt: null,
+    recoveredOrderNumber: null,
+    suppressReason: null,
+    incentive: null,
+    ...overrides,
+  };
+}
+
 function row(overrides: Partial<AbandonedCheckoutRow> = {}): AbandonedCheckoutRow {
   return {
     orderId: "order-1",
@@ -149,12 +226,38 @@ function row(overrides: Partial<AbandonedCheckoutRow> = {}): AbandonedCheckoutRo
     email: "sam@example.com",
     customerName: "Sam Shopper",
     totalPence: 1447,
-    items,
+    subtotalPence: 1447,
+    deliveryFeePence: 399,
+    isDelivery: true,
+    items: [
+      line(),
+      line({
+        productId: null,
+        productName: "Gone Dal",
+        quantity: 1,
+        unitPricePence: 249,
+        product: null,
+      }),
+    ],
     abandonedAt: new Date(NOW.getTime() - DAY),
-    reminder: null,
+    origin: "PAYMENT_EXPIRED",
+    recovery: null,
     ...overrides,
   };
 }
+
+describe("basketAtTodaysPrices (#1733 R16)", () => {
+  it("prices at today's price, marks deleted products unavailable and leaves them out of the total", () => {
+    const basket = basketAtTodaysPrices(row(), "https://cdn.test");
+    expect(basket.items[0]).toMatchObject({
+      lineTotalPence: 1298,
+      imageUrl: "https://cdn.test/products/rice.webp",
+      available: true,
+    });
+    expect(basket.items[1]).toMatchObject({ available: false, imageUrl: null });
+    expect(basket.totalPence).toBe(1298);
+  });
+});
 
 const CODE: StoreCode = {
   id: "code-1",
@@ -177,10 +280,12 @@ function deps(overrides: Partial<RemindDeps> = {}) {
     find: vi.fn(async () => row()),
     hasConsent: vi.fn(async () => true),
     listCodes: vi.fn(async () => [CODE, { ...CODE, id: "code-2", isActive: false }]),
+    ensureRecovery: vi.fn(async () => ({ id: "rec-1", status: "PENDING", emailCount: 0 })),
     claim: vi.fn(async () => {
       order.push("claim");
-      return "claimed" as const;
+      return true;
     }),
+    newToken: vi.fn(async () => ({ token: "raw-token", hash: "hash-of-raw-token" })),
     loadStore: vi.fn(async () => ({
       sender: { name: "Corner Shop", email: "shop@s.test" },
       baseUrl: "https://s.test",
@@ -190,21 +295,29 @@ function deps(overrides: Partial<RemindDeps> = {}) {
       sent.push(...m);
     }),
     now: () => NOW,
+    cdnBaseUrl: "https://cdn.test",
     ...overrides,
   };
   return d;
 }
 
-const input = { orderNumber: "SHO-1", staffUserId: "staff-1", discountCodeId: null };
+const input = {
+  orderNumber: "SHO-1",
+  staffUserId: "staff-1",
+  discountCodeId: null as string | null,
+  confirmResend: false,
+};
 
-describe("sendAbandonedCheckoutReminder (R2, R3, R5)", () => {
-  it("claims, then sends one marketing email from the store to the customer", async () => {
+describe("sendRecoveryEmail (#1733 R17, R18)", () => {
+  it("claims with the token HASH, then sends one email carrying the raw token's restore link", async () => {
     const d = deps();
-    expect(await sendAbandonedCheckoutReminder(input, d)).toEqual({ ok: true });
+    expect(await sendRecoveryEmail(input, d)).toEqual({ ok: true });
     expect(d.order).toEqual(["claim", "send"]);
     expect(d.claim).toHaveBeenCalledWith({
-      orderId: "order-1",
-      sentByUserId: "staff-1",
+      recoveryId: "rec-1",
+      expectedEmailCount: 0,
+      tokenHash: "hash-of-raw-token",
+      actorUserId: "staff-1",
       discountCode: null,
     });
     expect(d.sent).toHaveLength(1);
@@ -214,19 +327,44 @@ describe("sendAbandonedCheckoutReminder (R2, R3, R5)", () => {
       sender: { name: "Corner Shop", email: "shop@s.test" },
       log: { audience: "CUSTOMER", event: "ABANDONED_CHECKOUT_REMINDER" },
     });
-    expect(d.sent[0].body).toContain('href="https://s.test/account/orders/SHO-1"');
+    expect(d.sent[0].body).toContain('href="https://s.test/recover/raw-token"');
   });
 
-  it("an offerable code is recorded on the claim and appears in the email", async () => {
+  it("uses the recovery's allocated incentive when no store code is chosen", async () => {
+    const d = deps({
+      find: vi.fn(async () =>
+        row({
+          recovery: recovery({
+            incentive: {
+              id: "c-9",
+              code: "BACK-ABCDEFGH",
+              kind: "FREE_DELIVERY",
+              value: 0,
+              minSubtotalPence: 0,
+              endsAt: null,
+              isActive: true,
+            },
+          }),
+        }),
+      ),
+    });
+    await sendRecoveryEmail(input, d);
+    expect(d.claim).toHaveBeenCalledWith(
+      expect.objectContaining({ discountCode: "BACK-ABCDEFGH" }),
+    );
+    expect(d.sent[0].subject).toContain("free delivery");
+  });
+
+  it("an offerable store code is recorded on the claim and appears in the email", async () => {
     const d = deps();
-    await sendAbandonedCheckoutReminder({ ...input, discountCodeId: "code-1" }, d);
+    await sendRecoveryEmail({ ...input, discountCodeId: "code-1" }, d);
     expect(d.claim).toHaveBeenCalledWith(expect.objectContaining({ discountCode: "BACK10" }));
     expect(d.sent[0].subject).toContain("10% off");
   });
 
   it.each(["code-2", "missing"])("code %s that cannot be offered sends nothing", async (id) => {
     const d = deps();
-    expect(await sendAbandonedCheckoutReminder({ ...input, discountCodeId: id }, d)).toEqual({
+    expect(await sendRecoveryEmail({ ...input, discountCodeId: id }, d)).toEqual({
       ok: false,
       error: REMIND_COPY.badCode,
     });
@@ -234,25 +372,35 @@ describe("sendAbandonedCheckoutReminder (R2, R3, R5)", () => {
     expect(d.sent).toEqual([]);
   });
 
-  it("another store's or a non-abandoned order is not found", async () => {
-    const d = deps({ find: vi.fn(async () => null) });
-    expect(await sendAbandonedCheckoutReminder(input, d)).toEqual({
-      ok: false,
-      error: REMIND_COPY.notFound,
+  it("a second send is refused without confirmation, and claims emailCount 1 → 2 with it", async () => {
+    const sentRow = row({ recovery: recovery({ status: "EMAIL_SENT", emailCount: 1 }) });
+    const d = deps({
+      find: vi.fn(async () => sentRow),
+      ensureRecovery: vi.fn(async () => ({ id: "rec-1", status: "EMAIL_SENT", emailCount: 1 })),
     });
+    expect(await sendRecoveryEmail(input, d)).toEqual({
+      ok: false,
+      error: REMINDER_BLOCK_COPY["already-sent"],
+    });
+    expect(d.claim).not.toHaveBeenCalled();
+    expect(await sendRecoveryEmail({ ...input, confirmResend: true }, d)).toEqual({ ok: true });
+    expect(d.claim).toHaveBeenCalledWith(expect.objectContaining({ expectedEmailCount: 1 }));
+  });
+
+  it("losing the claim race (double click, second admin) sends nothing", async () => {
+    const d = deps({ claim: vi.fn(async () => false) });
+    expect(await sendRecoveryEmail(input, d)).toEqual({ ok: false, error: REMIND_COPY.raced });
+    expect(d.sent).toEqual([]);
   });
 
   it.each([
     ["a guest", { userId: null }, "guest"],
-    [
-      "already reminded",
-      { reminder: { sentAt: NOW, discountCode: null, sentByName: null } },
-      "already-sent",
-    ],
+    ["suppressed", { recovery: recovery({ status: "SUPPRESSED" }) }, "suppressed"],
+    ["recovered", { recovery: recovery({ status: "RECOVERED" }) }, "recovered"],
     ["too old", { abandonedAt: new Date(NOW.getTime() - 8 * DAY) }, "too-old"],
   ] as const)("%s is refused server-side, before any claim", async (_l, change, reason) => {
     const d = deps({ find: vi.fn(async () => row(change as Partial<AbandonedCheckoutRow>)) });
-    expect(await sendAbandonedCheckoutReminder(input, d)).toEqual({
+    expect(await sendRecoveryEmail(input, d)).toEqual({
       ok: false,
       error: REMINDER_BLOCK_COPY[reason],
     });
@@ -262,19 +410,37 @@ describe("sendAbandonedCheckoutReminder (R2, R3, R5)", () => {
 
   it("consent withdrawn since the page loaded is refused", async () => {
     const d = deps({ hasConsent: vi.fn(async () => false) });
-    expect(await sendAbandonedCheckoutReminder(input, d)).toEqual({
+    expect(await sendRecoveryEmail(input, d)).toEqual({
       ok: false,
       error: REMINDER_BLOCK_COPY["no-consent"],
     });
-    expect(d.sent).toEqual([]);
   });
 
-  it("losing the claim race (double click, second admin) sends nothing", async () => {
-    const d = deps({ claim: vi.fn(async () => "already-sent" as const) });
-    expect(await sendAbandonedCheckoutReminder(input, d)).toEqual({
-      ok: false,
-      error: REMINDER_BLOCK_COPY["already-sent"],
-    });
+  it("another store's or a non-abandoned order is not found", async () => {
+    const d = deps({ find: vi.fn(async () => null) });
+    expect(await sendRecoveryEmail(input, d)).toEqual({ ok: false, error: REMIND_COPY.notFound });
+  });
+});
+
+describe("previewRecoveryEmail (#1733 R15)", () => {
+  it("builds exactly what Send builds, apart from the placeholder link, claiming and sending nothing", async () => {
+    const d = deps();
+    const preview = await previewRecoveryEmail(
+      { orderNumber: "SHO-1", discountCodeId: "code-1" },
+      d,
+    );
+    expect(d.claim).not.toHaveBeenCalled();
     expect(d.sent).toEqual([]);
+    await sendRecoveryEmail({ ...input, discountCodeId: "code-1" }, d);
+    if (!preview.ok) throw new Error("preview failed");
+    expect(preview.to).toBe("sam@example.com");
+    expect(preview.subject).toBe(d.sent[0].subject);
+    expect(preview.html.replace(PREVIEW_RESTORE_PATH, "/recover/raw-token")).toBe(d.sent[0].body);
+  });
+
+  it("still previews a blocked checkout, saying why it can't be sent", async () => {
+    const d = deps({ find: vi.fn(async () => row({ userId: null })) });
+    const preview = await previewRecoveryEmail({ orderNumber: "SHO-1", discountCodeId: null }, d);
+    expect(preview).toMatchObject({ ok: true, blockedReason: REMINDER_BLOCK_COPY.guest });
   });
 });

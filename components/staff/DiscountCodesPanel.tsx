@@ -25,6 +25,7 @@ import { Icon } from "@/components/icons/Icon";
 const initialState: DiscountCodeState = { error: null, saved: false };
 
 function formatValue(row: CodeListRow): string {
+  if (row.kind === "FREE_DELIVERY") return "Free delivery"; // #1733
   return row.kind === "PERCENTAGE"
     ? `${(row.value / 100).toFixed(row.value % 100 === 0 ? 0 : 2)}% off`
     : `£${(row.value / 100).toFixed(2)} off`;

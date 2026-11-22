@@ -6,9 +6,42 @@ every branch merges.
 
 ## [Unreleased]
 
+- Trial streaming the homepage account and cart controls independently of the first render (#439).
+
+- Post-ship docs for #1730: roadmap row, staff-guide sanity check, and a `CLAUDE.md` rule for migration-timestamp collisions between parallel agents.
+
+- **Staff-controlled checkout recovery (#1732, #1733).**
+  - `/staff/abandoned-checkouts` now lists every checkout a customer didn't pay for, with why (slice A's
+    reason), each item's availability and today's price, a recovery status (Pending, Reviewed, Email
+    sent, Recovered, Expired, Don't contact) and "Bought later".
+  - Admins review, mark "Don't contact", allocate a single-use incentive locked to that customer
+    (% off, £ off, or the new **free delivery** discount kind), preview the exact email, and send it
+    themselves; a second email needs an explicit confirmation. Nothing is automatic.
+  - The email shows product images and today's prices, says the payment wasn't taken, and links to a
+    `/recover/<token>` page that restores the basket at today's prices (only the token's SHA-256 is
+    stored; 14-day expiry; opening the link changes nothing).
+  - A payment within 14 days of the email marks the checkout **Recovered** with the new order number,
+    inside `confirmPayment`'s transaction.
+  - Migration `20261122140000_checkout_recovery`: `CheckoutRecovery`, `CheckoutRecoveryEvent`,
+    `DiscountKind.FREE_DELIVERY`, `DiscountCode.restrictedToUserId`; #1554's `AbandonedCheckoutReminder`
+    rows are copied over and the table dropped. Spec: `specs/2026-11-22-checkout-recovery/`.
+
 - Add manual product allergen declarations and reviewed barcode lookup.
 
 - Allow Wikimedia thumbnails in the staff Image Library image policy.
+
+- **Unpaid checkouts no longer show as cancelled orders; every cancellation records why (#1730).**
+  - A shopper who goes to pay and then presses back, changes their basket or lets the payment link
+    expire no longer sees a "Cancelled" order in My orders. Opening its link says "Payment not
+    completed. You haven't been charged." A paid order the store cancelled still shows as cancelled.
+  - New `CancellationOrigin` on the CANCELLED status event (`CHECKOUT_CHANGED`, `PAYMENT_EXPIRED`,
+    `PAYMENT_FAILED`, `CHECKOUT_ABANDONED`, `PROVIDER_UNAVAILABLE`, `STAFF`), required by
+    `releaseOrder`. Hand-authored migration `20261122130000_cancellation_origin` backfills only
+    exact historical notes; anything else stays "Reason not recorded".
+  - "Unpaid" is read from `Payment` (no SUCCEEDED/REFUNDED payment), not from the reason, so it is
+    right for old orders and can never hide a paid one. `/staff/orders` hides unpaid checkouts by
+    default ("Show unpaid checkouts", `?unpaid=1`) and labels every cancelled order.
+  - Stock hold and release are unchanged. Spec: `specs/2026-11-22-unpaid-checkout-cancellations/`.
 
 - Resolve Wikimedia and Open Food Facts imports by provider ID and add exact file and barcode searches.
 

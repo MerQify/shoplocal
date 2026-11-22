@@ -1,3 +1,5 @@
+import { UNPAID_CHECKOUT_STATUS_LABEL } from "@/lib/cancellation-origin";
+import { UnpaidCheckoutNotice } from "@/components/orders/UnpaidCheckoutNotice";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -175,7 +177,9 @@ export default async function OrderLookupPage({ searchParams }: LookupPageProps)
               <div className="text-right">
                 <p className="text-xs text-slate-500 font-medium">Status</p>
                 <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-primary mt-0.5">
-                  {orderStatusLabel(orderResult.status)}
+                  {orderResult.neverPaid
+                    ? UNPAID_CHECKOUT_STATUS_LABEL
+                    : orderStatusLabel(orderResult.status)}
                 </span>
               </div>
             </div>
@@ -183,14 +187,18 @@ export default async function OrderLookupPage({ searchParams }: LookupPageProps)
             {/* #1435 R21 — the shared tracker: the order's own path (delivery or collection),
                 never the raw status. No LiveRefresh here: each lookup spends the rate-limit
                 budget, so this page refreshes only when the shopper asks. */}
-            <OrderProgressTracker
-              orderNumber={orderResult.orderNumber}
-              status={orderResult.status}
-              fulfilmentMethod={orderResult.fulfilmentMethod}
-              timeline={orderResult.timeline}
-              slotLabel={orderResult.slotLabel}
-              cancellation={orderResult.cancellation}
-            />
+            {orderResult.neverPaid ? (
+              <UnpaidCheckoutNotice />
+            ) : (
+              <OrderProgressTracker
+                orderNumber={orderResult.orderNumber}
+                status={orderResult.status}
+                fulfilmentMethod={orderResult.fulfilmentMethod}
+                timeline={orderResult.timeline}
+                slotLabel={orderResult.slotLabel}
+                cancellation={orderResult.cancellation}
+              />
+            )}
 
             {/* Items Summary */}
             <h2 className="sr-only">Order Items</h2>

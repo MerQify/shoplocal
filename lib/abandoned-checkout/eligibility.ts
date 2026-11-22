@@ -2,13 +2,11 @@
  * #1554 — which abandoned checkouts the staff page lists, and whether one may be reminded. Pure and
  * import-free, so the page, the action and the tests share one rule.
  *
- * An abandoned checkout is an order the checkout-session expiry cancelled before payment: both the
- * Stripe webhook and the scheduled payment sweep write a CANCELLED status event whose note begins
- * `Checkout session expired`. A shopper who pressed Cancel, or whose payment failed, did not
- * abandon anything and is not listed.
+ * #1732 — an abandoned checkout is an order cancelled before payment for one of
+ * `RECOVERABLE_ORIGINS` (`lib/abandoned-checkout/recovery.ts`), read from slice A's
+ * `OrderStatusEvent.cancellationOrigin`. It replaced the "Checkout session expired" note prefix,
+ * which only ever found expired payment links.
  */
-
-export const ABANDONED_NOTE_PREFIX = "Checkout session expired";
 
 /** How far back the page lists. */
 export const ABANDONED_LIST_DAYS = 30;
@@ -18,7 +16,8 @@ export const REMINDER_WINDOW_DAYS = 7;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export type ReminderBlock = "already-sent" | "guest" | "no-email" | "no-consent" | "too-old";
+export type ReminderBlock =
+  "already-sent" | "guest" | "no-email" | "no-consent" | "too-old" | "suppressed" | "recovered";
 
 export const REMINDER_BLOCK_COPY: Record<ReminderBlock, string> = {
   "already-sent": "A reminder has already been sent for this checkout.",
@@ -27,6 +26,8 @@ export const REMINDER_BLOCK_COPY: Record<ReminderBlock, string> = {
   "no-consent":
     "This customer has not agreed to marketing emails, or has not verified their email address.",
   "too-old": `Reminders can only be sent within ${REMINDER_WINDOW_DAYS} days of the checkout expiring.`,
+  suppressed: 'This checkout is marked "Don\'t contact".',
+  recovered: "This customer has already completed the purchase.",
 };
 
 export interface ReminderCandidate {
@@ -35,15 +36,25 @@ export interface ReminderCandidate {
   email: string | null;
   /** `hasEffectiveMarketingConsent`: newest choice is a grant AND the email is verified. */
   hasConsent: boolean;
-  reminderSentAt: Date | null;
+  /** #1733 — emails already sent for this checkout (0 = none). */
+  emailCount: number;
+  /** #1733 — the recovery's stored status, or null when no recovery exists yet. */
+  status: string | null;
 }
 
 /**
- * Null when a reminder may be sent now, else the first reason it may not. "Already sent" comes
- * first because it is the most useful thing to tell the admin.
+ * Null when a reminder may be sent now, else the first reason it may not. A suppressed or recovered
+ * checkout is never emailed. "Already sent" blocks unless staff explicitly confirm a second send
+ * (#1733 R18); the consent and window rules still apply to that second send.
  */
-export function reminderBlock(row: ReminderCandidate, now: Date): ReminderBlock | null {
-  if (row.reminderSentAt) return "already-sent";
+export function reminderBlock(
+  row: ReminderCandidate,
+  now: Date,
+  options: { confirmResend?: boolean } = {},
+): ReminderBlock | null {
+  if (row.status === "SUPPRESSED") return "suppressed";
+  if (row.status === "RECOVERED") return "recovered";
+  if (row.emailCount > 0 && !options.confirmResend) return "already-sent";
   if (!row.userId) return "guest";
   if (!row.email) return "no-email";
   if (!row.hasConsent) return "no-consent";

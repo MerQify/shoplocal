@@ -308,7 +308,13 @@ async function main() {
         `PrismaNeon; order ${untracked.orderNumber}, quantity ${before?.quantity} → ${after?.quantity}, updatedAt unchanged=${after?.updatedAt.getTime() === before?.updatedAt.getTime()}`,
       );
 
-      const cancelled = await cancelUnpaidOrder(asWs, vendorId, untracked.orderNumber, "zz-1211");
+      const cancelled = await cancelUnpaidOrder(
+        asWs,
+        vendorId,
+        untracked.orderNumber,
+        "zz-1211",
+        "CHECKOUT_CHANGED",
+      );
       const afterCancel = await ws.inventory.findUnique({ where: { productId: untrackedId } });
       check(
         "R11",
@@ -321,6 +327,7 @@ async function main() {
         vendorId,
         tracked.orderNumber,
         "zz-1211",
+        "CHECKOUT_CHANGED",
       );
       const trackedRestored = await ws.inventory.findUnique({ where: { productId: trackedId } });
       check(
@@ -707,7 +714,13 @@ async function main() {
         select: { vendorId: true, status: true },
       });
       if (vendorRow?.status === "PENDING_PAYMENT") {
-        await cancelUnpaidOrder(asWs, vendorRow.vendorId, orderNumber, "zz-1211 cleanup");
+        await cancelUnpaidOrder(
+          asWs,
+          vendorRow.vendorId,
+          orderNumber,
+          "zz-1211 cleanup",
+          "CHECKOUT_CHANGED",
+        );
       }
     }
     const keep = LEAVE_STOREFRONT

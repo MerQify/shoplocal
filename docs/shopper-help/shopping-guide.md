@@ -4,8 +4,8 @@ title: "Shopping Guide & Help Center"
 audience: [shopper]
 type: guide
 status: approved
-version: "1.10.0"
-updated: 2026-11-15
+version: "1.12.0"
+updated: 2026-11-22
 visibility: public
 summary: "A complete guide for customers on how to browse, place orders, and manage their account."
 tags: ["shopper", "help", "orders"]
@@ -38,8 +38,8 @@ Welcome! This guide explains how to find what you need, place orders, and make t
 - **If you leave the payment page:** If you go back from the payment page without paying, you can choose **Continue to payment** to pay for the same order, or **Change my order** to cancel it and put your items back in your basket. Nothing is charged until you pay. If the payment link has expired, nothing was charged; choose **Put my items back in the basket** and check out again. Signed-in shoppers see the same choices on the order's page under your account while it is awaiting payment.
 - **Order emails:** We email you when your order is confirmed, when it is out for delivery or ready to collect, when it has been delivered or collected, and if it is cancelled. Each email has one **View your order** button. If an email cannot be delivered straight away, we keep trying for up to 24 hours. Order emails never contain offers or adverts.
 - **Other emails from us:** If a payment by bank or other delayed method fails, we email you to say no money was taken and you can order again. When you send us a message through **Contact us**, you get an automatic email saying we've received it. When you create an account, we email you a link to verify your address. If you try to register with an email that already has an account, we email you a reminder with links to sign in or reset your password instead.
-- **Basket reminders:** Only if you have agreed to hear from us, and only if you were signed in, we may send you **one** reminder about a checkout you didn't finish, sometimes with a discount code. You can stop these at any time with the **Stop marketing emails** link in the email, or under **Your data** in your account. Guests never get them.
-- **Order History:** If you create an account, you can view your full past order history and track active orders.
+- **Basket reminders:** Only if you have agreed to hear from us, and only if you were signed in, we may send you a reminder about a checkout you didn't finish, sometimes with a personal discount code only you can use. It says your payment wasn't completed, so you haven't been charged. Its **Return to your basket** link shows your basket at today's prices and, when you press **Restore my basket**, puts what's still available back in your basket. The link works for 14 days. You can stop these at any time with the **Stop marketing emails** link in the email, or under **Your data** in your account. Guests never get them.
+- **Order History:** If you create an account, you can view your full past order history and track active orders. Unpaid checkouts don't appear there: if you went to pay and then went back, changed your basket or let the payment link expire, no order was placed and nothing was charged. If you open the link to one, it says **"Payment not completed. You haven't been charged."**
 - **Cancellations:** If you need to cancel an order, please contact the store directly.
 
 ## Ratings & Reviews

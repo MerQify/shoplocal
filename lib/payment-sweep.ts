@@ -9,6 +9,7 @@ import type {
   ReconciliationOutcome,
   ReconciliationOutcomeRecord,
 } from "@/lib/repositories/payment-reconciliations";
+import type { CancellationOriginValue } from "@/lib/cancellation-origin";
 
 /**
  * The stranded payment sweep (P9.2, #618), with a memory between runs (#945).
@@ -84,16 +85,33 @@ const RELEASE_NOTES = {
   noSession: "No payment session was ever created; released by the scheduled payment sweep.",
 } as const;
 
+/** #1730 — the structured reason each note above records. */
+const RELEASE_ORIGINS = {
+  expired: "PAYMENT_EXPIRED",
+  unsettled: "PAYMENT_FAILED",
+  noSession: "CHECKOUT_ABANDONED",
+} as const satisfies Record<keyof typeof RELEASE_NOTES, CancellationOriginValue>;
+
 export interface SweepOrderOperations {
   /** #429's bound compare-and-set. Unchanged by this slice; this is a caller. */
   confirm(orderNumber: string, binding: PaymentBinding): Promise<ConfirmPaymentResult>;
-  fail(orderNumber: string, binding: PaymentBinding, reason: string): Promise<FailPaymentResult>;
+  fail(
+    orderNumber: string,
+    binding: PaymentBinding,
+    reason: string,
+    origin: CancellationOriginValue,
+  ): Promise<FailPaymentResult>;
   /**
    * The no-binding release, for an order carrying no session id at all. No
    * `PaymentBinding` is constructible for those, so `fail` would refuse them as
    * `unbindable` by design — this is the only path that can resolve them.
    */
-  cancelUnpaid(vendorId: string, orderNumber: string, reason: string): Promise<boolean>;
+  cancelUnpaid(
+    vendorId: string,
+    orderNumber: string,
+    reason: string,
+    origin: CancellationOriginValue,
+  ): Promise<boolean>;
 }
 
 /** The claim-and-record half of `lib/repositories/payment-reconciliations.ts`, bound to a client. */
@@ -433,6 +451,7 @@ async function reconcile(
       vendorId,
       order.orderNumber,
       RELEASE_NOTES.noSession,
+      RELEASE_ORIGINS.noSession,
     );
     if (!cancelled) {
       await record(deps, attempt, "ALREADY_HANDLED");
@@ -484,8 +503,13 @@ async function reconcile(
     return defer(deps, attempt, new Date(now + config.deferIntervalMs));
   }
 
-  const note = session.status === "expired" ? RELEASE_NOTES.expired : RELEASE_NOTES.unsettled;
-  const result = await deps.orders.fail(order.orderNumber, binding, note);
+  const kind = session.status === "expired" ? "expired" : "unsettled";
+  const result = await deps.orders.fail(
+    order.orderNumber,
+    binding,
+    RELEASE_NOTES[kind],
+    RELEASE_ORIGINS[kind],
+  );
   if (!result.ok) return handleRefusal(deps, attempt, result.reason, "fail", session.id);
   await record(deps, attempt, "RELEASED");
   emit("log", "transition", { order: order.orderNumber, outcome: "RELEASED" });

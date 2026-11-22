@@ -62,6 +62,12 @@ export interface StaffOrdersQuery {
    * a link would carry the typo to the next page.
    */
   status: string;
+  /**
+   * #1730 — `?unpaid=1`: include unpaid checkouts (cancelled, never paid). Hidden by default, so
+   * the queue and the CANCELLED filter show only orders a customer actually paid for. Anything
+   * other than exactly "1" is false.
+   */
+  includeUnpaid: boolean;
 }
 
 /** A URL-encoded query string carrying the current filter, for the next-page link. */
@@ -69,12 +75,17 @@ export function staffOrdersHref(query: StaffOrdersQuery, cursor?: string | null)
   const params = new URLSearchParams();
   if (query.status) params.set("status", query.status);
   if (query.search) params.set("q", query.search);
+  if (query.includeUnpaid) params.set("unpaid", "1");
   if (cursor) params.set("cursor", cursor);
   const qs = params.toString();
   return qs ? `/staff/orders?${qs}` : "/staff/orders";
 }
 
-export function parseStaffOrdersQuery(input: { status?: string; q?: string }): StaffOrdersQuery {
+export function parseStaffOrdersQuery(input: {
+  status?: string;
+  q?: string;
+  unpaid?: string;
+}): StaffOrdersQuery {
   const rawStatus = (input.status ?? "").trim();
   const rawSearch = (input.q ?? "").trim();
 
@@ -98,5 +109,6 @@ export function parseStaffOrdersQuery(input: { status?: string; q?: string }): S
     statuses,
     search: rawSearch === "" ? null : rawSearch,
     status,
+    includeUnpaid: input.unpaid === "1",
   };
 }

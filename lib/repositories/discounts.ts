@@ -104,6 +104,7 @@ export async function previewCode(
       maxPerCustomer: true,
       isActive: true,
       referrerUserId: true,
+      restrictedToUserId: true, // #1733
       promotions: {
         where: { isActive: true },
         select: {
@@ -229,6 +230,7 @@ export async function previewCode(
     remainingRedemptions: row.remainingRedemptions,
     maxPerCustomer: row.maxPerCustomer,
     isActive: row.isActive,
+    restrictedToUserId: row.restrictedToUserId,
     subtotalPence: input.subtotalPence,
     deliveryFeePence: input.deliveryFeePence,
     userId: input.userId,
@@ -446,6 +448,8 @@ export interface CodeListRow {
   remainingRedemptions: number | null;
   maxPerCustomer: number | null;
   isActive: boolean;
+  /** #1733 — set on a checkout-recovery incentive: only this customer may redeem it. */
+  restrictedToUserId: string | null;
   /** DERIVED from DiscountRedemption — there is no stored counter to disagree with. */
   redemptionCount: number;
 }
@@ -466,6 +470,7 @@ export async function listCodes(db: AnyDb, vendorId: string): Promise<CodeListRo
       remainingRedemptions: true,
       maxPerCustomer: true,
       isActive: true,
+      restrictedToUserId: true,
       _count: { select: { redemptions: true } },
     },
   });

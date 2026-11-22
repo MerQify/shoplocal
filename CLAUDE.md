@@ -96,6 +96,10 @@ Modelling rules, the raw-SQL exception, the migration procedure: `specs/architec
 - Images: store a **relative key**, never a URL; keys are immutable.
 - **Generate every migration with `--create-only` and read the SQL before it applies** — Prisma has
   proposed dropping the hand-authored `pg_trgm` indexes on every migration since `#508`.
+- **Parallel agents can pick the same migration timestamp.** `#1730` and `#1735` both wrote
+  `20261122120000_…` on the same day. Before opening the PR, fetch `origin/staging` and compare
+  `prisma/migrations/` names; if yours collides and has never been applied anywhere, rename it to a
+  later timestamp (never rename one that has reached `staging`).
 - **But `migrate dev --create-only` currently REFUSES on dev, and its only offer destroys data.**
   `20260820200500_p8_image_needs_review` was edited after it was applied, so `migrate dev` demands a
   schema reset and names `migrate reset` — which drops every row in the dev database. **Never accept

@@ -192,7 +192,11 @@ describe("cancelOrder — what goes back in the basket (#1589 R11)", () => {
     check.mockResolvedValue({ kind: "no-session" });
 
     await redirectedTo(form("tok-1"));
-    expect(cancelUnpaid).toHaveBeenCalledWith("AHE-1", "Shopper cancelled payment at checkout");
+    expect(cancelUnpaid).toHaveBeenCalledWith(
+      "AHE-1",
+      "Shopper cancelled payment at checkout",
+      "CHECKOUT_CHANGED",
+    );
     expect(addItems).toHaveBeenCalledWith({ userId: null, guestToken: "guest-cart" }, [
       { productId: "p-1", quantity: 3, customNote: "ripe ones" },
       { productId: "p-2", quantity: 2 },

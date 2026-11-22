@@ -26,9 +26,8 @@ const PAGE_SIZE = 10;
  * Order history (P4a, #122). Vendor-scoped in the repository, so a shopper on
  * Aheed's host sees Aheed orders only — the same rule as P3a's per-vendor cart.
  *
- * Deliberately unfiltered by status: an abandoned PENDING_PAYMENT order and a
- * CANCELLED one are both real history, and hiding them just leaves the shopper
- * wondering where their attempted order went.
+ * #1730 — unpaid checkouts (cancelled, never paid) are left out by the repository; an order
+ * awaiting payment, and every paid order including one the store cancelled, still shows.
  */
 export default async function OrdersPage({
   searchParams,
@@ -108,7 +107,7 @@ export default async function OrdersPage({
                         {formatOrderDate(order.createdAt)}
                       </p>
                     </div>
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.status} neverPaid={order.neverPaid} />
                   </div>
 
                   <p className="mb-2 line-clamp-2 text-sm text-primary-muted">

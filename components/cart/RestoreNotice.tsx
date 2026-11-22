@@ -36,6 +36,9 @@ export function restoreHeading(notice: Notice): string {
       // "in full" rather than "weren't added": a list notice can carry a `p` entry too, because
       // #1088 reports the per-line outcome `addItems` returns alongside the skipped lines.
       return `${k} of ${notice.of} ${noun} from your list couldn't be added in full:`;
+    case "recovered":
+      // #1733 — the restore link in a checkout-recovery email.
+      return `${k} of ${notice.of} ${noun} from your saved basket couldn't be added in full:`;
   }
 }
 
