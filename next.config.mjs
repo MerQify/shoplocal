@@ -3,6 +3,7 @@ const discoveryImageSources = [
   "https://live.staticflickr.com",
   "https://farm1.staticflickr.com",
   "https://upload.wikimedia.org",
+  "https://thumb.wikimedia.org",
   "https://images.openfoodfacts.org",
   "https://static.openfoodfacts.org",
   "https://images.pexels.com",
