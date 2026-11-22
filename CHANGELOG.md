@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Trial lower startup-script fetch priority on the Aheed staging homepage.
+
 - Add opt-in server render timings on Aheed staging for homepage performance investigation.
 
 - Reduce storefront rendering waits and exclude documentation and test fixtures from the application stylesheet.

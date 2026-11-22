@@ -185,7 +185,7 @@ jobs:
         run: |
           echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | npx wrangler secret put CLOUDFLARE_ACCOUNT_ID --env afc-staging
           echo "${{ secrets.CLOUDFLARE_API_TOKEN }}" | npx wrangler secret put CLOUDFLARE_API_TOKEN --env afc-staging
-          npx wrangler deploy --env afc-staging --var "GIT_COMMIT_SHA:$(git rev-parse --short HEAD)"
+          npx wrangler deploy --env afc-staging workers/afc-homepage-priority/entry.mjs --var "GIT_COMMIT_SHA:$(git rev-parse --short HEAD)"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
