@@ -40,7 +40,7 @@ function contents() {
 
 function openDrawer(itemCount = 2) {
   const utils = render(<CartDrawerShell itemCount={itemCount}>{contents()}</CartDrawerShell>);
-  const opener = screen.getByRole("button", { name: `Cart, ${itemCount} items` });
+  const opener = screen.getByRole("button", { name: `Basket, ${itemCount} items` });
   fireEvent.click(opener);
   return { ...utils, opener, dialog: screen.getByRole("dialog") };
 }
@@ -184,7 +184,7 @@ describe("cart drawer — heading order (R6)", () => {
         <h3>Your cart is empty</h3>
       </CartDrawerShell>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Cart, empty" }));
+    fireEvent.click(screen.getByRole("button", { name: "Basket, empty" }));
     const seen = levels(screen.getByRole("dialog"));
     expect(seen).toEqual([2, 3]);
   });

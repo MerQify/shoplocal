@@ -57,8 +57,7 @@ describe("Icon Credits & Cart Tooltip Polish (#1257)", () => {
     expect(button?.getAttribute("title")).toBe("My Cart");
 
     // The inner SVG must have aria-hidden and no <title> tag that would hijack browser hover
-    // #1288: 3D icons render inside IconMedallion; its root carries data-icon and the size.
-    const svg = button?.querySelector("[data-medallion]");
+    const svg = button?.querySelector('svg[data-icon="shopping-basket"]');
     expect(svg).not.toBeNull();
     expect(svg?.getAttribute("aria-hidden")).toBe("true");
     expect(svg?.querySelector("title")).toBeNull();
