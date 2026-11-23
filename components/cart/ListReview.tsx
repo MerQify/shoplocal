@@ -86,7 +86,7 @@ export function ListReview({ lines }: { lines: ResolvedLine[] }) {
                 ) : (
                   <>
                     <p className="flex items-center gap-1.5 text-xs font-semibold text-danger">
-                      <Icon name="package-x" className="h-4 w-4" />
+                      <Icon name="item-unavailable" size="sm" />
                       {line.resolution.product.name} — unavailable, not added
                     </p>
                     {/* Named by the matched product, the name this row shows, not the typed text. */}
@@ -151,7 +151,7 @@ export function ListReview({ lines }: { lines: ResolvedLine[] }) {
 
             {line.resolution.kind === "unmatched" && (
               <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-primary-muted">
-                <Icon name="circle-alert" className="h-4 w-4" />
+                <Icon name="status-warning" size="sm" />
                 No match in this shop — check the spelling or search for it
               </p>
             )}

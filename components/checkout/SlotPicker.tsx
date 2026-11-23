@@ -257,7 +257,7 @@ export function SlotPicker({
                   className="sticky left-0 bg-white py-2 text-left font-bold text-primary"
                 >
                   <span className="inline-flex items-center gap-1.5">
-                    <Icon name="calendar-clock" className="h-4 w-4" />
+                    <Icon name="timed-slot" size="sm" />
                     {dayParts(shownDays[0]).month}
                   </span>
                 </th>

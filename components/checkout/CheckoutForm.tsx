@@ -759,7 +759,7 @@ export function CheckoutForm({
           disabled={pending}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-md transition active:scale-95 motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-1"
         >
-          <Icon name="shield-check" className="h-4 w-4" />
+          <Icon name="secure-payment" size="sm" />
           {pending ? "Continuing to payment…" : "Continue to payment"}
         </button>
       </div>

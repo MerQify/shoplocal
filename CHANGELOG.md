@@ -142,6 +142,8 @@ every branch merges.
 
 ### Changed
 
+- Improve storefront favourite, basket, fulfilment and checkout status icons (#1744).
+
 - **Consolidate browser WebP converters onto `lib/webp-convert.ts` (#1675, 2026-11-20).**
   - Parameterized `convertToWebp(source: Blob, maxEdgePx?: number)` with default `MAX_IMAGE_EDGE_PX` (1200px) from `lib/product-image.ts`.
   - Consolidated duplicate `toWebp` canvas routines in `BundleImageUploader`, `CampaignBannerUploader`, `ProductImageManager`, `PromotionForm`, `VendorLogoUploader`, and `WhatsappQrUploader` onto `lib/webp-convert.ts`.

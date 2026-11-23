@@ -213,7 +213,7 @@ describe("Navigation & Icon Improvements (#1251)", () => {
     expect(userSvg?.style.width).toBe("24px");
   });
 
-  it("enlarges Cart and Rewards 3D icons with informative tooltips (R2)", () => {
+  it("sizes the basket and rewards icons and provides tooltips", () => {
     const { container: cartContainer } = render(
       <CartDrawerShell itemCount={4} subtotalPence={2896}>
         <div>Cart body</div>
@@ -221,10 +221,8 @@ describe("Navigation & Icon Improvements (#1251)", () => {
     );
     const cartButton = cartContainer.querySelector("button");
     expect(cartButton?.getAttribute("title")).toBe("My Cart");
-    const cartSvg = cartContainer.querySelector<HTMLElement>(
-      '[data-medallion][data-icon="shopping-cart"]',
-    );
-    expect(cartSvg?.style.width).toBe("28px");
+    const cartSvg = cartButton?.querySelector('svg[data-icon="shopping-basket"]');
+    expect(cartSvg?.getAttribute("width")).toBe("20");
 
     const { container: rewardsContainer } = render(
       <RewardsLauncher vendorName="Aheed Food Centre" />,

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import { usePathname } from "next/navigation";
 import { CartDrawerContext } from "./drawer-context";
 import { Icon } from "@/components/icons/Icon";
-import { IconMedallion } from "@/components/icons/IconMedallion";
 
 /** Everything focusable we expect inside the drawer, in DOM order. */
 const FOCUSABLE =
@@ -114,19 +113,14 @@ export function CartDrawerShell({
         ref={openerRef}
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={itemCount > 0 ? `Cart, ${itemCount} items` : "Cart, empty"}
+        aria-label={itemCount > 0 ? `Basket, ${itemCount} items` : "Basket, empty"}
         title="My Cart"
         aria-haspopup="dialog"
         aria-expanded={open}
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full bg-primary px-4 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-transform hover:scale-105 motion-reduce:hover:scale-100 hover:bg-primary/90 hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] sm:bottom-8 sm:right-8 group"
       >
-        <IconMedallion
-          icon3d="cart-add"
-          dataIcon="shopping-cart"
-          size={28}
-          className="-my-1"
-          decorative
-        />
+        <Icon name="shopping-basket" size="md" className="shrink-0" />
+        <span className="hidden sm:inline">Basket</span>
         {itemCount > 0 && (
           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-xs font-extrabold text-white shadow-sm">
             {itemCount}
@@ -167,7 +161,7 @@ export function CartDrawerShell({
             >
               <div className="flex items-center justify-between bg-primary p-4 text-white">
                 <div className="flex items-center gap-2">
-                  <IconMedallion icon3d="cart-add" size={24} className="-my-1" decorative />
+                  <Icon name="shopping-basket" size="md" className="shrink-0" />
                   <h2 id={titleId} className="text-base font-bold">
                     My Cart ({itemCount})
                   </h2>

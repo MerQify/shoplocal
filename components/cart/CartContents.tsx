@@ -172,7 +172,7 @@ export function CartContents({
                         aria-label={`Decrease quantity of ${line.name}`}
                         className="flex size-tap items-center justify-center p-1 text-primary-muted hover:text-primary lg:size-auto"
                       >
-                        <Icon name="minus" className="h-3 w-3" />
+                        <Icon name="minus" size="sm" />
                       </button>
                     </form>
                     <span className="px-2 text-xs font-bold text-primary">{line.quantity}</span>
@@ -188,7 +188,7 @@ export function CartContents({
                         aria-label={`Increase quantity of ${line.name}`}
                         className="flex size-tap items-center justify-center p-1 text-primary-muted hover:text-primary disabled:opacity-30 lg:size-auto"
                       >
-                        <Icon name="plus" className="h-3 w-3" />
+                        <Icon name="plus" size="sm" />
                       </button>
                     </form>
                   </div>

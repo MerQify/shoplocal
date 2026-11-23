@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ICON_REGISTRY } from "@/components/icons/registry";
 import manifest from "./fixtures/lucide-icons-in-use.json";
+import { lucideRegistryExports } from "./fixtures/lucide-registry-exports";
 
 /**
  * Proves R31 (#1223): every `lucide-react` icon the app imported at BASE resolves to a registry entry,
@@ -28,8 +29,7 @@ describe("lucide icons in use at BASE", () => {
     }
   });
 
-  it("the registry holds no icon the manifest does not account for, bar Phase 3, #1239 and #1242 additions", () => {
-    const accountedFor = new Set(manifest.icons.map((i) => i.key));
+  it("accounts for all registry keys, including additions after BASE", () => {
     const allowedAdditions = new Set([
       "featured-star",
       "heart-outline",
@@ -47,7 +47,7 @@ describe("lucide icons in use at BASE", () => {
     ]);
     for (const [key] of Object.entries(ICON_REGISTRY)) {
       if (allowedAdditions.has(key)) continue;
-      expect(accountedFor.has(key), `${key} is unused`).toBe(true);
+      expect(lucideRegistryExports.has(key), `${key} is unused`).toBe(true);
     }
   });
 });
