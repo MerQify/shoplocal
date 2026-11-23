@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-23T15:38:05.962Z` · commit `da3e3ad7` · `394` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-22T16:20:01.708Z` · commit `87c9b90b` · `393` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -377,7 +377,6 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Nightly Image Hub sync for both production cells (plan)](specs/2026-11-21-nightly-image-hub-sync/plan.md) | spec | 1.0.0 | 2026-11-21 | draft | internal | A scheduled GitHub Actions job runs the |
 | [Checkout recovery: staff-controlled abandoned-basket recovery (plan)](specs/2026-11-22-checkout-recovery/plan.md) | spec | 1.0.0 | 2026-11-22 | approved | internal | Slices B and C of the checkout-recovery brief (#1732, |
 | [Unpaid checkout cancellations told apart from real cancellations (plan)](specs/2026-11-22-unpaid-checkout-cancellations/plan.md) | spec | 1.0.0 | 2026-11-22 | approved | internal | Slice A of checkout recovery (#1730). Records why every order was cancelled, hides never-paid checkouts from My orders and the default staff list, and words old unpaid links as "Payment not completed". |
-| [Priority 1 storefront icons (plan)](specs/2026-11-23-priority-1-storefront-icons/plan.md) | spec | 1.0.0 | 2026-11-23 | approved | internal | Improve recognition of favourites, basket controls and checkout states using the existing semantic icon registry. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
 | [ADR-002 — Authentication Library](specs/decisions/ADR-002-auth-library.md) | adr | 1.0.0 | 2026-08-06 | approved | internal | Decision to use Better Auth (self-hosted, bearer tokens, RBAC) for email/password and Google Sign-In, rejecting hosted IdPs like Clerk/Auth0 for the MVP. |

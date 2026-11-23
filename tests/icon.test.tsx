@@ -15,7 +15,7 @@ import {
   type IconTone,
 } from "@/components/icons/types";
 import { buildIconData } from "../scripts/lib/icon-build";
-import { lucideRegistryExports } from "./fixtures/lucide-registry-exports";
+import manifest from "./fixtures/lucide-icons-in-use.json";
 import { LUCIDE_CHILD_ATTRIBUTE_EXCEPTIONS } from "./fixtures/icon-parity-exceptions";
 
 /**
@@ -179,10 +179,11 @@ describe("Lucide icons keep lucide-react's root attributes (R13)", () => {
 
   it("puts no more own-paint attributes on children than lucide-react does", () => {
     const exceptions = new Set(LUCIDE_CHILD_ATTRIBUTE_EXCEPTIONS.map((e) => e.key));
+    const byKey = new Map(manifest.icons.map((i) => [i.key, i.export]));
     for (const [name] of lucideEntries) {
       if (exceptions.has(name)) continue;
       const component = (lucide as unknown as Record<string, React.ComponentType>)[
-        lucideRegistryExports.get(name)!
+        byKey.get(name)!
       ];
       const reference = descendantsWithOwnPaint(render(createElement(component)));
       const ours = descendantsWithOwnPaint(render(<Icon name={name} />));

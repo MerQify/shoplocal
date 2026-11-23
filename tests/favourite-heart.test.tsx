@@ -71,22 +71,19 @@ describe("FavouriteButton — the three states (R10)", () => {
     }
   });
 
-  it("fills the same heart silhouette only when saved", () => {
+  it("renders heart-outline for off and signed-out, and heart for on (#1239)", () => {
     const { unmount: u1 } = renderHeart("off");
-    const off = screen.getByRole("button").querySelector('svg[data-icon="favourite-heart"]');
-    expect(off?.getAttribute("fill")).toBe("none");
-    expect(off?.classList.contains("fill-current")).toBe(false);
+    expect(
+      screen.getByRole("button").querySelector('svg[data-icon="heart-outline"]'),
+    ).not.toBeNull();
     u1();
 
     const { unmount: u2 } = renderHeart("signed-out");
-    const signedOut = screen.getByRole("link").querySelector('svg[data-icon="favourite-heart"]');
-    expect(signedOut?.getAttribute("fill")).toBe("none");
-    expect(signedOut?.classList.contains("fill-current")).toBe(false);
+    expect(screen.getByRole("link").querySelector('svg[data-icon="heart-outline"]')).not.toBeNull();
     u2();
 
     const { unmount: u3 } = renderHeart("on");
-    const on = screen.getByRole("button").querySelector('svg[data-icon="favourite-heart"]');
-    expect(on?.classList.contains("fill-current")).toBe(true);
+    expect(screen.getByRole("button").querySelector('svg[data-icon="heart"]')).not.toBeNull();
     u3();
   });
 });

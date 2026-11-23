@@ -4,7 +4,7 @@ import * as lucide from "lucide-react";
 import { describe, expect, it } from "vitest";
 import { ICON_DATA } from "@/components/icons/generated/icon-data";
 import { ICON_REGISTRY } from "@/components/icons/registry";
-import { lucideRegistryExports as exportFor } from "./fixtures/lucide-registry-exports";
+import manifest from "./fixtures/lucide-icons-in-use.json";
 import { LUCIDE_PARITY_EXCEPTIONS } from "./fixtures/icon-parity-exceptions";
 import { geometryOf, sameGeometry } from "../scripts/lib/svg-geometry";
 
@@ -19,6 +19,7 @@ import { geometryOf, sameGeometry } from "../scripts/lib/svg-geometry";
  */
 
 const exceptions = new Map(LUCIDE_PARITY_EXCEPTIONS.map((e) => [e.key, e.reason]));
+const exportFor = new Map(manifest.icons.map((i) => [i.key, i.export]));
 
 function lucideGeometry(exportName: string): string[] {
   const component = (lucide as unknown as Record<string, React.ComponentType | undefined>)[
