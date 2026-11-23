@@ -10,7 +10,7 @@ import { OrderItemsCard } from "@/components/orders/OrderItemsCard";
 import { OrderAddressCard } from "@/components/orders/OrderAddressCard";
 import { OrderPointsNote } from "@/components/orders/OrderPointsNote";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Icon } from "@/components/icons/Icon";
+import { IconMedallion } from "@/components/icons/IconMedallion";
 import { PaymentStatusCheck } from "@/components/checkout/PaymentStatusCheck";
 import { OrderProgressTracker } from "@/components/orders/OrderProgressTracker";
 import { LiveRefresh } from "@/components/orders/LiveRefresh";
@@ -57,13 +57,13 @@ export default async function OrderConfirmationPage({
           races the webhook, and a closed tab means it never happens at all. */}
       <div className="mb-6 flex items-center gap-3">
         {order.status === "CONFIRMED" && (
-          <Icon name="status-confirmed" size="lg" tone="action" className="shrink-0" />
+          <IconMedallion icon="circle-check" size={32} className="shrink-0" decorative />
         )}
         {order.status === "PENDING_PAYMENT" && (
-          <Icon name="status-pending" size="lg" tone="accent" className="shrink-0" />
+          <IconMedallion icon="clock" size={32} tint="accent" className="shrink-0" decorative />
         )}
         {order.status === "CANCELLED" && (
-          <Icon name="status-cancelled" size="lg" tone="danger" className="shrink-0" />
+          <IconMedallion icon="circle-x" size={32} tint="danger" className="shrink-0" decorative />
         )}
         <div>
           <h1 className="text-xl font-bold text-primary">

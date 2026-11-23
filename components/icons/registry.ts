@@ -18,15 +18,6 @@ import type { IconFamily, RegistryEntry } from "./types";
  * interactive 1-to-5 rating `star` on `provider: "lucide"`.
  */
 export const ICON_REGISTRY = {
-  "favourite-heart": { tier: "functional", provider: "lucide", id: "heart" },
-  "shopping-basket": { tier: "functional", provider: "lucide", id: "shopping-basket" },
-  "item-unavailable": { tier: "functional", provider: "lucide", id: "package-x" },
-  "timed-slot": { tier: "functional", provider: "lucide", id: "calendar-clock" },
-  "secure-payment": { tier: "functional", provider: "lucide", id: "shield-check" },
-  "status-warning": { tier: "functional", provider: "lucide", id: "circle-alert" },
-  "status-confirmed": { tier: "functional", provider: "lucide", id: "circle-check" },
-  "status-pending": { tier: "functional", provider: "lucide", id: "clock" },
-  "status-cancelled": { tier: "functional", provider: "lucide", id: "circle-x" },
   apple: { tier: "decorative", provider: "noto", id: "red-apple" },
   "arrow-left": { tier: "functional", provider: "lucide", id: "arrow-left" },
   "arrow-right": { tier: "functional", provider: "lucide", id: "arrow-right" },
@@ -149,15 +140,6 @@ export type IconName = keyof typeof ICON_REGISTRY;
  * Mapping of semantic icon keys to their visual design family (#1602).
  */
 export const ICON_FAMILY_MAP: Record<IconName, IconFamily> = {
-  "favourite-heart": "functional",
-  "shopping-basket": "functional",
-  "item-unavailable": "functional",
-  "timed-slot": "functional",
-  "secure-payment": "functional",
-  "status-warning": "functional",
-  "status-confirmed": "functional",
-  "status-pending": "functional",
-  "status-cancelled": "functional",
   // Functional family: Search, basket, account, navigation, controls, checkout
   "arrow-left": "functional",
   "arrow-right": "functional",
