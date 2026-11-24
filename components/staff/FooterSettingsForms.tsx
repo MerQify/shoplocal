@@ -130,7 +130,10 @@ export function FooterSettingsForms({ initial }: { initial: FooterSettingsValues
 
   return (
     <div className="flex flex-col gap-8">
-      <form action={saveContact} className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+      <form
+        action={saveContact}
+        className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+      >
         <div>
           <h2 className="text-xl font-bold text-black">Footer contact &amp; legal</h2>
           <p className="mt-1 text-sm text-black/60">
@@ -186,7 +189,10 @@ export function FooterSettingsForms({ initial }: { initial: FooterSettingsValues
         </button>
       </form>
 
-      <form action={saveHours} className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+      <form
+        action={saveHours}
+        className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+      >
         <div>
           <h2 className="text-xl font-bold text-black">Opening hours &amp; payment badges</h2>
           <p className="mt-1 text-sm text-black/60">

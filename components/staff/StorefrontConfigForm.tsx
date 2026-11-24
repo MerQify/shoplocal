@@ -419,7 +419,10 @@ export function StorefrontConfigForm({
           </div>
         )}
 
-        <form action={saveBranding} className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+        <form
+          action={saveBranding}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+        >
           <div>
             <h2 className="text-xl font-bold text-black">Branding &amp; colours</h2>
             <p className="mt-1 text-sm text-black/60">
@@ -516,7 +519,9 @@ export function StorefrontConfigForm({
                       <input
                         type="color"
                         value={val || "#ffffff"}
-                        onChange={(e) => setColors((prev) => ({ ...prev, [field.name]: e.target.value }))}
+                        onChange={(e) =>
+                          setColors((prev) => ({ ...prev, [field.name]: e.target.value }))
+                        }
                         className={`h-[44px] w-[44px] shrink-0 cursor-pointer rounded-lg border p-1 ${
                           hasError ? "border-danger" : "border-black/20"
                         }`}
@@ -526,9 +531,13 @@ export function StorefrontConfigForm({
                         name={field.name}
                         type="text"
                         value={val}
-                        onChange={(e) => setColors((prev) => ({ ...prev, [field.name]: e.target.value }))}
+                        onChange={(e) =>
+                          setColors((prev) => ({ ...prev, [field.name]: e.target.value }))
+                        }
                         className={`min-w-0 flex-1 rounded-lg border p-2.5 font-mono text-sm ${
-                          hasError ? "border-danger focus-visible:outline-danger" : "border-black/20"
+                          hasError
+                            ? "border-danger focus-visible:outline-danger"
+                            : "border-black/20"
                         }`}
                         placeholder={field.placeholder}
                       />
@@ -566,8 +575,8 @@ export function StorefrontConfigForm({
           <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-black/10 p-6">
             <h3 className="font-bold text-black">Live Preview</h3>
             <p className="text-sm text-black/60">
-              This shows what your colours will look like to shoppers. We automatically adjust them to
-              guarantee they are readable.
+              This shows what your colours will look like to shoppers. We automatically adjust them
+              to guarantee they are readable.
             </p>
             <div
               style={brandStyle(livePrimitives)}
@@ -636,7 +645,10 @@ export function StorefrontConfigForm({
             with database access: VendorConfig carried all three columns and
             prisma/seed.ts was their only writer. A sibling <form>, never nested —
             HTML forbids that, and the two save independently. */}
-        <form action={saveDeliveryRules} className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+        <form
+          action={saveDeliveryRules}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+        >
           <div>
             <h2 className="text-xl font-bold text-black">Delivery rules</h2>
             <p className="mt-1 text-sm text-black/60">
@@ -839,7 +851,10 @@ export function StorefrontConfigForm({
 
         {/* #962 — a fifth sibling <form>, never nested, so no other form above ever submits
             productGridDensity and none of them can change it. */}
-        <form action={saveGridDensity} className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+        <form
+          action={saveGridDensity}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+        >
           <div>
             <h2 className="text-xl font-bold text-black">Product grid layout</h2>
             <p className="mt-1 text-sm text-black/60">
@@ -900,18 +915,23 @@ export function StorefrontConfigForm({
 
         {/* #905 — a fourth sibling <form>, never nested. The labels gate the staff product form only;
             switching one off never clears a product's stored value (saveProduct strips it). */}
-        <form action={saveCatalogueSettings} className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+        <form
+          action={saveCatalogueSettings}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+        >
           <div>
             <h2 className="text-xl font-bold text-black">Product labels &amp; store description</h2>
             <p className="mt-1 text-sm text-black/60">
               Choose which labels your staff can set on a product. Switching a label off hides it on
-              the product form but keeps the value already saved on each product, and your storefront
-              keeps showing a label only on products that carry it.
+              the product form but keeps the value already saved on each product, and your
+              storefront keeps showing a label only on products that carry it.
             </p>
           </div>
 
           <fieldset className="flex flex-col gap-3">
-            <legend className="mb-2 font-bold text-black">Labels offered on the product form</legend>
+            <legend className="mb-2 font-bold text-black">
+              Labels offered on the product form
+            </legend>
             <div className="flex flex-wrap gap-x-6 gap-y-3">
               {CATALOGUE_LABEL_FIELDS.map((label) => (
                 <label key={label.name} className="flex items-center gap-2 text-sm text-black">
@@ -991,12 +1011,15 @@ export function StorefrontConfigForm({
 
         {/* #407 / #405 — a third sibling <form>, never nested. Leaving a field blank HIDES that
             link on the storefront rather than falling back to a platform account (#239). */}
-        <form action={saveSocialContact} className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+        <form
+          action={saveSocialContact}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+        >
           <div>
             <h2 className="text-xl font-bold text-black">Social &amp; contact links</h2>
             <p className="mt-1 text-sm text-black/60">
-              Where shoppers can find you. Leave a field blank to hide that link from your storefront
-              — nothing is shown in its place.
+              Where shoppers can find you. Leave a field blank to hide that link from your
+              storefront — nothing is shown in its place.
             </p>
           </div>
 
@@ -1047,8 +1070,8 @@ export function StorefrontConfigForm({
               placeholder="e.g. 447700900123"
             />
             <p className="text-xs text-black/60">
-              International format, digits only — no plus sign, spaces or dashes. This adds a WhatsApp
-              button to your storefront.
+              International format, digits only — no plus sign, spaces or dashes. This adds a
+              WhatsApp button to your storefront.
             </p>
           </div>
 
@@ -1066,9 +1089,9 @@ export function StorefrontConfigForm({
               placeholder="e.g. https://chat.whatsapp.com/your-invite-code"
             />
             <p className="text-xs text-black/60">
-              Must start with https://chat.whatsapp.com/ followed by your group invite code. Shown on
-              the Offers &amp; Deals page (/whatsapp-offers); leave blank to hide the WhatsApp group
-              banner on that page.
+              Must start with https://chat.whatsapp.com/ followed by your group invite code. Shown
+              on the Offers &amp; Deals page (/whatsapp-offers); leave blank to hide the WhatsApp
+              group banner on that page.
             </p>
           </div>
 
