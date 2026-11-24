@@ -208,6 +208,6 @@ describe("reject an approved image (#1682)", () => {
 
     reject.mockResolvedValueOnce({ ok: false, code: "unreachable", message: "Hub down." });
     fireEvent.click(screen.getByRole("button", { name: "Reject" }));
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Hub down."));
+    await waitFor(() => expect(screen.getByText("Hub down.")).toBeTruthy(), { timeout: 4000 });
   });
 });

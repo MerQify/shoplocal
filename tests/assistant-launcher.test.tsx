@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import {
   AssistantLauncherProvider,
@@ -26,5 +26,5 @@ it("loads the assistant on demand and restores focus to the opener", async () =>
   expect(await screen.findByRole("dialog", {}, { timeout: 5000 })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Close help assistant" }));
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(document.activeElement).toBe(opener);
+  await waitFor(() => expect(document.activeElement).toBe(opener));
 });

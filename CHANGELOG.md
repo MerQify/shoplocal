@@ -6,6 +6,11 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Category selector alphabetical sorting & staff category collation.**
+  - **Alphabetical Category Option Groups:** Centralised default alphabetical (A–Z) sorting in `toCategoryOptionGroups` across departments and child subcategories, automatically applying to `/staff/products`, `BulkProductActions`, `ProductForm`, and `PromotionForm` category selectors.
+  - **Staff Categories Collation:** Applied alphabetical natural tree collation on `/staff/categories`.
+  - **Hardened Image Library Test:** Stabilised async rejection assertions in `tests/image-library-client.test.tsx`.
+
 - **Platform-wide list optimisation, Cloudflare metadata architecture, and staff active/archived management.**
   - **Alphabetical Sorting (A–Z) by Default:** Case-insensitive natural collation across categories, subcategories, brands, selectors, and navigation menus (`lib/list-sorting.ts`). Preserves two-tier parent-child hierarchies.
   - **Shopper Visibility Filtering:** Enforced `visibleCategoryWhere` and shopper-visible brands (`listShopperVisibleBrands`) ensuring inactive/hidden items never leak to shoppers while maintaining complete staff access.

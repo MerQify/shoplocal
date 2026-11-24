@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-24T06:47:57.065Z` · commit `0a411b97` · `394` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-24T07:43:32.420Z` · commit `8000d577` · `395` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -377,6 +377,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Nightly Image Hub sync for both production cells (plan)](specs/2026-11-21-nightly-image-hub-sync/plan.md) | spec | 1.0.0 | 2026-11-21 | draft | internal | A scheduled GitHub Actions job runs the |
 | [Checkout recovery: staff-controlled abandoned-basket recovery (plan)](specs/2026-11-22-checkout-recovery/plan.md) | spec | 1.0.0 | 2026-11-22 | approved | internal | Slices B and C of the checkout-recovery brief (#1732, |
 | [Unpaid checkout cancellations told apart from real cancellations (plan)](specs/2026-11-22-unpaid-checkout-cancellations/plan.md) | spec | 1.0.0 | 2026-11-22 | approved | internal | Slice A of checkout recovery (#1730). Records why every order was cancelled, hides never-paid checkouts from My orders and the default staff list, and words old unpaid links as "Payment not completed". |
+| [Category Selector Alphabetical Sorting & Staff Category Collation](specs/2026-11-24-category-selector-alphabetical-sort/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Default alphabetical sorting for category option groups across staff and product forms. |
 | [Platform-Wide List Optimisation & Cloudflare Metadata Architecture](specs/2026-11-24-platform-wide-list-optimisation/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for list collation, edge metadata caching, and admin archive controls. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
