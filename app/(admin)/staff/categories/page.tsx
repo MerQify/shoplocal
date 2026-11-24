@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireVendorRole } from "@/lib/auth-rbac";
 import { listCategoriesForAdmin } from "@/lib/categories-service";
+import { sortCategoryTreeAlphabetical } from "@/lib/list-sorting";
 import { PanelRefusal } from "@/components/staff/PanelRefusal";
 import { CategoryForm } from "@/components/staff/CategoryForm";
 import { CategoryListClient } from "@/components/staff/CategoryListClient";
@@ -33,7 +34,7 @@ export default async function StaffCategoriesPage() {
     );
   }
 
-  const categories = await listCategoriesForAdmin(auth.vendorId);
+  const categories = sortCategoryTreeAlphabetical(await listCategoriesForAdmin(auth.vendorId));
   const missingCount = categories.filter((c) => !c.imageKey).length;
 
   return (
