@@ -33,6 +33,7 @@ import {
   staffProductsHref,
 } from "@/lib/staff-products-query";
 import { StickyBulkActionBar } from "@/components/staff/StickyBulkActionBar";
+import { ProductCatalogLayout, FilterToggleBtn } from "@/components/staff/ProductCatalogLayout";
 import { SelectAllHeaderCheckbox } from "@/components/staff/SelectAllHeaderCheckbox";
 import { Pagination } from "@/components/ui/Pagination";
 import { BULK_PRODUCTS_FORM_ID } from "@/lib/product-restriction-form";
@@ -192,6 +193,15 @@ export default async function StaffProductsPage({
     query.needs !== undefined ||
     query.brandId !== undefined;
 
+  let activeFilterCount = 0;
+  if (query.status !== PRODUCT_STATUS_ALL) activeFilterCount++;
+  if (query.category !== CATEGORY_ALL) activeFilterCount++;
+  if (query.brand !== BRAND_ALL) activeFilterCount++;
+  if (query.restrictionFilter !== RESTRICTION_ALL) activeFilterCount++;
+  if (query.stockFilter !== STOCK_ALL) activeFilterCount++;
+  if (query.needsFilter !== NEEDS_ALL) activeFilterCount++;
+  if (query.search) activeFilterCount++;
+
   return (
     <PageContainer width="wide">
       {/* Dashboard Top Header */}
@@ -278,211 +288,194 @@ export default async function StaffProductsPage({
       </header>
 
       {/* Main Two-Column Layout: Sidebar Filters + Products Main Area */}
-      <div className="mt-4 flex flex-col lg:flex-row items-start gap-6">
-        {/* Left Column: Dedicated Filters Sidebar */}
-        <aside className="w-full lg:w-72 shrink-0">
-          <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-black/10">
-              <div className="flex items-center gap-2 font-bold text-primary text-sm">
-                <Icon name="sliders-horizontal" className="h-4 w-4 text-primary" />
-                <span>Filters</span>
-              </div>
-              {isFiltered && (
-                <Link
-                  href="/staff/products"
-                  className="text-xs font-semibold text-action hover:underline"
-                >
-                  Clear all
-                </Link>
-              )}
-            </div>
+      <ProductCatalogLayout
+        activeFilterCount={activeFilterCount}
+        isFiltered={isFiltered}
+        sidebar={
+          <form method="get" action="/staff/products" className="space-y-4">
+            {query.search && <input type="hidden" name="q" value={query.search} />}
 
-            <form method="get" action="/staff/products" className="space-y-4">
-              {query.search && <input type="hidden" name="q" value={query.search} />}
-
-              {/* Status Radio Filter */}
-              <fieldset className="space-y-2">
-                <legend className="text-xs font-bold uppercase tracking-wide text-primary">
-                  Status
-                </legend>
-                <div className="space-y-1">
-                  <label className="flex items-center justify-between rounded-xl px-2.5 py-1.5 text-sm font-medium text-primary hover:bg-surface-muted cursor-pointer transition">
-                    <div className="flex items-center gap-2.5">
-                      <input
-                        type="radio"
-                        name="status"
-                        value={PRODUCT_STATUS_ALL}
-                        defaultChecked={query.status === PRODUCT_STATUS_ALL}
-                        className="h-4 w-4 text-action focus:ring-action"
-                      />
-                      <span>All statuses</span>
-                    </div>
-                    {facets.all.count !== undefined && (
-                      <span className="text-xs text-primary-muted font-normal">
-                        ({facets.all.count.toLocaleString()})
-                      </span>
-                    )}
-                  </label>
-                  <label className="flex items-center justify-between rounded-xl px-2.5 py-1.5 text-sm font-medium text-primary hover:bg-surface-muted cursor-pointer transition">
-                    <div className="flex items-center gap-2.5">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="active"
-                        defaultChecked={query.status === "active"}
-                        className="h-4 w-4 text-action focus:ring-action"
-                      />
-                      <span>Active</span>
-                    </div>
-                    {facets.active.count !== undefined && (
-                      <span className="text-xs text-primary-muted font-normal">
-                        ({facets.active.count.toLocaleString()})
-                      </span>
-                    )}
-                  </label>
-                  <label className="flex items-center justify-between rounded-xl px-2.5 py-1.5 text-sm font-medium text-primary hover:bg-surface-muted cursor-pointer transition">
-                    <div className="flex items-center gap-2.5">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="archived"
-                        defaultChecked={query.status === "archived" || query.status === "inactive"}
-                        className="h-4 w-4 text-action focus:ring-action"
-                      />
-                      <span>Archived</span>
-                    </div>
-                    {facets.archived.count !== undefined && (
-                      <span className="text-xs text-primary-muted font-normal">
-                        ({facets.archived.count.toLocaleString()})
-                      </span>
-                    )}
-                  </label>
-                </div>
-              </fieldset>
-
-              {/* Category Filter */}
-              <label className={labelClass}>
-                <span>Category</span>
-                <select name="category" defaultValue={query.category} className={selectClass}>
-                  <option value={CATEGORY_ALL}>All categories</option>
-                  {toCategoryOptionGroups(filteredCategories).map((group) => (
-                    <optgroup key={group.parent.id} label={group.parent.name}>
-                      <option value={group.parent.id}>All of {group.parent.name}</option>
-                      {group.children.map((child) => (
-                        <option key={child.id} value={child.id}>
-                          {child.name}
-                          {!child.isActive && " (inactive)"}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </label>
-
-              {/* Brand Filter */}
-              <label className={labelClass}>
-                <span>Brand</span>
-                <select name="brand" defaultValue={query.brand} className={selectClass}>
-                  <option value={BRAND_ALL}>All brands</option>
-                  <option value={BRAND_NONE}>No brand</option>
-                  {filteredBrands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {/* Restriction Filter */}
-              <label className={labelClass}>
-                <span>Restriction</span>
-                <select
-                  name="restriction"
-                  defaultValue={query.restrictionFilter}
-                  className={selectClass}
-                >
-                  <option value={RESTRICTION_ALL}>Any</option>
-                  {availableRestrictions.length > 0 && (
-                    <>
-                      <option value="any">Restricted</option>
-                      <option value="none">Not restricted</option>
-                      {availableRestrictions.map((value) => (
-                        <option key={value} value={value}>
-                          {RESTRICTION_LABELS[value]}
-                        </option>
-                      ))}
-                    </>
+            {/* Status Radio Filter */}
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-bold uppercase tracking-wide text-primary">
+                Status
+              </legend>
+              <div className="space-y-1">
+                <label className="flex items-center justify-between rounded-xl px-2.5 py-1.5 text-sm font-medium text-primary hover:bg-surface-muted cursor-pointer transition">
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      type="radio"
+                      name="status"
+                      value={PRODUCT_STATUS_ALL}
+                      defaultChecked={query.status === PRODUCT_STATUS_ALL}
+                      className="h-4 w-4 text-action focus:ring-action"
+                    />
+                    <span>All statuses</span>
+                  </div>
+                  {facets.all.count !== undefined && (
+                    <span className="text-xs text-primary-muted font-normal">
+                      ({facets.all.count.toLocaleString()})
+                    </span>
                   )}
-                </select>
-              </label>
+                </label>
+                <label className="flex items-center justify-between rounded-xl px-2.5 py-1.5 text-sm font-medium text-primary hover:bg-surface-muted cursor-pointer transition">
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      type="radio"
+                      name="status"
+                      value="active"
+                      defaultChecked={query.status === "active"}
+                      className="h-4 w-4 text-action focus:ring-action"
+                    />
+                    <span>Active</span>
+                  </div>
+                  {facets.active.count !== undefined && (
+                    <span className="text-xs text-primary-muted font-normal">
+                      ({facets.active.count.toLocaleString()})
+                    </span>
+                  )}
+                </label>
+                <label className="flex items-center justify-between rounded-xl px-2.5 py-1.5 text-sm font-medium text-primary hover:bg-surface-muted cursor-pointer transition">
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      type="radio"
+                      name="status"
+                      value="archived"
+                      defaultChecked={query.status === "archived" || query.status === "inactive"}
+                      className="h-4 w-4 text-action focus:ring-action"
+                    />
+                    <span>Archived</span>
+                  </div>
+                  {facets.archived.count !== undefined && (
+                    <span className="text-xs text-primary-muted font-normal">
+                      ({facets.archived.count.toLocaleString()})
+                    </span>
+                  )}
+                </label>
+              </div>
+            </fieldset>
 
-              {/* Stock Filter */}
-              <label className={labelClass}>
-                <span>Stock</span>
-                <select name="stock" defaultValue={query.stockFilter} className={selectClass}>
-                  <option value={STOCK_ALL}>Any</option>
-                  {(availableStockFilters.length > 0 ? availableStockFilters : STOCK_FILTERS).map(
-                    (value) => (
-                      <option key={value} value={value}>
-                        {STOCK_MODE_LABELS[value]}
+            {/* Category Filter */}
+            <label className={labelClass}>
+              <span>Category</span>
+              <select name="category" defaultValue={query.category} className={selectClass}>
+                <option value={CATEGORY_ALL}>All categories</option>
+                {toCategoryOptionGroups(filteredCategories).map((group) => (
+                  <optgroup key={group.parent.id} label={group.parent.name}>
+                    <option value={group.parent.id}>All of {group.parent.name}</option>
+                    {group.children.map((child) => (
+                      <option key={child.id} value={child.id}>
+                        {child.name}
+                        {!child.isActive && " (inactive)"}
                       </option>
-                    ),
-                  )}
-                </select>
-              </label>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
 
-              {/* Needs Attention Filter */}
-              <label className={labelClass}>
-                <span>Needs attention</span>
-                <select name="needs" defaultValue={query.needsFilter} className={selectClass}>
-                  <option value={NEEDS_ALL}>Any</option>
-                  {NEEDS_FILTERS.map((value) => (
+            {/* Brand Filter */}
+            <label className={labelClass}>
+              <span>Brand</span>
+              <select name="brand" defaultValue={query.brand} className={selectClass}>
+                <option value={BRAND_ALL}>All brands</option>
+                <option value={BRAND_NONE}>No brand</option>
+                {filteredBrands.map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Restriction Filter */}
+            <label className={labelClass}>
+              <span>Restriction</span>
+              <select
+                name="restriction"
+                defaultValue={query.restrictionFilter}
+                className={selectClass}
+              >
+                <option value={RESTRICTION_ALL}>Any</option>
+                {availableRestrictions.length > 0 && (
+                  <>
+                    <option value="any">Restricted</option>
+                    <option value="none">Not restricted</option>
+                    {availableRestrictions.map((value) => (
+                      <option key={value} value={value}>
+                        {RESTRICTION_LABELS[value]}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </select>
+            </label>
+
+            {/* Stock Filter */}
+            <label className={labelClass}>
+              <span>Stock</span>
+              <select name="stock" defaultValue={query.stockFilter} className={selectClass}>
+                <option value={STOCK_ALL}>Any</option>
+                {(availableStockFilters.length > 0 ? availableStockFilters : STOCK_FILTERS).map(
+                  (value) => (
                     <option key={value} value={value}>
-                      {NEEDS_LABELS[value]}
+                      {STOCK_MODE_LABELS[value]}
                     </option>
-                  ))}
-                </select>
-              </label>
+                  ),
+                )}
+              </select>
+            </label>
 
-              {/* Sort Filter */}
-              <label className={labelClass}>
-                <span>Sort by</span>
-                <select name="sort" defaultValue={query.sort} className={selectClass}>
-                  {SORT_OPTIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {SORT_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {/* Needs Attention Filter */}
+            <label className={labelClass}>
+              <span>Needs attention</span>
+              <select name="needs" defaultValue={query.needsFilter} className={selectClass}>
+                <option value={NEEDS_ALL}>Any</option>
+                {NEEDS_FILTERS.map((value) => (
+                  <option key={value} value={value}>
+                    {NEEDS_LABELS[value]}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-              {/* Per Page Filter */}
-              <label className={labelClass}>
-                <span>Per page</span>
-                <select name="perPage" defaultValue={String(query.perPage)} className={selectClass}>
-                  {PER_PAGE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {/* Sort Filter */}
+            <label className={labelClass}>
+              <span>Sort by</span>
+              <select name="sort" defaultValue={query.sort} className={selectClass}>
+                {SORT_OPTIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {SORT_LABELS[value]}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-              {/* Apply Button */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
-                >
-                  Apply filters
-                </button>
-              </div>
-            </form>
-          </div>
-        </aside>
+            {/* Per Page Filter */}
+            <label className={labelClass}>
+              <span>Per page</span>
+              <select name="perPage" defaultValue={String(query.perPage)} className={selectClass}>
+                {PER_PAGE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        {/* Right Column: Search, Quick Views, Product Table & Pagination */}
-        <main className="min-w-0 flex-1 space-y-4">
+            {/* Apply Button */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
+              >
+                Apply filters
+              </button>
+            </div>
+          </form>
+        }
+      >
+        <div className="space-y-4">
           {/* Search Bar & Quick Views Card */}
           <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm space-y-3">
             <form method="get" action="/staff/products" className="flex gap-2">
@@ -537,37 +530,40 @@ export default async function StaffProductsPage({
             </form>
 
             {/* Quick Views */}
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5 text-xs">
-              <span className="font-bold uppercase tracking-wide text-primary-muted mr-1">
-                Quick views:
-              </span>
-              <Link
-                href={staffProductsHref({ ...query, needs: undefined })}
-                className={`rounded-full border px-3 py-1 font-semibold transition ${
-                  !query.needs
-                    ? "border-primary bg-primary text-white"
-                    : "border-black/10 bg-white text-primary hover:bg-surface-muted"
-                }`}
-              >
-                All Products
-              </Link>
-              {NEEDS_FILTERS.map((value) => {
-                const active = query.needs === value;
-                return (
-                  <Link
-                    key={value}
-                    href={staffProductsHref({ ...query, needs: active ? undefined : value })}
-                    aria-pressed={active}
-                    className={`rounded-full border px-3 py-1 font-semibold transition ${
-                      active
-                        ? "border-primary bg-primary text-white"
-                        : "border-black/10 bg-white text-primary hover:bg-surface-muted"
-                    }`}
-                  >
-                    {NEEDS_LABELS[value]}
-                  </Link>
-                );
-              })}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-black/5 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold uppercase tracking-wide text-primary-muted mr-1">
+                  Quick views:
+                </span>
+                <Link
+                  href={staffProductsHref({ ...query, needs: undefined })}
+                  className={`rounded-full border px-3 py-1 font-semibold transition ${
+                    !query.needs
+                      ? "border-primary bg-primary text-white"
+                      : "border-black/10 bg-white text-primary hover:bg-surface-muted"
+                  }`}
+                >
+                  All Products
+                </Link>
+                {NEEDS_FILTERS.map((value) => {
+                  const active = query.needs === value;
+                  return (
+                    <Link
+                      key={value}
+                      href={staffProductsHref({ ...query, needs: active ? undefined : value })}
+                      aria-pressed={active}
+                      className={`rounded-full border px-3 py-1 font-semibold transition ${
+                        active
+                          ? "border-primary bg-primary text-white"
+                          : "border-black/10 bg-white text-primary hover:bg-surface-muted"
+                      }`}
+                    >
+                      {NEEDS_LABELS[value]}
+                    </Link>
+                  );
+                })}
+              </div>
+              <FilterToggleBtn />
             </div>
           </div>
 
@@ -681,6 +677,17 @@ export default async function StaffProductsPage({
                                       </span>
                                     </>
                                   )}
+                                  {product.restriction === "AGE_RESTRICTED" && (
+                                    <>
+                                      <span>·</span>
+                                      <span
+                                        title="Cannot currently be sold online due to age restrictions"
+                                        className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800 border border-amber-200/60 cursor-help"
+                                      >
+                                        Age Restricted
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -788,11 +795,12 @@ export default async function StaffProductsPage({
                                 </span>
                               )}
 
-                              {product.restriction !== null && (
-                                <span className="inline-flex items-center rounded-full bg-danger-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-danger">
-                                  {RESTRICTION_LABELS[product.restriction]}
-                                </span>
-                              )}
+                              {product.restriction !== null &&
+                                product.restriction !== "AGE_RESTRICTED" && (
+                                  <span className="inline-flex items-center rounded-full bg-danger-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-danger">
+                                    {RESTRICTION_LABELS[product.restriction]}
+                                  </span>
+                                )}
 
                               {tracked && product.quantity <= 0 && (
                                 <span className="inline-flex items-center rounded-full bg-danger-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-danger">
@@ -848,8 +856,8 @@ export default async function StaffProductsPage({
               }}
             />
           )}
-        </main>
-      </div>
+        </div>
+      </ProductCatalogLayout>
 
       {/* Unified Docked Sticky Bulk Action Bar */}
       {items.length > 0 && (

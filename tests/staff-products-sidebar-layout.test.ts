@@ -7,6 +7,8 @@ const read = (path: string) => readFileSync(join(root, path), "utf8");
 
 describe("Staff products sidebar filter layout and sticky action bar", () => {
   const pageSource = read("app/(admin)/staff/products/page.tsx");
+  const layoutSource = read("components/staff/ProductCatalogLayout.tsx");
+  const barSource = read("components/staff/StickyBulkActionBar.tsx");
 
   it("selectClass includes w-full and truncate for uniform sizing and clean truncation", () => {
     expect(pageSource).toContain(
@@ -14,9 +16,15 @@ describe("Staff products sidebar filter layout and sticky action bar", () => {
     );
   });
 
-  it("renders a two-column layout with sidebar and main area", () => {
-    expect(pageSource).toContain('<aside className="w-full lg:w-72 shrink-0">');
-    expect(pageSource).toContain('<main className="min-w-0 flex-1 space-y-4">');
+  it("renders ProductCatalogLayout with collapsible sidebar and responsive main table", () => {
+    expect(pageSource).toContain("<ProductCatalogLayout");
+    expect(pageSource).toContain("activeFilterCount={activeFilterCount}");
+    expect(pageSource).toContain("<FilterToggleBtn />");
+    expect(layoutSource).toContain("<aside");
+    expect(layoutSource).toContain("<main");
+    expect(layoutSource).toContain("staff_products_filters_collapsed");
+    expect(layoutSource).toContain("panel-left-close");
+    expect(layoutSource).toContain("panel-left-open");
   });
 
   it("houses all 8 filter dimensions within the sidebar form", () => {
@@ -40,6 +48,15 @@ describe("Staff products sidebar filter layout and sticky action bar", () => {
     expect(pageSource).toContain("Apply filters");
   });
 
+  it("displays compact Age Restricted badge under product name instead of bulky status column banner", () => {
+    // Product column contains Age Restricted pill with tooltip
+    expect(pageSource).toContain('product.restriction === "AGE_RESTRICTED"');
+    expect(pageSource).toContain("Age Restricted");
+    expect(pageSource).toContain('title="Cannot currently be sold online due to age restrictions"');
+    // Status column excludes AGE_RESTRICTED to keep rows uncluttered
+    expect(pageSource).toContain('product.restriction !== "AGE_RESTRICTED"');
+  });
+
   it("mounts the SelectAllHeaderCheckbox and StickyBulkActionBar", () => {
     expect(pageSource).toContain("<SelectAllHeaderCheckbox />");
     expect(pageSource).toContain("<StickyBulkActionBar");
@@ -48,12 +65,11 @@ describe("Staff products sidebar filter layout and sticky action bar", () => {
     expect(pageSource).toContain("isStoreAdmin={isStoreAdmin}");
   });
 
-  it("StickyBulkActionBar includes Low-Stock Alert At option", () => {
-    const barSource = read("components/staff/StickyBulkActionBar.tsx");
-    expect(barSource).toContain("Low-stock alert at:");
+  it("StickyBulkActionBar applies low-stock alert threshold to selected products", () => {
+    expect(barSource).toContain("Low-stock alert:");
     expect(barSource).toContain('name="lowStockThreshold"');
-    expect(barSource).toContain("Save default");
-    expect(barSource).toContain("saveLowStockDefaultAction");
+    expect(barSource).toContain("Apply to selected");
+    expect(barSource).toContain("bulkSetLowStockThresholdAction");
   });
 
   it("Product drilldown edit page includes back navigation and 2-column responsive layout", () => {
@@ -72,7 +88,7 @@ describe("Staff products sidebar filter layout and sticky action bar", () => {
     expect(formSource).toContain('form="product-form"');
   });
 
-  it("renders low-stock default form inside a popover for store admins", () => {
+  it("renders low-stock default form inside a popover for store admins for store-wide default", () => {
     expect(pageSource).toContain('const isStoreAdmin = auth.via !== "STAFF";');
     expect(pageSource).toContain("<LowStockDefaultForm current={lowStockDefault} />");
     expect(pageSource).toContain("Low-stock default: {lowStockDefault}");

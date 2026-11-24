@@ -3,10 +3,10 @@
 import { useActionState, useEffect, useState } from "react";
 import { bulkProductAction } from "@/features/admin/product-restrictions";
 import { saveBulkQuantities } from "@/features/admin/product-quantities";
-import { saveLowStockDefaultAction } from "@/features/admin/catalogue";
+import { bulkSetLowStockThresholdAction } from "@/features/admin/catalogue";
 import {
+  BULK_LOW_STOCK_THRESHOLD_IDLE,
   DEFAULT_LOW_STOCK_THRESHOLD,
-  LOW_STOCK_DEFAULT_IDLE,
   MAX_LOW_STOCK_THRESHOLD,
 } from "@/lib/low-stock";
 import {
@@ -75,9 +75,9 @@ export function StickyBulkActionBar({
     saveBulkQuantities,
     initialBulkQuantityState,
   );
-  const [lowStockState, lowStockAction, lowStockPending] = useActionState(
-    saveLowStockDefaultAction,
-    LOW_STOCK_DEFAULT_IDLE,
+  const [thresholdState, thresholdAction, thresholdPending] = useActionState(
+    bulkSetLowStockThresholdAction,
+    BULK_LOW_STOCK_THRESHOLD_IDLE,
   );
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -323,38 +323,37 @@ export function StickyBulkActionBar({
             </div>
           )}
 
-          {/* Low-Stock Alert At Form */}
-          {isStoreAdmin && (
-            <>
-              <div className="hidden md:block h-5 w-px bg-white/20" />
-              <form action={lowStockAction} className="flex items-center gap-2">
-                <label
-                  htmlFor="sticky-low-stock-input"
-                  className="text-xs text-white/70 font-medium whitespace-nowrap"
-                >
-                  Low-stock alert at:
-                </label>
-                <input
-                  id="sticky-low-stock-input"
-                  type="number"
-                  name="lowStockThreshold"
-                  min={0}
-                  max={MAX_LOW_STOCK_THRESHOLD}
-                  step={1}
-                  required
-                  defaultValue={lowStockDefault}
-                  className="w-14 rounded-xl border border-white/20 bg-white/10 px-2 py-1.5 text-center text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-action"
-                />
-                <button
-                  type="submit"
-                  disabled={lowStockPending}
-                  className="rounded-xl bg-white/20 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/30 disabled:opacity-50 whitespace-nowrap"
-                >
-                  {lowStockPending ? "Saving…" : "Save default"}
-                </button>
-              </form>
-            </>
-          )}
+          {/* Low-Stock Alert At Form for Selected Products */}
+          <div className="hidden md:block h-5 w-px bg-white/20" />
+          <form action={thresholdAction} className="flex items-center gap-2">
+            {Array.from(selectedIds).map((id) => (
+              <input key={id} type="hidden" name="productId" value={id} />
+            ))}
+            <label
+              htmlFor="sticky-low-stock-input"
+              className="text-xs text-white/70 font-medium whitespace-nowrap"
+            >
+              Low-stock alert:
+            </label>
+            <input
+              id="sticky-low-stock-input"
+              type="number"
+              name="lowStockThreshold"
+              min={0}
+              max={MAX_LOW_STOCK_THRESHOLD}
+              step={1}
+              required
+              defaultValue={lowStockDefault}
+              className="w-14 rounded-xl border border-white/20 bg-white/10 px-2 py-1.5 text-center text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-action"
+            />
+            <button
+              type="submit"
+              disabled={!hasSelection || thresholdPending}
+              className="rounded-xl bg-white/20 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/30 disabled:opacity-50 whitespace-nowrap motion-reduce:active:scale-100"
+            >
+              {thresholdPending ? "Applying…" : "Apply to selected"}
+            </button>
+          </form>
         </div>
       </aside>
 
@@ -380,17 +379,17 @@ export function StickyBulkActionBar({
         </div>
       )}
 
-      {/* Low-stock default notification */}
-      {lowStockState.message && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-action text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
+      {/* Low-stock threshold notification */}
+      {thresholdState.status === "ok" && thresholdState.message && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-emerald-600 text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
           <Icon name="check" className="h-4 w-4" />
-          {lowStockState.message}
+          {thresholdState.message}
         </div>
       )}
-      {lowStockState.error && (
+      {thresholdState.status === "error" && thresholdState.message && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-danger text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
           <Icon name="circle-alert" className="h-4 w-4" />
-          {lowStockState.error}
+          {thresholdState.message}
         </div>
       )}
     </>
