@@ -78,6 +78,9 @@ export function StorefrontConfigForm({
   logoUrl,
   markUrl,
   whatsappQrUrl = null,
+  footerSlot,
+  marketingSlot,
+  reviewsSlot,
 }: {
   initialConfig: VendorConfig;
   initialBranding: VendorBranding;
@@ -94,6 +97,9 @@ export function StorefrontConfigForm({
   markUrl: string | null;
   /** #1233 — the current WhatsApp community group QR code image URL, or null. */
   whatsappQrUrl?: string | null;
+  footerSlot?: React.ReactNode;
+  marketingSlot?: React.ReactNode;
+  reviewsSlot?: React.ReactNode;
 }) {
   const router = useRouter();
   const [themePending, startThemeTransition] = useTransition();
@@ -347,715 +353,774 @@ export function StorefrontConfigForm({
   };
 
   return (
-    <div className="flex max-w-2xl flex-col gap-8">
-      <VendorLogoUploader currentLogoUrl={logoUrl} />
-      <VendorMarkUploader currentMarkUrl={markUrl} cream={initialBranding.brandCream} />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Column 1: Left / Primary (lg:col-span-7) */}
+      <div className="flex flex-col gap-8 lg:col-span-7">
+        {/* #75, #714 — Themes dropdown mixing Global and Vendor themes. */}
+        {(themes.length > 0 || vendorThemes.length > 0) && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+            <label htmlFor="themeId" className="text-xl font-bold text-black">
+              Apply a theme
+            </label>
+            <p className="text-sm text-black/60">
+              Choosing a theme copies its colours onto the fields below. You can still adjust any of
+              them afterwards.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <select
+                id="themeId"
+                name="themeId"
+                value={selectedThemeRef}
+                onChange={(event) => setSelectedThemeRef(event.target.value)}
+                className="rounded-lg border border-black/20 p-3"
+              >
+                <option value="">Select a theme…</option>
+                {themes.length > 0 && (
+                  <optgroup label="Global Presets">
+                    {themes.map((theme) => (
+                      <option key={`global:${theme.id}`} value={`global:${theme.id}`}>
+                        {theme.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {vendorThemes.length > 0 && (
+                  <optgroup label="Your Saved Themes">
+                    {vendorThemes.map((theme) => (
+                      <option key={`vendor:${theme.id}`} value={`vendor:${theme.id}`}>
+                        {theme.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              <button
+                type="button"
+                onClick={applyTheme}
+                disabled={themePending || !selectedThemeRef}
+                className="rounded-full bg-primary px-6 py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+              >
+                {themePending ? "Applying…" : "Apply Theme"}
+              </button>
+              {selectedThemeRef.startsWith("vendor:") && (
+                <button
+                  type="button"
+                  onClick={handleDeleteTheme}
+                  disabled={deletingTheme || themePending}
+                  className="rounded-full border border-danger/30 bg-danger-tint px-5 py-3 font-bold text-danger hover:bg-danger-tint/80 disabled:opacity-50"
+                >
+                  {deletingTheme ? "Deleting…" : "Delete Theme"}
+                </button>
+              )}
+            </div>
+            {deleteThemeError && (
+              <p className="mt-2 text-sm font-semibold text-danger">{deleteThemeError}</p>
+            )}
+          </div>
+        )}
 
-      {/* #75, #714 — Themes dropdown mixing Global and Vendor themes. */}
-      {(themes.length > 0 || vendorThemes.length > 0) && (
-        <div className="flex flex-col gap-2 rounded-2xl border border-black/10 p-4">
-          <label htmlFor="themeId" className="font-bold text-black">
-            Apply a theme
-          </label>
-          <p className="text-sm text-black/60">
-            Choosing a theme copies its colours onto the fields below. You can still adjust any of
-            them afterwards.
-          </p>
-          <div className="flex gap-3">
-            <select
-              id="themeId"
-              name="themeId"
-              value={selectedThemeRef}
-              onChange={(event) => setSelectedThemeRef(event.target.value)}
+        <form
+          action={saveBranding}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+        >
+          <div>
+            <h2 className="text-xl font-bold text-black">Branding &amp; colours</h2>
+            <p className="mt-1 text-sm text-black/60">
+              Customise your store’s headlines, search placeholder, and brand colour palette.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="heroSubtitle" className="font-bold text-black">
+              Hero Subtitle
+            </label>
+            <input
+              id="heroSubtitle"
+              name="heroSubtitle"
+              type="text"
+              defaultValue={initialConfig.heroSubtitle || ""}
               className="rounded-lg border border-black/20 p-3"
-            >
-              <option value="">Select a theme…</option>
-              {themes.length > 0 && (
-                <optgroup label="Global Presets">
-                  {themes.map((theme) => (
-                    <option key={`global:${theme.id}`} value={`global:${theme.id}`}>
-                      {theme.name}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {vendorThemes.length > 0 && (
-                <optgroup label="Your Saved Themes">
-                  {vendorThemes.map((theme) => (
-                    <option key={`vendor:${theme.id}`} value={`vendor:${theme.id}`}>
-                      {theme.name}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
+              placeholder="e.g. Quality products at fair prices, delivered locally"
+            />
+          </div>
+
+          {/* #1078 — the banner's first line. Blank is NOT "hide": it keeps the line derived from the
+              store name and delivery area, which is this vendor's own data. Plain text, no tokens. The
+              placeholder names no store and no trade (CLAUDE.md, "User-facing copy"). */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="bannerHeadline" className="font-bold text-black">
+              Banner Headline
+            </label>
+            <input
+              id="bannerHeadline"
+              name="bannerHeadline"
+              type="text"
+              maxLength={MAX_BANNER_HEADLINE_LENGTH}
+              defaultValue={initialConfig.bannerHeadline || ""}
+              className="rounded-lg border border-black/20 p-3"
+              placeholder="Your banner headline"
+            />
+            <p className="text-xs text-black/60">
+              The first line of the banner at the top of every page. Leave blank to show your store
+              name and delivery area.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="bannerNote" className="font-bold text-black">
+              Banner Note
+            </label>
+            <input
+              id="bannerNote"
+              name="bannerNote"
+              type="text"
+              defaultValue={initialConfig.bannerNote || ""}
+              className="rounded-lg border border-black/20 p-3"
+              placeholder="e.g. Same-Day Local Dispatch"
+            />
+          </div>
+
+          {/*
+            #729 — the header search box's hint text. The column always existed but could only be
+            set by seeding. Empty clears it, and the header then shows the platform's neutral
+            "Search products…".
+          */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="searchPlaceholder" className="font-bold text-black">
+              Search box text
+            </label>
+            <input
+              id="searchPlaceholder"
+              name="searchPlaceholder"
+              type="text"
+              defaultValue={initialConfig.searchPlaceholder || ""}
+              className={`rounded-lg border p-3 ${
+                brandingState.field === "searchPlaceholder" ? "border-danger" : "border-black/20"
+              }`}
+              placeholder="e.g. Search our products…"
+            />
+            {brandingState.field === "searchPlaceholder" && (
+              <p className="text-sm font-semibold text-danger">{brandingState.error}</p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="font-bold text-black mb-3">Brand colour palette</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {BRAND_COLOR_FIELDS.map((field) => {
+                const hasError = brandingState.field === field.name;
+                const val = colors[field.name];
+                return (
+                  <div key={field.name} className="flex flex-col gap-1.5">
+                    <label htmlFor={field.name} className="font-bold text-black text-sm">
+                      {field.label}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={val || "#ffffff"}
+                        onChange={(e) =>
+                          setColors((prev) => ({ ...prev, [field.name]: e.target.value }))
+                        }
+                        className={`h-[44px] w-[44px] shrink-0 cursor-pointer rounded-lg border p-1 ${
+                          hasError ? "border-danger" : "border-black/20"
+                        }`}
+                      />
+                      <input
+                        id={field.name}
+                        name={field.name}
+                        type="text"
+                        value={val}
+                        onChange={(e) =>
+                          setColors((prev) => ({ ...prev, [field.name]: e.target.value }))
+                        }
+                        className={`min-w-0 flex-1 rounded-lg border p-2.5 font-mono text-sm ${
+                          hasError
+                            ? "border-danger focus-visible:outline-danger"
+                            : "border-black/20"
+                        }`}
+                        placeholder={field.placeholder}
+                      />
+                    </div>
+                    {hasError && (
+                      <p className="text-xs font-semibold text-danger">{brandingState.error}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <label htmlFor="mainColorPicker" className="text-sm font-bold text-black">
+              Main Colour:
+            </label>
+            <input
+              id="mainColorPicker"
+              type="color"
+              value={mainColor}
+              onChange={(e) => setMainColor(e.target.value)}
+              className="h-[40px] w-[40px] cursor-pointer rounded-lg border border-black/20 p-1"
+            />
             <button
               type="button"
-              onClick={applyTheme}
-              disabled={themePending || !selectedThemeRef}
-              className="rounded-full bg-primary px-6 py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+              onClick={randomisePalette}
+              className="rounded-full bg-action-tint px-6 py-2 text-sm font-bold text-action hover:bg-action/10"
             >
-              {themePending ? "Applying…" : "Apply Theme"}
+              Randomise Colours
             </button>
-            {selectedThemeRef.startsWith("vendor:") && (
-              <button
-                type="button"
-                onClick={handleDeleteTheme}
-                disabled={deletingTheme || themePending}
-                className="rounded-full border border-danger/30 bg-danger-tint px-5 py-3 font-bold text-danger hover:bg-danger-tint/80 disabled:opacity-50"
-              >
-                {deletingTheme ? "Deleting…" : "Delete Theme"}
-              </button>
-            )}
           </div>
-          {deleteThemeError && (
-            <p className="mt-2 text-sm font-semibold text-danger">{deleteThemeError}</p>
-          )}
-        </div>
-      )}
 
-      <form action={saveBranding} className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="heroSubtitle" className="font-bold text-black">
-            Hero Subtitle
-          </label>
-          <input
-            id="heroSubtitle"
-            name="heroSubtitle"
-            type="text"
-            defaultValue={initialConfig.heroSubtitle || ""}
-            className="rounded-lg border border-black/20 p-3"
-            placeholder="e.g. Quality products at fair prices, delivered locally"
-          />
-        </div>
+          {/* Live Preview */}
+          <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-black/10 p-6">
+            <h3 className="font-bold text-black">Live Preview</h3>
+            <p className="text-sm text-black/60">
+              This shows what your colours will look like to shoppers. We automatically adjust them
+              to guarantee they are readable.
+            </p>
+            <div
+              style={brandStyle(livePrimitives)}
+              className="flex flex-col gap-4 rounded-xl border border-black/5 bg-surface-muted p-6"
+            >
+              {/* Primary / Header style */}
+              <div className="flex items-center justify-between rounded-lg bg-primary px-4 py-3 text-white">
+                <span className="font-bold">Header / Primary Button</span>
+              </div>
 
-        {/* #1078 — the banner's first line. Blank is NOT "hide": it keeps the line derived from the
-            store name and delivery area, which is this vendor's own data. Plain text, no tokens. The
-            placeholder names no store and no trade (CLAUDE.md, "User-facing copy"). */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="bannerHeadline" className="font-bold text-black">
-            Banner Headline
-          </label>
-          <input
-            id="bannerHeadline"
-            name="bannerHeadline"
-            type="text"
-            maxLength={MAX_BANNER_HEADLINE_LENGTH}
-            defaultValue={initialConfig.bannerHeadline || ""}
-            className="rounded-lg border border-black/20 p-3"
-            placeholder="Your banner headline"
-          />
-          <p className="text-xs text-black/60">
-            The first line of the banner at the top of every page. Leave blank to show your store
-            name and delivery area.
-          </p>
-        </div>
+              {/* Action text on action tint */}
+              <div className="flex flex-col gap-1 rounded-lg bg-action-tint p-4">
+                <span className="font-bold text-action">Trust Strip / Info Panel</span>
+                <span className="text-sm text-primary-muted">
+                  This is muted text on the action tint.
+                </span>
+              </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="bannerNote" className="font-bold text-black">
-            Banner Note
-          </label>
-          <input
-            id="bannerNote"
-            name="bannerNote"
-            type="text"
-            defaultValue={initialConfig.bannerNote || ""}
-            className="rounded-lg border border-black/20 p-3"
-            placeholder="e.g. Same-Day Local Dispatch"
-          />
-        </div>
+              {/* Error banner */}
+              <div className="rounded-lg bg-danger-tint p-4 text-danger">
+                <span className="font-bold">Error Banner</span>
+              </div>
 
-        {/*
-          #729 — the header search box's hint text. The column always existed but could only be
-          set by seeding. Empty clears it, and the header then shows the platform's neutral
-          "Search products…".
-        */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="searchPlaceholder" className="font-bold text-black">
-            Search box text
-          </label>
-          <input
-            id="searchPlaceholder"
-            name="searchPlaceholder"
-            type="text"
-            defaultValue={initialConfig.searchPlaceholder || ""}
-            className={`rounded-lg border p-3 ${
-              brandingState.field === "searchPlaceholder" ? "border-danger" : "border-black/20"
-            }`}
-            placeholder="e.g. Search our products…"
-          />
-          {brandingState.field === "searchPlaceholder" && (
-            <p className="text-sm font-semibold text-danger">{brandingState.error}</p>
-          )}
-        </div>
+              {/* Accent badge */}
+              <div className="self-start rounded-full bg-accent-tint px-3 py-1 text-sm font-bold text-accent">
+                Accent Badge
+              </div>
+            </div>
 
-        {BRAND_COLOR_FIELDS.map((field) => {
-          const hasError = brandingState.field === field.name;
-          const val = colors[field.name];
-          return (
-            <div key={field.name} className="flex flex-col gap-2">
-              <label htmlFor={field.name} className="font-bold text-black">
-                {field.label}
-              </label>
+            {/* Save as Theme */}
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-black/5 bg-black/5 p-4">
+              <h4 className="font-bold text-black text-sm">Save these colours as a Theme</h4>
               <div className="flex gap-3">
                 <input
-                  type="color"
-                  value={val || "#ffffff"}
-                  onChange={(e) => setColors((prev) => ({ ...prev, [field.name]: e.target.value }))}
-                  className={`h-[50px] w-[50px] cursor-pointer rounded-lg border p-1 ${
-                    hasError ? "border-danger" : "border-black/20"
-                  }`}
-                />
-                <input
-                  id={field.name}
-                  name={field.name}
                   type="text"
-                  value={val}
-                  onChange={(e) => setColors((prev) => ({ ...prev, [field.name]: e.target.value }))}
-                  className={`flex-1 rounded-lg border p-3 font-mono ${
-                    hasError ? "border-danger focus-visible:outline-danger" : "border-black/20"
-                  }`}
-                  placeholder={field.placeholder}
+                  placeholder="e.g. Summer Palette"
+                  value={saveThemeName}
+                  onChange={(e) => setSaveThemeName(e.target.value)}
+                  className="flex-1 rounded-lg border border-black/20 p-2 text-sm"
                 />
+                <button
+                  type="button"
+                  onClick={handleSaveTheme}
+                  disabled={savingTheme || !saveThemeName.trim()}
+                  className="rounded-lg bg-black px-4 py-2 text-sm font-bold text-white hover:bg-black/80 disabled:opacity-50"
+                >
+                  {savingTheme ? "Saving…" : "Save"}
+                </button>
               </div>
-              {hasError && (
-                <p className="text-sm font-semibold text-danger">{brandingState.error}</p>
+              {saveThemeError && (
+                <p className="text-sm font-semibold text-danger">{saveThemeError}</p>
               )}
             </div>
-          );
-        })}
+          </div>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <label htmlFor="mainColorPicker" className="text-sm font-bold text-black">
-            Main Colour:
-          </label>
-          <input
-            id="mainColorPicker"
-            type="color"
-            value={mainColor}
-            onChange={(e) => setMainColor(e.target.value)}
-            className="h-[40px] w-[40px] cursor-pointer rounded-lg border border-black/20 p-1"
-          />
           <button
-            type="button"
-            onClick={randomisePalette}
-            className="rounded-full bg-action-tint px-6 py-2 text-sm font-bold text-action hover:bg-action/10"
+            type="submit"
+            disabled={brandingPending}
+            className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
           >
-            Randomise Colours
+            {brandingPending ? "Saving…" : "Save Config"}
           </button>
-        </div>
+        </form>
 
-        {/* Live Preview */}
-        <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-black/10 p-6">
-          <h3 className="font-bold text-black">Live Preview</h3>
-          <p className="text-sm text-black/60">
-            This shows what your colours will look like to shoppers. We automatically adjust them to
-            guarantee they are readable.
-          </p>
-          <div
-            style={brandStyle(livePrimitives)}
-            className="flex flex-col gap-4 rounded-xl border border-black/5 bg-surface-muted p-6"
-          >
-            {/* Primary / Header style */}
-            <div className="flex items-center justify-between rounded-lg bg-primary px-4 py-3 text-white">
-              <span className="font-bold">Header / Primary Button</span>
-            </div>
-
-            {/* Action text on action tint */}
-            <div className="flex flex-col gap-1 rounded-lg bg-action-tint p-4">
-              <span className="font-bold text-action">Trust Strip / Info Panel</span>
-              <span className="text-sm text-primary-muted">
-                This is muted text on the action tint.
-              </span>
-            </div>
-
-            {/* Error banner */}
-            <div className="rounded-lg bg-danger-tint p-4 text-danger">
-              <span className="font-bold">Error Banner</span>
-            </div>
-
-            {/* Accent badge */}
-            <div className="self-start rounded-full bg-accent-tint px-3 py-1 text-sm font-bold text-accent">
-              Accent Badge
-            </div>
-          </div>
-
-          {/* Save as Theme */}
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-black/5 bg-black/5 p-4">
-            <h4 className="font-bold text-black text-sm">Save these colours as a Theme</h4>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                placeholder="e.g. Summer Palette"
-                value={saveThemeName}
-                onChange={(e) => setSaveThemeName(e.target.value)}
-                className="flex-1 rounded-lg border border-black/20 p-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={handleSaveTheme}
-                disabled={savingTheme || !saveThemeName.trim()}
-                className="rounded-lg bg-black px-4 py-2 text-sm font-bold text-white hover:bg-black/80 disabled:opacity-50"
-              >
-                {savingTheme ? "Saving…" : "Save"}
-              </button>
-            </div>
-            {saveThemeError && (
-              <p className="text-sm font-semibold text-danger">{saveThemeError}</p>
-            )}
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={brandingPending}
-          className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+        {/* #634 — until this shipped, changing a delivery fee needed a developer
+            with database access: VendorConfig carried all three columns and
+            prisma/seed.ts was their only writer. A sibling <form>, never nested —
+            HTML forbids that, and the two save independently. */}
+        <form
+          action={saveDeliveryRules}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
         >
-          {brandingPending ? "Saving…" : "Save Config"}
-        </button>
-      </form>
-
-      {/* #634 — until this shipped, changing a delivery fee needed a developer
-          with database access: VendorConfig carried all three columns and
-          prisma/seed.ts was their only writer. A sibling <form>, never nested —
-          HTML forbids that, and the two save independently. */}
-      <form action={saveDeliveryRules} className="flex flex-col gap-6">
-        <div>
-          <h2 className="font-bold text-black">Delivery rules</h2>
-          <p className="mt-1 text-sm text-black/60">
-            What delivery costs and when it is free. These apply to every order at checkout.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="deliveryFee" className="font-bold text-black">
-            Delivery fee (£)
-          </label>
-          <input
-            id="deliveryFee"
-            name="deliveryFee"
-            type="text"
-            inputMode="decimal"
-            defaultValue={penceToPoundsValue(initialConfig.deliveryFeePence)}
-            className={fieldClass(deliveryState.field === DELIVERY_FEE_FIELD)}
-            placeholder="e.g. 3.49"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="freeDeliveryThreshold" className="font-bold text-black">
-            Free delivery over (£)
-          </label>
-          <input
-            id="freeDeliveryThreshold"
-            name="freeDeliveryThreshold"
-            type="text"
-            inputMode="decimal"
-            defaultValue={penceToPoundsValue(initialConfig.freeDeliveryThresholdPence)}
-            className={fieldClass(deliveryState.field === FREE_DELIVERY_THRESHOLD_FIELD)}
-            placeholder="e.g. 30.00"
-          />
-          <p className="text-xs text-black/60">
-            Leave blank to never offer free delivery. Zero would make every order qualify.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="minimumOrder" className="font-bold text-black">
-            Minimum delivery order (£)
-          </label>
-          <input
-            id="minimumOrder"
-            name="minimumOrder"
-            type="text"
-            inputMode="decimal"
-            defaultValue={penceToPoundsValue(initialConfig.minimumOrderPence)}
-            className={fieldClass(deliveryState.field === MINIMUM_ORDER_FIELD)}
-            placeholder="e.g. 0.00"
-          />
-          <p className="text-xs text-black/60">
-            Enter 0.00 for no minimum. A delivery order below this cannot check out. It does not
-            apply to Click &amp; Collect orders, which have their own minimum below.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 mt-4">
-          <input
-            type="checkbox"
-            id="offerCollection"
-            name="offerCollection"
-            checked={offerCollection}
-            onChange={(e) => setOfferCollection(e.target.checked)}
-            className="h-5 w-5 rounded border-black/20 text-primary focus:ring-primary"
-          />
-          <label htmlFor="offerCollection" className="font-bold text-black">
-            Offer Click & Collect
-          </label>
-        </div>
-
-        {offerCollection && (
-          <div className="flex flex-col gap-4 rounded-xl border border-black/10 bg-surface-muted p-4">
-            <h3 className="font-bold text-black">Collection Location</h3>
-            <p className="text-sm text-black/60">Where shoppers will collect their orders.</p>
-
-            {/* #1083 — collection's own minimum. Before it, collection inherited the delivery
-                minimum above, so a collection basket below it could not be placed. Only rendered
-                while collection is offered; unticked, nothing is submitted and the stored value is
-                left alone. */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="collectionMinimumOrder" className="text-sm font-bold text-black">
-                Collection minimum order (£)
-              </label>
-              <input
-                id="collectionMinimumOrder"
-                name="collectionMinimumOrder"
-                type="text"
-                inputMode="decimal"
-                defaultValue={penceToPoundsValue(initialConfig.collectionMinimumOrderPence)}
-                className={fieldClass(deliveryState.field === COLLECTION_MINIMUM_FIELD)}
-                placeholder="e.g. 0.00"
-              />
-              <p className="text-xs text-black/60">
-                Enter 0.00 for no minimum on collection orders.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="collectionAddressLine1" className="text-sm font-bold text-black">
-                Address Line 1
-              </label>
-              <input
-                id="collectionAddressLine1"
-                name="collectionAddressLine1"
-                defaultValue={initialLocation?.addressLine1 ?? ""}
-                className={fieldClass(deliveryState.field === "collectionAddressLine1")}
-                placeholder="e.g. Unit 4, Market Square"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="collectionAddressLine2" className="text-sm font-bold text-black">
-                Address Line 2 (Optional)
-              </label>
-              <input
-                id="collectionAddressLine2"
-                name="collectionAddressLine2"
-                defaultValue={initialLocation?.addressLine2 ?? ""}
-                className="rounded-lg border border-black/20 p-3"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="collectionCity" className="text-sm font-bold text-black">
-                City / Town
-              </label>
-              <input
-                id="collectionCity"
-                name="collectionCity"
-                defaultValue={initialLocation?.city ?? ""}
-                className={fieldClass(deliveryState.field === "collectionCity")}
-                placeholder="Town or city"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="collectionPostcode" className="text-sm font-bold text-black">
-                Postcode
-              </label>
-              <input
-                id="collectionPostcode"
-                name="collectionPostcode"
-                defaultValue={initialLocation?.postcode ?? ""}
-                className={fieldClass(deliveryState.field === "collectionPostcode")}
-                placeholder="Full postcode"
-                onBlur={(e) => void lookUpStorePostcode(e.target.value, "collectionCity")}
-              />
-              {locationLookingUp && (
-                <p className="text-xs text-primary-muted">Checking postcode...</p>
-              )}
-              {locationLookup && !locationLookingUp && (
-                <p className="text-xs text-primary-muted">{locationLookup}</p>
-              )}
-            </div>
+          <div>
+            <h2 className="text-xl font-bold text-black">Delivery rules</h2>
+            <p className="mt-1 text-sm text-black/60">
+              What delivery costs and when it is free. These apply to every order at checkout.
+            </p>
           </div>
-        )}
 
-        {deliveryState.error && (
-          <p className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
-            {deliveryState.error}
-          </p>
-        )}
-        {deliveryState.saved && !deliveryState.error && (
-          <p className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary">
-            Delivery rules saved.
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={deliveryPending}
-          className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
-        >
-          {deliveryPending ? "Saving…" : "Save Delivery Rules"}
-        </button>
-      </form>
-
-      {/* #407 / #405 — a third sibling <form>, never nested. Leaving a field blank HIDES that
-          link on the storefront rather than falling back to a platform account (#239). */}
-      <form action={saveSocialContact} className="flex flex-col gap-6">
-        <div>
-          <h2 className="font-bold text-black">Social &amp; contact links</h2>
-          <p className="mt-1 text-sm text-black/60">
-            Where shoppers can find you. Leave a field blank to hide that link from your storefront
-            — nothing is shown in its place.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="facebookUrl" className="font-bold text-black">
-            Facebook page address
-          </label>
-          <input
-            id="facebookUrl"
-            name="facebookUrl"
-            type="text"
-            inputMode="url"
-            defaultValue={initialConfig.facebookUrl ?? ""}
-            className={fieldClass(socialState.field === FACEBOOK_URL_FIELD)}
-            placeholder="e.g. https://www.facebook.com/yourpage"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="instagramUrl" className="font-bold text-black">
-            Instagram profile address
-          </label>
-          <input
-            id="instagramUrl"
-            name="instagramUrl"
-            type="text"
-            inputMode="url"
-            defaultValue={initialConfig.instagramUrl ?? ""}
-            className={fieldClass(socialState.field === INSTAGRAM_URL_FIELD)}
-            placeholder="e.g. https://www.instagram.com/yourprofile"
-          />
-          <p className="text-xs text-black/60">
-            Both addresses must start with https:// — anything else is refused.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="whatsappNumber" className="font-bold text-black">
-            WhatsApp number
-          </label>
-          <input
-            id="whatsappNumber"
-            name="whatsappNumber"
-            type="text"
-            inputMode="numeric"
-            defaultValue={initialConfig.whatsappNumber ?? ""}
-            className={fieldClass(socialState.field === WHATSAPP_NUMBER_FIELD)}
-            placeholder="e.g. 447700900123"
-          />
-          <p className="text-xs text-black/60">
-            International format, digits only — no plus sign, spaces or dashes. This adds a WhatsApp
-            button to your storefront.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="whatsappCommunityUrl" className="font-bold text-black">
-            WhatsApp community group link
-          </label>
-          <input
-            id="whatsappCommunityUrl"
-            name="whatsappCommunityUrl"
-            type="text"
-            inputMode="url"
-            defaultValue={initialConfig.whatsappCommunityUrl ?? ""}
-            className={fieldClass(socialState.field === WHATSAPP_COMMUNITY_URL_FIELD)}
-            placeholder="e.g. https://chat.whatsapp.com/your-invite-code"
-          />
-          <p className="text-xs text-black/60">
-            Must start with https://chat.whatsapp.com/ followed by your group invite code. Shown on
-            the Offers &amp; Deals page (/whatsapp-offers); leave blank to hide the WhatsApp group
-            banner on that page.
-          </p>
-        </div>
-
-        {socialState.error && (
-          <p className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
-            {socialState.error}
-          </p>
-        )}
-        {socialState.saved && !socialState.error && (
-          <p className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary">
-            Social &amp; contact links saved.
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={socialPending}
-          className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
-        >
-          {socialPending ? "Saving…" : "Save Social & Contact Links"}
-        </button>
-      </form>
-
-      <WhatsappQrUploader currentQrUrl={whatsappQrUrl} />
-
-      {/* #905 — a fourth sibling <form>, never nested. The labels gate the staff product form only;
-          switching one off never clears a product's stored value (saveProduct strips it). */}
-      <form action={saveCatalogueSettings} className="flex flex-col gap-6">
-        <div>
-          <h2 className="font-bold text-black">Product labels &amp; store description</h2>
-          <p className="mt-1 text-sm text-black/60">
-            Choose which labels your staff can set on a product. Switching a label off hides it on
-            the product form but keeps the value already saved on each product, and your storefront
-            keeps showing a label only on products that carry it.
-          </p>
-        </div>
-
-        <fieldset className="flex flex-col gap-3">
-          <legend className="mb-2 font-bold text-black">Labels offered on the product form</legend>
-          <div className="flex flex-wrap gap-x-6 gap-y-3">
-            {CATALOGUE_LABEL_FIELDS.map((label) => (
-              <label key={label.name} className="flex items-center gap-2 text-sm text-black">
-                <input
-                  type="checkbox"
-                  name={label.name}
-                  defaultChecked={initialConfig[label.name]}
-                  className="h-5 w-5 rounded border-black/20 text-primary focus:ring-primary"
-                  aria-invalid={catalogueState.field === label.name || undefined}
-                />
-                {label.label}
-              </label>
-            ))}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="deliveryFee" className="font-bold text-black">
+              Delivery fee (£)
+            </label>
+            <input
+              id="deliveryFee"
+              name="deliveryFee"
+              type="text"
+              inputMode="decimal"
+              defaultValue={penceToPoundsValue(initialConfig.deliveryFeePence)}
+              className={fieldClass(deliveryState.field === DELIVERY_FEE_FIELD)}
+              placeholder="e.g. 3.49"
+            />
           </div>
-          <p className="text-xs text-black/60">
-            HMC certification needs Halal: it is only offered on the product form while Halal is.
-          </p>
-        </fieldset>
 
-        {/* #1656 — a storefront notice, not a product label, so it sits outside that fieldset. */}
-        <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-2 text-sm font-bold text-black">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="freeDeliveryThreshold" className="font-bold text-black">
+              Free delivery over (£)
+            </label>
+            <input
+              id="freeDeliveryThreshold"
+              name="freeDeliveryThreshold"
+              type="text"
+              inputMode="decimal"
+              defaultValue={penceToPoundsValue(initialConfig.freeDeliveryThresholdPence)}
+              className={fieldClass(deliveryState.field === FREE_DELIVERY_THRESHOLD_FIELD)}
+              placeholder="e.g. 30.00"
+            />
+            <p className="text-xs text-black/60">
+              Leave blank to never offer free delivery. Zero would make every order qualify.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="minimumOrder" className="font-bold text-black">
+              Minimum delivery order (£)
+            </label>
+            <input
+              id="minimumOrder"
+              name="minimumOrder"
+              type="text"
+              inputMode="decimal"
+              defaultValue={penceToPoundsValue(initialConfig.minimumOrderPence)}
+              className={fieldClass(deliveryState.field === MINIMUM_ORDER_FIELD)}
+              placeholder="e.g. 0.00"
+            />
+            <p className="text-xs text-black/60">
+              Enter 0.00 for no minimum. A delivery order below this cannot check out. It does not
+              apply to Click &amp; Collect orders, which have their own minimum below.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 mt-4">
             <input
               type="checkbox"
-              name="showAllergenNotice"
-              defaultChecked={initialConfig.showAllergenNotice}
+              id="offerCollection"
+              name="offerCollection"
+              checked={offerCollection}
+              onChange={(e) => setOfferCollection(e.target.checked)}
               className="h-5 w-5 rounded border-black/20 text-primary focus:ring-primary"
             />
-            Show allergen notice
-          </label>
-          <p className="text-xs text-black/60">
-            For stores that sell food. Product, basket and checkout pages tell shoppers to ask you
-            about allergens before they order, with the phone number and email from your footer
-            contact details.
-          </p>
-        </div>
+            <label htmlFor="offerCollection" className="font-bold text-black">
+              Offer Click & Collect
+            </label>
+          </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="storeDescription" className="font-bold text-black">
-            What this store sells
-          </label>
-          <textarea
-            id="storeDescription"
-            name="storeDescription"
-            rows={2}
-            maxLength={200}
-            defaultValue={initialConfig.storeDescription ?? ""}
-            className={fieldClass(catalogueState.field === STORE_DESCRIPTION_FIELD)}
-            aria-invalid={catalogueState.field === STORE_DESCRIPTION_FIELD || undefined}
-          />
-          <p className="text-xs text-black/60">
-            One or two sentences, up to 200 characters. This is given to the store&apos;s AI
-            features — shopping-list matching, search-word suggestions and pack-size suggestions —
-            so they understand what you sell. Leave it blank and they use neutral wording.
-          </p>
-        </div>
+          {offerCollection && (
+            <div className="flex flex-col gap-4 rounded-xl border border-black/10 bg-surface-muted p-4">
+              <h3 className="font-bold text-black">Collection Location</h3>
+              <p className="text-sm text-black/60">Where shoppers will collect their orders.</p>
 
-        {catalogueState.error && (
-          <p className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
-            {catalogueState.error}
-          </p>
-        )}
-        {catalogueState.saved && !catalogueState.error && (
-          <p className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary">
-            Product labels &amp; store description saved.
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={cataloguePending}
-          className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
-        >
-          {cataloguePending ? "Saving…" : "Save Product Labels & Description"}
-        </button>
-      </form>
-
-      {/* #962 — a fifth sibling <form>, never nested, so no other form above ever submits
-          productGridDensity and none of them can change it. */}
-      <form action={saveGridDensity} className="flex flex-col gap-6">
-        <div>
-          <h2 className="font-bold text-black">Product grid layout</h2>
-          <p className="mt-1 text-sm text-black/60">
-            How many product cards sit side by side on your category, search and bundle pages. It
-            changes the layout only; every product still shows.
-          </p>
-          {/* #1173 — the collapsible filter sidebar adds a column on wide screens. */}
-          <p className="mt-1 text-sm text-black/60">
-            On category and search pages, a shopper who hides the filter sidebar sees one more
-            product per row on wide screens.
-          </p>
-        </div>
-
-        <fieldset className="flex flex-col gap-3">
-          <legend className="sr-only">Grid layout</legend>
-          {PRODUCT_GRID_DENSITIES.map((density) => (
-            <div key={density} className="flex items-start gap-3 text-sm text-black">
-              <input
-                type="radio"
-                id={`productGridDensity-${density}`}
-                name={PRODUCT_GRID_DENSITY_FIELD}
-                value={density}
-                defaultChecked={initialConfig.productGridDensity === density}
-                aria-describedby={`productGridDensity-${density}-description`}
-                className="mt-0.5 h-5 w-5 border-black/20 text-primary focus:ring-primary"
-              />
-              <div>
-                <label htmlFor={`productGridDensity-${density}`} className="font-bold">
-                  {PRODUCT_GRID_DENSITY_OPTIONS[density].label}
+              {/* #1083 — collection's own minimum. Before it, collection inherited the delivery
+                  minimum above, so a collection basket below it could not be placed. Only rendered
+                  while collection is offered; unticked, nothing is submitted and the stored value is
+                  left alone. */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="collectionMinimumOrder" className="text-sm font-bold text-black">
+                  Collection minimum order (£)
                 </label>
-                <p id={`productGridDensity-${density}-description`} className="text-black/60">
-                  {PRODUCT_GRID_DENSITY_OPTIONS[density].description}
+                <input
+                  id="collectionMinimumOrder"
+                  name="collectionMinimumOrder"
+                  type="text"
+                  inputMode="decimal"
+                  defaultValue={penceToPoundsValue(initialConfig.collectionMinimumOrderPence)}
+                  className={fieldClass(deliveryState.field === COLLECTION_MINIMUM_FIELD)}
+                  placeholder="e.g. 0.00"
+                />
+                <p className="text-xs text-black/60">
+                  Enter 0.00 for no minimum on collection orders.
                 </p>
               </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="collectionAddressLine1" className="text-sm font-bold text-black">
+                  Address Line 1
+                </label>
+                <input
+                  id="collectionAddressLine1"
+                  name="collectionAddressLine1"
+                  defaultValue={initialLocation?.addressLine1 ?? ""}
+                  className={fieldClass(deliveryState.field === "collectionAddressLine1")}
+                  placeholder="e.g. Unit 4, Market Square"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="collectionAddressLine2" className="text-sm font-bold text-black">
+                  Address Line 2 (Optional)
+                </label>
+                <input
+                  id="collectionAddressLine2"
+                  name="collectionAddressLine2"
+                  defaultValue={initialLocation?.addressLine2 ?? ""}
+                  className="rounded-lg border border-black/20 p-3"
+                  placeholder="e.g. Industrial Estate"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="collectionCity" className="text-sm font-bold text-black">
+                  City / Town
+                </label>
+                <input
+                  id="collectionCity"
+                  name="collectionCity"
+                  defaultValue={initialLocation?.city ?? ""}
+                  className={fieldClass(deliveryState.field === "collectionCity")}
+                  placeholder="Town or city"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="collectionPostcode" className="text-sm font-bold text-black">
+                  Postcode
+                </label>
+                <input
+                  id="collectionPostcode"
+                  name="collectionPostcode"
+                  defaultValue={initialLocation?.postcode ?? ""}
+                  className={fieldClass(deliveryState.field === "collectionPostcode")}
+                  placeholder="Full postcode"
+                  onBlur={(e) => void lookUpStorePostcode(e.target.value, "collectionCity")}
+                />
+                {locationLookingUp && (
+                  <p className="text-xs text-primary-muted">Checking postcode...</p>
+                )}
+                {locationLookup && !locationLookingUp && (
+                  <p className="text-xs text-primary-muted">{locationLookup}</p>
+                )}
+              </div>
             </div>
-          ))}
-        </fieldset>
+          )}
 
-        {gridState.error && (
-          <p className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
-            {gridState.error}
-          </p>
-        )}
-        {gridState.saved && !gridState.error && (
-          <p className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary">
-            Product grid layout saved.
-          </p>
-        )}
+          {deliveryState.error && (
+            <p className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
+              {deliveryState.error}
+            </p>
+          )}
+          {deliveryState.saved && !deliveryState.error && (
+            <p className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary">
+              Delivery rules saved.
+            </p>
+          )}
 
-        <button
-          type="submit"
-          disabled={gridPending}
-          className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+          <button
+            type="submit"
+            disabled={deliveryPending}
+            className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+          >
+            {deliveryPending ? "Saving…" : "Save Delivery Rules"}
+          </button>
+        </form>
+
+        {/* Footer settings slot */}
+        {footerSlot}
+      </div>
+
+      {/* Column 2: Right / Secondary (lg:col-span-5) */}
+      <div className="flex flex-col gap-8 lg:col-span-5">
+        {/* Visual Assets Card */}
+        <div className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+          <div>
+            <h2 className="text-xl font-bold text-black">Visual assets</h2>
+            <p className="mt-1 text-sm text-black/60">
+              Your storefront logo, square app icon and WhatsApp community QR code.
+            </p>
+          </div>
+          <VendorLogoUploader currentLogoUrl={logoUrl} />
+          <VendorMarkUploader currentMarkUrl={markUrl} cream={initialBranding.brandCream} />
+          <WhatsappQrUploader currentQrUrl={whatsappQrUrl} />
+        </div>
+
+        {/* #962 — a fifth sibling <form>, never nested, so no other form above ever submits
+            productGridDensity and none of them can change it. */}
+        <form
+          action={saveGridDensity}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
         >
-          {gridPending ? "Saving…" : "Save Product Grid Layout"}
-        </button>
-      </form>
+          <div>
+            <h2 className="text-xl font-bold text-black">Product grid layout</h2>
+            <p className="mt-1 text-sm text-black/60">
+              How many product cards sit side by side on your category, search and bundle pages. It
+              changes the layout only; every product still shows.
+            </p>
+            {/* #1173 — the collapsible filter sidebar adds a column on wide screens. */}
+            <p className="mt-1 text-sm text-black/60">
+              On category and search pages, a shopper who hides the filter sidebar sees one more
+              product per row on wide screens.
+            </p>
+          </div>
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="sr-only">Grid layout</legend>
+            {PRODUCT_GRID_DENSITIES.map((density) => (
+              <div key={density} className="flex items-start gap-3 text-sm text-black">
+                <input
+                  type="radio"
+                  id={`productGridDensity-${density}`}
+                  name={PRODUCT_GRID_DENSITY_FIELD}
+                  value={density}
+                  defaultChecked={initialConfig.productGridDensity === density}
+                  aria-describedby={`productGridDensity-${density}-description`}
+                  className="mt-0.5 h-5 w-5 border-black/20 text-primary focus:ring-primary"
+                />
+                <div>
+                  <label htmlFor={`productGridDensity-${density}`} className="font-bold">
+                    {PRODUCT_GRID_DENSITY_OPTIONS[density].label}
+                  </label>
+                  <p id={`productGridDensity-${density}-description`} className="text-black/60">
+                    {PRODUCT_GRID_DENSITY_OPTIONS[density].description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </fieldset>
+
+          {gridState.error && (
+            <p className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
+              {gridState.error}
+            </p>
+          )}
+          {gridState.saved && !gridState.error && (
+            <p className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary">
+              Product grid layout saved.
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={gridPending}
+            className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+          >
+            {gridPending ? "Saving…" : "Save Product Grid Layout"}
+          </button>
+        </form>
+
+        {/* #905 — a fourth sibling <form>, never nested. The labels gate the staff product form only;
+            switching one off never clears a product's stored value (saveProduct strips it). */}
+        <form
+          action={saveCatalogueSettings}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+        >
+          <div>
+            <h2 className="text-xl font-bold text-black">Product labels &amp; store description</h2>
+            <p className="mt-1 text-sm text-black/60">
+              Choose which labels your staff can set on a product. Switching a label off hides it on
+              the product form but keeps the value already saved on each product, and your
+              storefront keeps showing a label only on products that carry it.
+            </p>
+          </div>
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="mb-2 font-bold text-black">
+              Labels offered on the product form
+            </legend>
+            <div className="flex flex-wrap gap-x-6 gap-y-3">
+              {CATALOGUE_LABEL_FIELDS.map((label) => (
+                <label key={label.name} className="flex items-center gap-2 text-sm text-black">
+                  <input
+                    type="checkbox"
+                    name={label.name}
+                    defaultChecked={initialConfig[label.name]}
+                    className="h-5 w-5 rounded border-black/20 text-primary focus:ring-primary"
+                    aria-invalid={catalogueState.field === label.name || undefined}
+                  />
+                  {label.label}
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-black/60">
+              HMC certification needs Halal: it is only offered on the product form while Halal is.
+            </p>
+          </fieldset>
+
+          {/* #1656 — a storefront notice, not a product label, so it sits outside that fieldset. */}
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 text-sm font-bold text-black">
+              <input
+                type="checkbox"
+                name="showAllergenNotice"
+                defaultChecked={initialConfig.showAllergenNotice}
+                className="h-5 w-5 rounded border-black/20 text-primary focus:ring-primary"
+              />
+              Show allergen notice
+            </label>
+            <p className="text-xs text-black/60">
+              For stores that sell food. Product, basket and checkout pages tell shoppers to ask you
+              about allergens before they order, with the phone number and email from your footer
+              contact details.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="storeDescription" className="font-bold text-black">
+              What this store sells
+            </label>
+            <textarea
+              id="storeDescription"
+              name="storeDescription"
+              rows={2}
+              maxLength={200}
+              defaultValue={initialConfig.storeDescription ?? ""}
+              className={fieldClass(catalogueState.field === STORE_DESCRIPTION_FIELD)}
+              aria-invalid={catalogueState.field === STORE_DESCRIPTION_FIELD || undefined}
+            />
+            <p className="text-xs text-black/60">
+              One or two sentences, up to 200 characters. This is given to the store&apos;s AI
+              features — shopping-list matching, search-word suggestions and pack-size suggestions —
+              so they understand what you sell. Leave it blank and they use neutral wording.
+            </p>
+          </div>
+
+          {catalogueState.error && (
+            <p className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
+              {catalogueState.error}
+            </p>
+          )}
+          {catalogueState.saved && !catalogueState.error && (
+            <p className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary">
+              Product labels &amp; store description saved.
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={cataloguePending}
+            className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+          >
+            {cataloguePending ? "Saving…" : "Save Product Labels & Description"}
+          </button>
+        </form>
+
+        {/* #407 / #405 — a third sibling <form>, never nested. Leaving a field blank HIDES that
+            link on the storefront rather than falling back to a platform account (#239). */}
+        <form
+          action={saveSocialContact}
+          className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+        >
+          <div>
+            <h2 className="text-xl font-bold text-black">Social &amp; contact links</h2>
+            <p className="mt-1 text-sm text-black/60">
+              Where shoppers can find you. Leave a field blank to hide that link from your
+              storefront — nothing is shown in its place.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="facebookUrl" className="font-bold text-black">
+              Facebook page address
+            </label>
+            <input
+              id="facebookUrl"
+              name="facebookUrl"
+              type="text"
+              inputMode="url"
+              defaultValue={initialConfig.facebookUrl ?? ""}
+              className={fieldClass(socialState.field === FACEBOOK_URL_FIELD)}
+              placeholder="e.g. https://www.facebook.com/yourpage"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="instagramUrl" className="font-bold text-black">
+              Instagram profile address
+            </label>
+            <input
+              id="instagramUrl"
+              name="instagramUrl"
+              type="text"
+              inputMode="url"
+              defaultValue={initialConfig.instagramUrl ?? ""}
+              className={fieldClass(socialState.field === INSTAGRAM_URL_FIELD)}
+              placeholder="e.g. https://www.instagram.com/yourprofile"
+            />
+            <p className="text-xs text-black/60">
+              Both addresses must start with https:// — anything else is refused.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="whatsappNumber" className="font-bold text-black">
+              WhatsApp number
+            </label>
+            <input
+              id="whatsappNumber"
+              name="whatsappNumber"
+              type="text"
+              inputMode="numeric"
+              defaultValue={initialConfig.whatsappNumber ?? ""}
+              className={fieldClass(socialState.field === WHATSAPP_NUMBER_FIELD)}
+              placeholder="e.g. 447700900123"
+            />
+            <p className="text-xs text-black/60">
+              International format, digits only — no plus sign, spaces or dashes. This adds a
+              WhatsApp button to your storefront.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="whatsappCommunityUrl" className="font-bold text-black">
+              WhatsApp community group link
+            </label>
+            <input
+              id="whatsappCommunityUrl"
+              name="whatsappCommunityUrl"
+              type="text"
+              inputMode="url"
+              defaultValue={initialConfig.whatsappCommunityUrl ?? ""}
+              className={fieldClass(socialState.field === WHATSAPP_COMMUNITY_URL_FIELD)}
+              placeholder="e.g. https://chat.whatsapp.com/your-invite-code"
+            />
+            <p className="text-xs text-black/60">
+              Must start with https://chat.whatsapp.com/ followed by your group invite code. Shown
+              on the Offers &amp; Deals page (/whatsapp-offers); leave blank to hide the WhatsApp
+              group banner on that page.
+            </p>
+          </div>
+
+          {socialState.error && (
+            <p className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger">
+              {socialState.error}
+            </p>
+          )}
+          {socialState.saved && !socialState.error && (
+            <p className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary">
+              Social &amp; contact links saved.
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={socialPending}
+            className="rounded-full bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+          >
+            {socialPending ? "Saving…" : "Save Social & Contact Links"}
+          </button>
+        </form>
+
+        {/* Marketing consent slot */}
+        {marketingSlot}
+
+        {/* Customer review links slot */}
+        {reviewsSlot}
+      </div>
     </div>
   );
 }
