@@ -15,15 +15,17 @@ import {
   MAX_RESTRICTION_REASON_LENGTH,
   RESTRICTION_LABELS,
   summarisePlanRisks,
+  type BulkAction,
   type BulkPlanEntry,
 } from "@/lib/product-restriction";
 import { inputClass, labelClass } from "@/lib/form-classes";
+import { toCategoryOptionGroups, type CategoryOption } from "@/lib/catalogue-form";
 
 const selectClass =
   "rounded-2xl border border-black/10 bg-white px-3 py-2 text-sm font-normal text-primary";
 
 /**
- * #1211 (R22–R25) — bulk Make available / Hide / Mark stock as not tracked on /staff/products.
+ * #1211 (R22–R25) — bulk Move to Active / Move to Archived / Mark stock as not tracked on /staff/products.
  *
  * Two steps. PREVIEW plans and writes nothing; it lists every restricted product in the selection
  * by name and class, split into "will be skipped" (hard blocks, or anything a STAFF account cannot
@@ -31,10 +33,15 @@ const selectClass =
  * carrying the previewed ids, and the server recomputes the plan from the database inside the
  * write — the preview shown here is never what decides.
  */
-export function BulkProductActions() {
+export function BulkProductActions({
+  categories = [],
+}: {
+  categories?: readonly CategoryOption[];
+}) {
   const [state, action, pending] = useActionState(bulkProductAction, initialBulkActionState);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [prevPhase, setPrevPhase] = useState(state.phase);
+  const [selectedAction, setSelectedAction] = useState<BulkAction>("ENABLE");
 
   // Synchronize selection state during render when phase transitions
   if (state.phase !== prevPhase) {
@@ -153,7 +160,12 @@ export function BulkProductActions() {
         )}
         <label className="flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-primary">
           With selected
-          <select name="bulkAction" defaultValue="ENABLE" className={selectClass}>
+          <select
+            name="bulkAction"
+            value={selectedAction}
+            onChange={(e) => setSelectedAction(e.target.value as BulkAction)}
+            className={selectClass}
+          >
             {BULK_ACTIONS.map((value) => (
               <option key={value} value={value}>
                 {BULK_ACTION_LABELS[value]}
@@ -161,6 +173,28 @@ export function BulkProductActions() {
             ))}
           </select>
         </label>
+        {selectedAction === "ENABLE" && categories.length > 0 && (
+          <label className="flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-primary">
+            Destination category
+            <select name="destinationCategoryId" className={selectClass}>
+              <option value="">Keep current category</option>
+              {toCategoryOptionGroups(categories).map((group) => (
+                <optgroup key={group.parent.id} label={group.parent.name}>
+                  <option value={group.parent.id}>
+                    {group.parent.name}
+                    {!group.parent.isActive && " (inactive)"}
+                  </option>
+                  {group.children.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.name}
+                      {!child.isActive && " (inactive)"}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+        )}
         <button
           type="submit"
           disabled={pending || selectedIds.size === 0}
@@ -176,7 +210,9 @@ export function BulkProductActions() {
         </p>
       )}
 
-      {state.phase === "preview" && <Preview state={state} action={action} pending={pending} />}
+      {state.phase === "preview" && (
+        <Preview state={state} action={action} pending={pending} categories={categories} />
+      )}
       {state.phase === "applied" && <Summary state={state} />}
     </div>
   );
@@ -186,10 +222,12 @@ function Preview({
   state,
   action,
   pending,
+  categories = [],
 }: {
   state: Extract<BulkActionState, { phase: "preview" }>;
   action: (form: FormData) => void;
   pending: boolean;
+  categories?: readonly CategoryOption[];
 }) {
   // The preview plan is made with no confirmation, so for ENABLE each restricted product is
   // already SKIPPED with the reason that applies to THIS actor: HARD_BLOCK, ADMIN_ONLY (a STAFF
@@ -207,12 +245,22 @@ function Preview({
   const { hardBlocked, overridable } = summarisePlanRisks(state.plan);
   const isEnable = state.action === "ENABLE";
 
+  const targetCategory = state.destinationCategoryId
+    ? categories.find((c) => c.id === state.destinationCategoryId)
+    : null;
+
   return (
     <div className="mt-4 space-y-3 border-t border-black/10 pt-4">
       <p className="text-sm text-primary">
         <strong>{BULK_ACTION_LABELS[state.action]}</strong>: {state.plan.length} selected,{" "}
         {willUpdate} will change now.
       </p>
+
+      {targetCategory && (
+        <p className="text-xs font-semibold text-action">
+          Destination category: <strong>{targetCategory.name}</strong>
+        </p>
+      )}
 
       {isEnable && skippedRestricted.length > 0 && (
         <div className="rounded-xl bg-danger-tint p-3">
@@ -244,6 +292,9 @@ function Preview({
       {/* No hidden `intent` here: each button names its own, so Cancel cannot submit "apply". */}
       <form action={action} className="space-y-2">
         <input type="hidden" name="bulkAction" value={state.action} />
+        {state.destinationCategoryId && (
+          <input type="hidden" name="destinationCategoryId" value={state.destinationCategoryId} />
+        )}
         {state.productIds.map((id) => (
           <input key={id} type="hidden" name="productId" value={id} />
         ))}

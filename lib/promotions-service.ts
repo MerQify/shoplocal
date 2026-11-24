@@ -1,10 +1,13 @@
 import { cache } from "react";
 import { getPrisma } from "@/lib/db";
+import { openLandingPromotionCache } from "@/lib/landing-promotion-cache";
+import { timeStorefrontRender } from "@/lib/storefront-render-timing";
 import { getCurrentVendorIdOrNull } from "@/lib/tenant";
 import {
   listPromotionsForAdmin as listAdminRepo,
   getPromotionById as getByIdRepo,
   listLivePromotions as listLiveRepo,
+  findNextPromotionStart,
   createPromotion as createRepo,
   updatePromotion as updateRepo,
   deletePromotion as deleteRepo,
@@ -33,10 +36,29 @@ export const HERO_PROMOTION_LIMIT = 12;
  * Storefront live promotions read (R11). Memoized per request with React `cache()`.
  */
 export const getLivePromotionsForStorefront = cache(
-  async (now = new Date(), limit = HERO_PROMOTION_LIMIT): Promise<PromotionRow[]> => {
+  async (now?: Date, limit = HERO_PROMOTION_LIMIT): Promise<PromotionRow[]> => {
+    const asOf = now ?? new Date();
     const vendorId = await getCurrentVendorIdOrNull();
     if (!vendorId) return [];
-    return listLiveRepo(getPrisma(), vendorId, now, limit);
+
+    const cache =
+      now === undefined && limit === HERO_PROMOTION_LIMIT
+        ? await openLandingPromotionCache(vendorId)
+        : null;
+    if (!cache) return listLiveRepo(getPrisma(), vendorId, asOf, limit);
+    const cached = await timeStorefrontRender("hero.promotions.cache-read", cache.read);
+    if (cached) return cached;
+
+    const prisma = getPrisma();
+    const [rows, schedule] = await Promise.all([
+      timeStorefrontRender("hero.promotions.db", () => listLiveRepo(prisma, vendorId, asOf, limit)),
+      findNextPromotionStart(prisma, vendorId, asOf).then(
+        (nextStart) => ({ nextStart }),
+        () => null,
+      ),
+    ]);
+    if (schedule) cache.write(rows, asOf, schedule.nextStart);
+    return rows;
   },
 );
 

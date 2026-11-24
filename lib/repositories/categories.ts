@@ -3,6 +3,7 @@ import { isUniqueViolation } from "@/lib/repositories/prisma-errors";
 import type { CatalogueWriteResult } from "@/lib/repositories/products";
 import { visibleCategoryWhere } from "@/lib/category-visibility";
 import { composePublicUrl } from "@/lib/storage";
+import { sortCategoryTreeAlphabetical, sortNamedEntities } from "@/lib/list-sorting";
 
 /**
  * Resolves a category's public image URL (ADR-003, #1278).
@@ -81,16 +82,17 @@ export async function listTopLevelCategories(
 ): Promise<CategorySummary[]> {
   const rows = await prisma.category.findMany({
     where: { vendorId, parentId: null, isActive: true },
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     select: { id: true, slug: true, name: true, imageKey: true },
   });
-  return rows.map((c) => ({
+  const summaries = rows.map((c) => ({
     id: c.id,
     slug: c.slug,
     name: c.name,
     imageKey: c.imageKey,
     imageUrl: composeCategoryImageUrl(c.imageKey, c.slug, cdnBaseUrl),
   }));
+  return sortNamedEntities(summaries);
 }
 
 /**
@@ -103,11 +105,8 @@ export async function listTopLevelCategories(
  * `parentId` is null — so the page's category query count is unchanged by gaining the control,
  * which matters because read amplification on these pages is a live concern (#670, #682).
  *
- * Ordering is `(sortOrder, name)` — the same global ordering `listTopLevelCategories` uses,
- * extended with a tiebreak so two categories sharing a `sortOrder` render in a stable order rather
- * than whatever the planner returns. Grouping into departments-with-children is NOT done here: it
- * is pure, it is `toCategoryOptionGroups`' job (`lib/catalogue-form.ts`), and doing it in SQL would
- * move the one rule worth unit-testing into a query shape that needs a database to assert.
+ * Naturally sorted A–Z maintaining the 2-tier parent-child hierarchy by default: departments
+ * are sorted A–Z, and subcategories within each department are sorted A–Z.
  */
 export async function listCategoryTreeForStorefront(
   prisma: ReturnType<typeof getPrisma>,
@@ -122,7 +121,7 @@ export async function listCategoryTreeForStorefront(
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     select: { id: true, slug: true, name: true, parentId: true, isActive: true, imageKey: true },
   });
-  return rows.map((c) => ({
+  const nodes = rows.map((c) => ({
     id: c.id,
     slug: c.slug,
     name: c.name,
@@ -131,6 +130,7 @@ export async function listCategoryTreeForStorefront(
     imageKey: c.imageKey,
     imageUrl: composeCategoryImageUrl(c.imageKey, c.slug, cdnBaseUrl),
   }));
+  return sortCategoryTreeAlphabetical(nodes);
 }
 
 /**
@@ -215,13 +215,15 @@ export async function getCategoryBySlug(
     name: row.name,
     imageKey: row.imageKey,
     imageUrl: composeCategoryImageUrl(row.imageKey, row.slug, cdnBaseUrl),
-    children: (row.children ?? []).map((child) => ({
-      id: child.id,
-      slug: child.slug,
-      name: child.name,
-      imageKey: child.imageKey,
-      imageUrl: composeCategoryImageUrl(child.imageKey, child.slug, cdnBaseUrl),
-    })),
+    children: sortNamedEntities(
+      (row.children ?? []).map((child) => ({
+        id: child.id,
+        slug: child.slug,
+        name: child.name,
+        imageKey: child.imageKey,
+        imageUrl: composeCategoryImageUrl(child.imageKey, child.slug, cdnBaseUrl),
+      })),
+    ),
     parent: row.parent
       ? {
           id: row.parent.id,
@@ -229,13 +231,15 @@ export async function getCategoryBySlug(
           name: row.parent.name,
           imageKey: row.parent.imageKey,
           imageUrl: composeCategoryImageUrl(row.parent.imageKey, row.parent.slug, cdnBaseUrl),
-          children: (row.parent.children ?? []).map((c) => ({
-            id: c.id,
-            slug: c.slug,
-            name: c.name,
-            imageKey: c.imageKey,
-            imageUrl: composeCategoryImageUrl(c.imageKey, c.slug, cdnBaseUrl),
-          })),
+          children: sortNamedEntities(
+            (row.parent.children ?? []).map((c) => ({
+              id: c.id,
+              slug: c.slug,
+              name: c.name,
+              imageKey: c.imageKey,
+              imageUrl: composeCategoryImageUrl(c.imageKey, c.slug, cdnBaseUrl),
+            })),
+          ),
         }
       : null,
   };
@@ -319,29 +323,7 @@ export interface CategoryWriteInput {
  * being certain is one lookup.
  */
 export function groupCategoryRowsByParent(rows: readonly AdminCategoryRow[]): AdminCategoryRow[] {
-  const byPosition = (a: AdminCategoryRow, b: AdminCategoryRow) =>
-    a.sortOrder - b.sortOrder || a.name.localeCompare(b.name);
-
-  const topLevelIds = new Set(rows.filter((row) => row.parentId === null).map((row) => row.id));
-  const isTopLevel = (row: AdminCategoryRow) =>
-    row.parentId === null || !topLevelIds.has(row.parentId);
-
-  const childrenByParent = new Map<string, AdminCategoryRow[]>();
-  for (const row of rows) {
-    if (isTopLevel(row)) continue;
-    const siblings = childrenByParent.get(row.parentId!);
-    if (siblings) siblings.push(row);
-    else childrenByParent.set(row.parentId!, [row]);
-  }
-
-  const ordered: AdminCategoryRow[] = [];
-  for (const parent of rows.filter(isTopLevel).sort(byPosition)) {
-    ordered.push(parent);
-    const children = childrenByParent.get(parent.id);
-    if (children) ordered.push(...children.sort(byPosition));
-  }
-
-  return ordered;
+  return sortCategoryTreeAlphabetical(rows, { prioritizeSortOrder: true });
 }
 
 /**

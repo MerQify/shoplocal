@@ -6,6 +6,52 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Staff storefront 2-column responsive layout and untracked product inline quantity editing.**
+  - **Responsive 2-Column Storefront Layout:** Reorganised `/staff/storefront` from an overly tall, narrow single column into a modern, balanced 2-column responsive layout on desktop (`lg:grid-cols-12`, with `lg:col-span-7` primary settings column and `lg:col-span-5` secondary settings column) while smoothly collapsing to a single column on tablet and mobile viewports.
+  - **Page Container Width Upgrade:** Upgraded `PageContainer` width from `standard` (`max-w-4xl`) to `wide` (`max-w-7xl`) to make full use of widescreen real estate without cramped sections.
+  - **Modular Panel Card Architecture:** Grouped storefront configuration into clean, self-contained panel cards (`border border-black/10 bg-white p-6 shadow-sm rounded-2xl`) across themes, branding & colors (with an 8-color 2-column subgrid), delivery rules, footer hours/legal, visual asset uploaders, grid density, catalogue labels, social channels, marketing consent, and customer review links.
+  - **Inline Stock Quantity for Untracked Products:** Preserved the numeric quantity input for untracked and unknown products on `/staff/products`, displaying `placeholder="—"` alongside the `Not tracked` status label so staff can enter a count and immediately mark products as tracked right from the catalogue table.
+
+- **Staff products collapsible filters, compact age restriction, and bulk low-stock alerts.**
+  - **Collapsible Sidebar Filters:** Added interactive sidebar collapse/expand controls (`ProductCatalogLayout`, `FilterToggleBtn`, `panel-left-close` / `panel-left-open`) on `/staff/products` to reclaim horizontal space on desktop and tablet displays, seamlessly expanding the product table across the full viewport (`w-full`) while remembering user preference via `localStorage`.
+  - **Compact Age Restriction Badge:** Replaced the bulky, multi-line `"AGE-RESTRICTED — CANNOT BE SOLD ONLINE YET"` banner in the Status column with a clean, compact **`Age Restricted`** label underneath the product name alongside PLU and net content, complete with informative tooltip. Clears the Status column for crisp `Active`, `Archived`, and `Image Review` tags without row height inflation.
+  - **Bulk Low-Stock Threshold on Selected Products:** Differentiated store-wide default management (in the top popover) from selection-scoped low-stock alert updates in `StickyBulkActionBar` (`bulkSetLowStockThresholdAction` and `bulkSetLowStockThresholds`), allowing staff to apply custom low-stock thresholds directly to checked products.
+
+- **Staff product edit 2-column responsive layout and sticky low-stock alert.**
+  - **Sticky Action Bar Low-Stock Alert:** Added a dedicated `Low-stock alert at:` threshold input and `Save default` action to `StickyBulkActionBar` on `/staff/products`, allowing store admins to adjust and save the default low-stock alert threshold directly from the floating toolbar.
+  - **Product Drilldown Top Navigation & Back Option:** Added a prominent `← Back to products` navigation button, breadcrumbs (`Products / {product.name}`), and status/stock/price metrics pill group at the top of `/staff/products/[id]`.
+  - **Responsive 2-Column Product Edit Layout:** Upgraded `/staff/products/[id]` to `width="wide"` (`max-w-7xl`). On desktop (`lg:` breakpoint and above), the screen presents an elegant 2-column layout (`lg:col-span-8` main form for details, pricing, stock, attributes, multi-buy, and HMC; `lg:col-span-4` sidebar for status/visibility, images, and restrictions). Smoothly collapses into a single-column layout on smaller devices.
+  - **Form Association Cleanliness:** Used standard HTML form association (`form="product-form"`) across sidebar controls to ensure all fields submit to `saveProduct` without invalid nested form tags.
+
+- **Staff products sidebar filters and docked sticky bulk action bar.**
+  - **Sidebar Filter Panel:** Moved the 8 product filter dimensions (Status, Category, Brand, Restriction, Stock, Needs attention, Sort by, Per page) into a dedicated `lg:w-72` left sidebar, decluttering the header and bringing the product data table directly above the fold.
+  - **Status Counts & Cascading Filters:** Displayed real-time counts for All statuses, Active, and Archived directly in the sidebar, powered by cached Cloudflare metadata facets.
+  - **Docked Floating Sticky Action Bar:** Replaced competing multi-row bulk controls with a unified, floating dark-navy toolbar docked to the bottom viewport (`StickyBulkActionBar`), appearing only when ≥ 1 product is checked or row quantities are altered.
+  - **Relocated Store Settings:** Compacted the global low-stock threshold configuration form into a clean header popover (`Low-stock default: {n}`) for store administrators.
+
+- **Staff products filter dropdown widths and layout stability.**
+  - **Optimal Fixed Dropdown Widths:** Assigned dedicated, optimal fixed widths (`w-36` to `w-56`) and `shrink-0` to each filter dropdown label on `/staff/products`, preventing controls from shuffling across rows when selections or cascaded option sets change.
+  - **Clean Closed Truncation:** Added `w-full truncate` to filter select elements ensuring long selected option names truncate cleanly with ellipsis inside the closed box while maintaining full readability in native dropdown menus upon interaction.
+  - **Action Group Alignment:** Anchored "Apply filters" and "Clear all" buttons with `shrink-0` to eliminate orphan line-wrapping.
+
+- **Cascading catalogue filters & Cloudflare metadata facets.**
+  - **Cascading Filter Visibility:** `/staff/products` dynamically cascades options based on status and category. Filtering by Active shows only active categories, brands, restrictions, and stock modes; filtering by Archived shows only archived ones; selecting a category narrows brands to that category.
+  - **Cloudflare KV Facet Metadata:** Pre-computed `metadata:v1:facets:<vendorId>` cached in Cloudflare KV / edge cache with automatic Postgres fallback, scheduled overnight warming (`0 3 * * *`), and immediate invalidation on catalogue mutations.
+
+- **Category selector alphabetical sorting & staff category collation.**
+  - **Alphabetical Category Option Groups:** Centralised default alphabetical (A–Z) sorting in `toCategoryOptionGroups` across departments and child subcategories, automatically applying to `/staff/products`, `BulkProductActions`, `ProductForm`, and `PromotionForm` category selectors.
+  - **Staff Categories Collation:** Applied alphabetical natural tree collation on `/staff/categories`.
+  - **Hardened Image Library Test:** Stabilised async rejection assertions in `tests/image-library-client.test.tsx`.
+
+- **Platform-wide list optimisation, Cloudflare metadata architecture, and staff active/archived management.**
+  - **Alphabetical Sorting (A–Z) by Default:** Case-insensitive natural collation across categories, subcategories, brands, selectors, and navigation menus (`lib/list-sorting.ts`). Preserves two-tier parent-child hierarchies.
+  - **Shopper Visibility Filtering:** Enforced `visibleCategoryWhere` and shopper-visible brands (`listShopperVisibleBrands`) ensuring inactive/hidden items never leak to shoppers while maintaining complete staff access.
+  - **Cloudflare-Native Metadata Cache:** Pre-built, versioned, validated category trees, visible brands, and navigation structures stored in Cloudflare KV with zero-failure database fallback (`lib/cloudflare-metadata.ts`).
+  - **Automated Metadata Refresh:** Overnight scheduled cron job (`/api/jobs/refresh-metadata`), post-deploy CI workflow hooks, and automatic invalidation on administrative category/brand mutations.
+  - **Staff Products Active & Archived Controls:** Added Active and Archived status filter options on `/staff/products` with bulk "Move to Active" action and category destination assignment.
+
+- Trial a tenant-keyed homepage promotions cache on Aheed staging with scheduled expiry (#439).
+
 - Trial streaming the homepage account and cart controls independently of the first render (#439).
 
 - Post-ship docs for #1730: roadmap row, staff-guide sanity check, and a `CLAUDE.md` rule for migration-timestamp collisions between parallel agents.

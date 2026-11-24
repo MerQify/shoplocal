@@ -687,6 +687,8 @@ export const CATEGORY_FIELDS = [
 
 /** The shape of an `AdminCategoryRow` this module needs, so no repository
  *  module is pulled into the client bundle just for a type. */
+import { sortCategoryOptionGroups } from "@/lib/list-sorting";
+
 export interface CategoryOption {
   id: string;
   name: string;
@@ -736,6 +738,7 @@ export type CategoryOptionGroup = CategoryOptionGroupOf<CategoryOption>;
  */
 export function toCategoryOptionGroups<T extends CategoryOption>(
   categories: readonly T[],
+  options?: { sortAlphabetical?: boolean },
 ): CategoryOptionGroupOf<T>[] {
   const groups: CategoryOptionGroupOf<T>[] = [];
   const byParentId = new Map<string, CategoryOptionGroupOf<T>>();
@@ -754,5 +757,9 @@ export function toCategoryOptionGroups<T extends CategoryOption>(
     }
   }
 
-  return groups;
+  if (options?.sortAlphabetical === false) {
+    return groups;
+  }
+
+  return sortCategoryOptionGroups(groups);
 }

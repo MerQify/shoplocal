@@ -452,17 +452,34 @@ describe("toCategoryOptionGroups (#630, generic since #681)", () => {
     ...extra,
   });
 
-  it("returns departments in input order, each followed by its own children", () => {
+  it("returns departments in alphabetical order, each followed by its own sorted children", () => {
     const groups = toCategoryOptionGroups([
       cat("produce", null),
-      cat("fruit", "produce"),
       cat("veg", "produce"),
+      cat("fruit", "produce"),
       cat("bakery", null),
       cat("bread", "bakery"),
     ]);
 
+    expect(groups.map((g) => g.parent.id)).toEqual(["bakery", "produce"]);
+    expect(groups[0].children.map((c) => c.id)).toEqual(["bread"]);
+    expect(groups[1].children.map((c) => c.id)).toEqual(["fruit", "veg"]);
+  });
+
+  it("can preserve input order when sortAlphabetical is false", () => {
+    const groups = toCategoryOptionGroups(
+      [
+        cat("produce", null),
+        cat("veg", "produce"),
+        cat("fruit", "produce"),
+        cat("bakery", null),
+        cat("bread", "bakery"),
+      ],
+      { sortAlphabetical: false },
+    );
+
     expect(groups.map((g) => g.parent.id)).toEqual(["produce", "bakery"]);
-    expect(groups[0].children.map((c) => c.id)).toEqual(["fruit", "veg"]);
+    expect(groups[0].children.map((c) => c.id)).toEqual(["veg", "fruit"]);
     expect(groups[1].children.map((c) => c.id)).toEqual(["bread"]);
   });
 

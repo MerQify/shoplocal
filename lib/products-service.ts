@@ -24,6 +24,7 @@ import {
   listProductsForAdmin as listProductsForAdminRepo,
   listProductsForAdminPage as listProductsForAdminPageRepo,
   bulkSetInventoryQuantities as bulkSetInventoryQuantitiesRepo,
+  bulkSetLowStockThresholds as bulkSetLowStockThresholdsRepo,
   matchProductListTerms,
   promoteProductImage as promoteProductImageRepo,
   quickUpdateInventory as quickUpdateInventoryRepo,
@@ -375,4 +376,13 @@ export async function bulkSetInventoryQuantities(
   updates: readonly { productId: string; quantity: number }[],
 ): Promise<BulkQuantityResult> {
   return bulkSetInventoryQuantitiesRepo(getPrismaWs(), vendorId, updates);
+}
+
+/** #1753 — bulk low-stock alert thresholds for selected products; uses WebSocket client. */
+export async function bulkSetLowStockThresholds(
+  vendorId: string,
+  productIds: readonly string[],
+  threshold: number,
+) {
+  return bulkSetLowStockThresholdsRepo(getPrismaWs(), vendorId, productIds, threshold);
 }

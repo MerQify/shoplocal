@@ -129,10 +129,13 @@ export function FooterSettingsForms({ initial }: { initial: FooterSettingsValues
   );
 
   return (
-    <div className="flex flex-col gap-10">
-      <form action={saveContact} className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
+      <form
+        action={saveContact}
+        className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+      >
         <div>
-          <h2 className="font-bold text-black">Footer contact &amp; legal</h2>
+          <h2 className="text-xl font-bold text-black">Footer contact &amp; legal</h2>
           <p className="mt-1 text-sm text-black/60">
             What your storefront footer shows about your shop. Leave a field blank to hide it —
             nothing is shown in its place. The address comes from your Collection Location above.
@@ -186,9 +189,12 @@ export function FooterSettingsForms({ initial }: { initial: FooterSettingsValues
         </button>
       </form>
 
-      <form action={saveHours} className="flex flex-col gap-6">
+      <form
+        action={saveHours}
+        className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
+      >
         <div>
-          <h2 className="font-bold text-black">Opening hours &amp; payment badges</h2>
+          <h2 className="text-xl font-bold text-black">Opening hours &amp; payment badges</h2>
           <p className="mt-1 text-sm text-black/60">
             Your usual hours for each day. Tick &quot;Closed all day&quot; for a day you never open.
             Leave a day&apos;s times empty to leave it out of the footer. With no days set, the
@@ -281,10 +287,10 @@ export function FooterSettingsForms({ initial }: { initial: FooterSettingsValues
         </button>
       </form>
 
-      <section className="flex flex-col gap-6">
+      <section className="flex flex-col gap-6 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
         <form action={saveOverride} className="flex flex-col gap-6">
           <div>
-            <h2 className="font-bold text-black">Holiday &amp; closure dates</h2>
+            <h2 className="text-xl font-bold text-black">Holiday &amp; closure dates</h2>
             <p className="mt-1 text-sm text-black/60">
               Different hours, or a closure, on one date. The footer lists dates in the next 14 days
               under &quot;Holiday hours&quot;, and on the day itself shows them in place of your

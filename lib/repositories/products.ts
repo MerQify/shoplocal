@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { getPrisma, getPrismaWs } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/repositories/prisma-errors";
 import { visibleCategoryWhere } from "@/lib/category-visibility";
+import { sortAlphabetical, sortNamedEntities } from "@/lib/list-sorting";
 import { keysetCursorArgs, runKeysetPage } from "@/lib/repositories/pagination";
 import {
   comparePackSizes,
@@ -43,7 +44,7 @@ import type { ProductTier } from "@/lib/tier-pricing";
 import { NOTE_ACCEPTANCE_SELECT, productAcceptsNote } from "@/lib/custom-note";
 import type { AttributeValueWrite } from "@/lib/product-attribute-form";
 import { formatAttributeNumber } from "@/lib/attribute-number";
-import { DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/low-stock";
+import { DEFAULT_LOW_STOCK_THRESHOLD, MAX_LOW_STOCK_THRESHOLD } from "@/lib/low-stock";
 import { readLowStockDefault } from "@/lib/repositories/vendor";
 import {
   deleteProductTier,
@@ -1824,12 +1825,14 @@ export async function getAvailableFacets(
     glutenFree: glutenFreeRes.available,
     hmcCertified: hmcCertifiedRes.available,
     onOffer: onOfferRes.available,
-    origins: originRows
-      .map((row) => row.origin)
-      .filter((origin): origin is string => origin !== null),
-    brands: brandRows
-      .map((row) => row.brand)
-      .filter((brand): brand is { id: string; name: string; slug: string } => brand !== null),
+    origins: sortAlphabetical(
+      originRows.map((row) => row.origin).filter((origin): origin is string => origin !== null),
+    ),
+    brands: sortNamedEntities(
+      brandRows
+        .map((row) => row.brand)
+        .filter((brand): brand is { id: string; name: string; slug: string } => brand !== null),
+    ),
     packSizes: packSizeRows
       .flatMap((row) =>
         row.netContentAmount !== null && row.netContentUnit !== null
@@ -3631,6 +3634,70 @@ export async function bulkSetInventoryQuantities(
       return result;
     },
     // 100 rows x 3 writes over one socket; the 5s default is too tight on a cold compute.
+    { timeout: 30_000, maxWait: 10_000 },
+  );
+}
+
+/**
+ * Bulk updates the lowStockThreshold for selected products (#1753).
+ * Operates within a transaction using DbWs. Scopes strictly to vendorId.
+ */
+export async function bulkSetLowStockThresholds(
+  prismaWs: DbWs,
+  vendorId: string,
+  productIds: readonly string[],
+  threshold: number,
+): Promise<{ updated: number; unchanged: number; missing: string[] }> {
+  if (!Number.isInteger(threshold) || threshold < 0 || threshold > MAX_LOW_STOCK_THRESHOLD) {
+    throw new Error(
+      `bulkSetLowStockThresholds: threshold must be an integer between 0 and ${MAX_LOW_STOCK_THRESHOLD}.`,
+    );
+  }
+  if (productIds.length === 0) return { updated: 0, unchanged: 0, missing: [] };
+
+  return prismaWs.$transaction(
+    async (tx) => {
+      const ids = [...new Set(productIds)];
+      const products = await tx.product.findMany({
+        where: { vendorId, id: { in: ids } },
+        select: {
+          id: true,
+          inventory: { select: { id: true, lowStockThreshold: true } },
+        },
+      });
+      const byId = new Map(products.map((p) => [p.id, p]));
+      const result = { updated: 0, unchanged: 0, missing: [] as string[] };
+
+      for (const id of ids) {
+        const existing = byId.get(id);
+        if (!existing) {
+          result.missing.push(id);
+          continue;
+        }
+        if (existing.inventory && existing.inventory.lowStockThreshold === threshold) {
+          result.unchanged += 1;
+          continue;
+        }
+
+        await tx.inventory.upsert({
+          where: { productId: id },
+          create: {
+            vendorId,
+            productId: id,
+            quantity: 0,
+            stockMode: "UNKNOWN",
+            lowStockThreshold: threshold,
+            version: 1,
+          },
+          update: {
+            lowStockThreshold: threshold,
+            version: { increment: 1 },
+          },
+        });
+        result.updated += 1;
+      }
+      return result;
+    },
     { timeout: 30_000, maxWait: 10_000 },
   );
 }

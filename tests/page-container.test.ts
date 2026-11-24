@@ -37,6 +37,7 @@ const EXPECTED: Record<string, { width: string; padY: string }> = {
   "app/(admin)/staff/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/orders/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/products/page.tsx": { width: "wide", padY: "default" },
+  "app/(admin)/staff/products/[id]/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/inventory/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/customers/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/abandoned-checkouts/page.tsx": { width: "wide", padY: "default" },
@@ -62,6 +63,7 @@ const EXPECTED: Record<string, { width: string; padY: string }> = {
   "app/(admin)/staff/feedback/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/enquiries/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/team/page.tsx": { width: "wide", padY: "default" },
+  "app/(admin)/staff/storefront/page.tsx": { width: "wide", padY: "default" },
   // #1319 — the platform admin's home: a metrics strip and a card grid, like the hub.
   "app/(admin)/staff/platform/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/platform/vendors/page.tsx": { width: "wide", padY: "default" },
@@ -78,7 +80,6 @@ const EXPECTED: Record<string, { width: string; padY: string }> = {
   "app/(admin)/staff/discounts/page.tsx": { width: "standard", padY: "default" },
   "app/(admin)/staff/loyalty/page.tsx": { width: "standard", padY: "default" },
   "app/(admin)/staff/delivery-areas/page.tsx": { width: "standard", padY: "default" },
-  "app/(admin)/staff/storefront/page.tsx": { width: "standard", padY: "default" },
   "app/(admin)/staff/assistant/page.tsx": { width: "standard", padY: "default" },
   "app/(admin)/staff/ai-usage/page.tsx": { width: "standard", padY: "default" },
   "app/(admin)/staff/products/import/page.tsx": { width: "standard", padY: "default" },
@@ -87,7 +88,6 @@ const EXPECTED: Record<string, { width: string; padY: string }> = {
   "app/(admin)/staff/onboarding/page.tsx": { width: "standard", padY: "default" },
   // --- admin: narrow
   "app/(admin)/staff/orders/[orderNumber]/page.tsx": { width: "narrow", padY: "default" },
-  "app/(admin)/staff/products/[id]/page.tsx": { width: "narrow", padY: "default" },
   "app/(admin)/staff/products/new/page.tsx": { width: "narrow", padY: "default" },
   "app/(admin)/staff/categories/[id]/page.tsx": { width: "narrow", padY: "default" },
   "app/(admin)/staff/bundles/[bundleId]/page.tsx": { width: "narrow", padY: "default" },

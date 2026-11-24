@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client/wasm";
 import type { getPrisma, getPrismaWs } from "@/lib/db";
 import type { ProductRestriction, StockMode } from "@/lib/cart-rules";
 import { readLowStockDefault } from "@/lib/repositories/vendor";
@@ -149,11 +150,17 @@ async function clearAndEnableInTx(
   actorUserId: string,
   reason: string,
   source: RestrictionChangeSource,
+  destinationCategoryId?: string | null,
 ): Promise<boolean> {
   if (isHardBlock(confirmedRestriction)) return false;
+  const updateData: Prisma.ProductUpdateManyMutationInput = {
+    restriction: null,
+    isActive: true,
+    ...(destinationCategoryId ? { categoryId: destinationCategoryId } : {}),
+  };
   const { count } = await tx.product.updateMany({
     where: { id: productId, vendorId, restriction: confirmedRestriction },
-    data: { restriction: null, isActive: true },
+    data: updateData,
   });
   if (count === 0) return false;
   await tx.productRestrictionAuditLog.create({
@@ -236,10 +243,25 @@ export async function applyBulkAction(
   ids: readonly string[],
   actor: RestrictionActor,
   actorUserId: string,
-  confirmation: { confirmed: boolean; reason: string | null },
+  confirmation: {
+    confirmed: boolean;
+    reason: string | null;
+    destinationCategoryId?: string | null;
+  },
   skipLabel: (entry: BulkPlanEntry) => string,
 ): Promise<BulkResult> {
   return prismaWs.$transaction(async (tx) => {
+    let validDestinationCategoryId: string | null = null;
+    if (confirmation.destinationCategoryId) {
+      const cat = await tx.category.findFirst({
+        where: { id: confirmation.destinationCategoryId, vendorId },
+        select: { id: true },
+      });
+      if (cat) {
+        validDestinationCategoryId = cat.id;
+      }
+    }
+
     const candidates = await loadBulkCandidates(tx, vendorId, ids);
     const plan = planBulkAction(action, ids, candidates, actor, confirmation);
     const result: BulkResult = { updated: [], skipped: [], failed: [] };
@@ -259,9 +281,13 @@ export async function applyBulkAction(
           });
           break;
         case "ENABLE": {
+          const updateData: Prisma.ProductUpdateManyMutationInput = {
+            isActive: true,
+            ...(validDestinationCategoryId ? { categoryId: validDestinationCategoryId } : {}),
+          };
           const { count } = await tx.product.updateMany({
             where: { id: entry.productId, vendorId, restriction: null, isActive: false },
-            data: { isActive: true },
+            data: updateData,
           });
           (count === 1 ? result.updated : result.failed).push(
             count === 1
@@ -279,6 +305,7 @@ export async function applyBulkAction(
             actorUserId,
             (confirmation.reason ?? "").trim(),
             "BULK_ACTION",
+            validDestinationCategoryId,
           );
           (applied ? result.updated : result.failed).push(
             applied
@@ -288,9 +315,20 @@ export async function applyBulkAction(
           break;
         }
         case "DISABLE": {
+          let archivedCatId: string | null = null;
+          const archivedCat = await tx.category.findFirst({
+            where: { vendorId, slug: "archived" },
+            select: { id: true },
+          });
+          if (archivedCat) {
+            archivedCatId = archivedCat.id;
+          }
           const { count } = await tx.product.updateMany({
             where: { id: entry.productId, vendorId, isActive: true },
-            data: { isActive: false },
+            data: {
+              isActive: false,
+              ...(archivedCatId ? { categoryId: archivedCatId } : {}),
+            },
           });
           (count === 1 ? result.updated : result.failed).push(
             count === 1

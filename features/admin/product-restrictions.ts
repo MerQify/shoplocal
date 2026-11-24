@@ -166,6 +166,7 @@ export async function bulkProductAction(
       phase: "preview",
       action: request.action,
       productIds: request.productIds,
+      destinationCategoryId: request.destinationCategoryId ?? null,
       plan,
       offersConfirmation:
         actor === "ADMIN" && request.action === "ENABLE" && overridable.length > 0,
@@ -179,10 +180,20 @@ export async function bulkProductAction(
     request.productIds,
     actor,
     auth.user.id,
-    { confirmed: readConfirmed(form), reason: readReason(form) || null },
+    {
+      confirmed: readConfirmed(form),
+      reason: readReason(form) || null,
+      destinationCategoryId: request.destinationCategoryId,
+    },
   );
   revalidatePath("/staff/products");
   revalidatePath("/staff/inventory");
   revalidatePath("/", "layout");
+  try {
+    const { invalidateVendorMetadata } = await import("@/lib/cloudflare-metadata");
+    await invalidateVendorMetadata(auth.vendorId, "all");
+  } catch (err) {
+    console.warn("[product-restrictions] Failed to invalidate metadata:", err);
+  }
   return { phase: "applied", action: request.action, result, error: null };
 }

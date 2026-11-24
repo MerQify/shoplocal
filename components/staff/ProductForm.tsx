@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, type ReactNode } from "react";
 import { DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/low-stock";
 import Link from "next/link";
 import { saveProduct } from "@/features/admin/catalogue";
@@ -77,6 +77,10 @@ export interface ProductFormProps {
    * the new-product page, which has no Images section.
    */
   imageLibrary?: { configured: boolean; contextQuery: string };
+  /**
+   * Optional restriction panel slot, rendered in the right-hand sidebar column outside <form>.
+   */
+  restrictionPanel?: ReactNode;
 }
 
 export function ProductForm({
@@ -88,6 +92,7 @@ export function ProductForm({
   attributes,
   defaultLowStockThreshold = DEFAULT_LOW_STOCK_THRESHOLD,
   imageLibrary,
+  restrictionPanel,
 }: ProductFormProps) {
   const anyLabel =
     labels.halal || labels.fresh || labels.organic || labels.vegetarian || labels.glutenFree;
@@ -113,392 +118,398 @@ export function ProductForm({
   };
 
   return (
-    <>
-      <form action={action} className="space-y-6">
-        {product && <input type="hidden" name="productId" value={product.id} />}
+    <div className="space-y-6">
+      {state.error && (
+        <p
+          role="alert"
+          id="product-form-error"
+          className="rounded-2xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger border border-danger/20"
+        >
+          {state.error}
+        </p>
+      )}
+      {state.saved && !state.error && (
+        <p
+          role="status"
+          className="rounded-2xl bg-action-tint px-4 py-3 text-sm font-medium text-primary border border-action/20"
+        >
+          Product saved.
+        </p>
+      )}
 
-        {state.error && (
-          <p
-            role="alert"
-            id="product-form-error"
-            className="rounded-xl bg-danger-tint px-4 py-3 text-sm font-medium text-danger"
-          >
-            {state.error}
-          </p>
-        )}
-        {state.saved && !state.error && (
-          <p
-            role="status"
-            className="rounded-xl bg-action-tint px-4 py-3 text-sm font-medium text-primary"
-          >
-            Product saved.
-          </p>
-        )}
+      {/* 2-Column Responsive Layout (stacks on mobile, 8/4 cols on desktop) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8 items-start">
+        {/* Main Left Column (8 of 12 columns on desktop) */}
+        <div className="space-y-6 lg:col-span-8">
+          <form id="product-form" action={action} className="space-y-6">
+            {product && <input type="hidden" name="productId" value={product.id} />}
 
-        <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5">
-          <h2 className="text-sm font-bold text-primary">Details</h2>
+            <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+              <h2 className="text-sm font-bold text-primary">Details</h2>
 
-          <div>
-            <label className={labelClass} htmlFor="name">
-              Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              required
-              defaultValue={product?.name ?? ""}
-              {...fieldProps("name")}
-            />
-          </div>
+              <div>
+                <label className={labelClass} htmlFor="name">
+                  Name
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  required
+                  defaultValue={product?.name ?? ""}
+                  {...fieldProps("name")}
+                />
+              </div>
 
-          <div>
-            <label className={labelClass} htmlFor="slug">
-              Web address {isNew && "(leave blank to build it from the name)"}
-            </label>
-            <input
-              id="slug"
-              name="slug"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="product-name"
-              defaultValue={product?.slug ?? ""}
-              {...fieldProps("slug")}
-            />
-          </div>
+              <div>
+                <label className={labelClass} htmlFor="slug">
+                  Web address {isNew && "(leave blank to build it from the name)"}
+                </label>
+                <input
+                  id="slug"
+                  name="slug"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="product-name"
+                  defaultValue={product?.slug ?? ""}
+                  {...fieldProps("slug")}
+                />
+              </div>
 
-          <div>
-            <label className={labelClass} htmlFor="description">
-              Description
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={4}
-              defaultValue={product?.description ?? ""}
-              {...fieldProps("description")}
-            />
-          </div>
+              <div>
+                <label className={labelClass} htmlFor="description">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={4}
+                  defaultValue={product?.description ?? ""}
+                  {...fieldProps("description")}
+                />
+              </div>
 
-          <div>
-            <label className={labelClass} htmlFor="categoryId">
-              Category
-            </label>
-            <select
-              id="categoryId"
-              name="categoryId"
-              required
-              defaultValue={product?.categoryId ?? ""}
-              {...fieldProps("categoryId")}
-            >
-              <option value="" disabled>
-                Choose a category
-              </option>
-              {/* #630 — one optgroup per department, with the department itself
+              <div>
+                <label className={labelClass} htmlFor="categoryId">
+                  Category
+                </label>
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  required
+                  defaultValue={product?.categoryId ?? ""}
+                  {...fieldProps("categoryId")}
+                >
+                  <option value="" disabled>
+                    Choose a category
+                  </option>
+                  {/* #630 — one optgroup per department, with the department itself
                   as the first selectable option inside it. Both tiers are
                   assignable and both seed paths use them, so the department
                   must stay pickable; a cascade would have removed that
                   silently. */}
-              {toCategoryOptionGroups(categories).map((group) => (
-                <optgroup key={group.parent.id} label={group.parent.name}>
-                  <option value={group.parent.id}>
-                    {group.parent.name} — directly in this department
-                    {!group.parent.isActive && " (inactive)"}
-                  </option>
-                  {group.children.map((child) => (
-                    <option key={child.id} value={child.id}>
-                      {child.name}
-                      {!child.isActive && " (inactive)"}
-                    </option>
+                  {toCategoryOptionGroups(categories).map((group) => (
+                    <optgroup key={group.parent.id} label={group.parent.name}>
+                      <option value={group.parent.id}>
+                        {group.parent.name} — directly in this department
+                        {!group.parent.isActive && " (inactive)"}
+                      </option>
+                      {group.children.map((child) => (
+                        <option key={child.id} value={child.id}>
+                          {child.name}
+                          {!child.isActive && " (inactive)"}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-        </section>
+                </select>
+              </div>
+            </section>
 
-        <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5">
-          <h2 className="text-sm font-bold text-primary">Price &amp; stock</h2>
+            <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5">
+              <h2 className="text-sm font-bold text-primary">Price &amp; stock</h2>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelClass} htmlFor="basePrice">
-                Price (£)
-              </label>
-              <input
-                id="basePrice"
-                name="basePrice"
-                inputMode="decimal"
-                required
-                placeholder="2.40"
-                defaultValue={poundsValue(product?.basePrice)}
-                {...fieldProps("basePrice")}
-              />
-            </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelClass} htmlFor="basePrice">
+                    Price (£)
+                  </label>
+                  <input
+                    id="basePrice"
+                    name="basePrice"
+                    inputMode="decimal"
+                    required
+                    placeholder="2.40"
+                    defaultValue={poundsValue(product?.basePrice)}
+                    {...fieldProps("basePrice")}
+                  />
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="originalPrice">
-                Was-price (£) — blank if not on offer
-              </label>
-              <input
-                id="originalPrice"
-                name="originalPrice"
-                inputMode="decimal"
-                placeholder="3.00"
-                defaultValue={poundsValue(product?.originalPrice)}
-                {...fieldProps("originalPrice")}
-              />
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="originalPrice">
+                    Was-price (£) — blank if not on offer
+                  </label>
+                  <input
+                    id="originalPrice"
+                    name="originalPrice"
+                    inputMode="decimal"
+                    placeholder="3.00"
+                    defaultValue={poundsValue(product?.originalPrice)}
+                    {...fieldProps("originalPrice")}
+                  />
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="vatRate">
-                VAT Rate (UK Compliance)
-              </label>
-              <select
-                id="vatRate"
-                name="vatRate"
-                defaultValue={product?.vatRate ?? 0}
-                {...fieldProps("vatRate")}
-              >
-                <option value={0}>0% VAT: Zero-rated domestic human food</option>
-                <option value={20}>
-                  20% VAT: Standard-rated (confectionery, alcohol &amp; non-food)
-                </option>
-              </select>
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="vatRate">
+                    VAT Rate (UK Compliance)
+                  </label>
+                  <select
+                    id="vatRate"
+                    name="vatRate"
+                    defaultValue={product?.vatRate ?? 0}
+                    {...fieldProps("vatRate")}
+                  >
+                    <option value={0}>0% VAT: Zero-rated domestic human food</option>
+                    <option value={20}>
+                      20% VAT: Standard-rated (confectionery, alcohol &amp; non-food)
+                    </option>
+                  </select>
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="unitLabel">
-                Unit label — shown under the price
-              </label>
-              <input
-                id="unitLabel"
-                name="unitLabel"
-                required
-                placeholder="£2.40 / kg"
-                defaultValue={product?.unitLabel ?? ""}
-                {...fieldProps("unitLabel")}
-              />
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="unitLabel">
+                    Unit label — shown under the price
+                  </label>
+                  <input
+                    id="unitLabel"
+                    name="unitLabel"
+                    required
+                    placeholder="£2.40 / kg"
+                    defaultValue={product?.unitLabel ?? ""}
+                    {...fieldProps("unitLabel")}
+                  />
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="netContentAmount">
-                Net content amount (optional)
-              </label>
-              <input
-                id="netContentAmount"
-                name="netContentAmount"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                placeholder="500"
-                defaultValue={product?.netContentAmount ?? ""}
-                {...fieldProps("netContentAmount")}
-              />
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="netContentAmount">
+                    Net content amount (optional)
+                  </label>
+                  <input
+                    id="netContentAmount"
+                    name="netContentAmount"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    step={1}
+                    placeholder="500"
+                    defaultValue={product?.netContentAmount ?? ""}
+                    {...fieldProps("netContentAmount")}
+                  />
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="netContentUnit">
-                Net content unit — enables a real unit price (Price Marking Order)
-              </label>
-              <select
-                id="netContentUnit"
-                name="netContentUnit"
-                defaultValue={product?.netContentUnit ?? ""}
-                {...fieldProps("netContentUnit")}
-              >
-                <option value="">No net content set — unit label stays free text</option>
-                {NET_CONTENT_UNITS.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {NET_CONTENT_UNIT_LABELS[unit]}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="netContentUnit">
+                    Net content unit — enables a real unit price (Price Marking Order)
+                  </label>
+                  <select
+                    id="netContentUnit"
+                    name="netContentUnit"
+                    defaultValue={product?.netContentUnit ?? ""}
+                    {...fieldProps("netContentUnit")}
+                  >
+                    <option value="">No net content set — unit label stays free text</option>
+                    {NET_CONTENT_UNITS.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {NET_CONTENT_UNIT_LABELS[unit]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="origin">
-                Origin (optional)
-              </label>
-              <input
-                id="origin"
-                name="origin"
-                placeholder="India"
-                defaultValue={product?.origin ?? ""}
-                {...fieldProps("origin")}
-              />
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="origin">
+                    Origin (optional)
+                  </label>
+                  <input
+                    id="origin"
+                    name="origin"
+                    placeholder="India"
+                    defaultValue={product?.origin ?? ""}
+                    {...fieldProps("origin")}
+                  />
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="brandId">
-                Brand (optional)
-              </label>
-              <select
-                id="brandId"
-                name="brandId"
-                defaultValue={product?.brandId ?? ""}
-                {...fieldProps("brandId")}
-              >
-                <option value="">No brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="brandId">
+                    Brand (optional)
+                  </label>
+                  <select
+                    id="brandId"
+                    name="brandId"
+                    defaultValue={product?.brandId ?? ""}
+                    {...fieldProps("brandId")}
+                  >
+                    <option value="">No brand</option>
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* #1211 (R15a) — the storefront purchase state. Changing it never changes the count:
+                {/* #1211 (R15a) — the storefront purchase state. Changing it never changes the count:
                 switching back to Tracked restores the last stored quantity. */}
-            <div>
-              <label className={labelClass} htmlFor="stockMode">
-                Stock tracking
-              </label>
-              <select
-                id="stockMode"
-                name="stockMode"
-                defaultValue={product?.stockMode ?? "TRACKED"}
-                {...fieldProps("stockMode")}
-              >
-                {STOCK_MODES.map((mode) => (
-                  <option key={mode} value={mode}>
-                    {STOCK_MODE_LABELS[mode]}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-black/60">
-                Tracked: sells while the stock count is above zero. Not tracked: sells without a
-                count. Infinite: guaranteed unlimited stock. Unknown: not for sale.
-              </p>
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="stockMode">
+                    Stock tracking
+                  </label>
+                  <select
+                    id="stockMode"
+                    name="stockMode"
+                    defaultValue={product?.stockMode ?? "TRACKED"}
+                    {...fieldProps("stockMode")}
+                  >
+                    {STOCK_MODES.map((mode) => (
+                      <option key={mode} value={mode}>
+                        {STOCK_MODE_LABELS[mode]}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-black/60">
+                    Tracked: sells while the stock count is above zero. Not tracked: sells without a
+                    count. Infinite: guaranteed unlimited stock. Unknown: not for sale.
+                  </p>
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="quantity">
-                Stock
-              </label>
-              <input
-                id="quantity"
-                name="quantity"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={1}
-                required
-                defaultValue={product?.quantity ?? 0}
-                {...fieldProps("quantity")}
-              />
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="quantity">
+                    Stock
+                  </label>
+                  <input
+                    id="quantity"
+                    name="quantity"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    required
+                    defaultValue={product?.quantity ?? 0}
+                    {...fieldProps("quantity")}
+                  />
+                </div>
 
-            <div>
-              <label className={labelClass} htmlFor="lowStockThreshold">
-                Low-stock threshold
-              </label>
-              <input
-                id="lowStockThreshold"
-                name="lowStockThreshold"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={1}
-                required
-                defaultValue={product?.lowStockThreshold ?? defaultLowStockThreshold}
-                {...fieldProps("lowStockThreshold")}
-              />
-            </div>
+                <div>
+                  <label className={labelClass} htmlFor="lowStockThreshold">
+                    Low-stock threshold
+                  </label>
+                  <input
+                    id="lowStockThreshold"
+                    name="lowStockThreshold"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    required
+                    defaultValue={product?.lowStockThreshold ?? defaultLowStockThreshold}
+                    {...fieldProps("lowStockThreshold")}
+                  />
+                </div>
 
-            {/*
+                {/*
               #876 — a calendar DAY, `type="date"`: the vendor's own day the product is expected
               back, stored as that day's UTC midnight. Optional; blank clears it.
             */}
-            <div>
-              <label className={labelClass} htmlFor="expectedRestockDay">
-                Expected restock date (optional)
-              </label>
-              <input
-                id="expectedRestockDay"
-                name="expectedRestockDay"
-                type="date"
-                defaultValue={product?.expectedRestockDay ?? ""}
-                {...fieldProps("expectedRestockDay")}
-                aria-describedby={
-                  state.field === "expectedRestockDay"
-                    ? "expectedRestockDay-hint product-form-error"
-                    : "expectedRestockDay-hint"
-                }
-              />
-              <p id="expectedRestockDay-hint" className="mt-1 text-xs text-black/60">
-                Shoppers see &ldquo;Back in stock&rdquo; with this date only while stock is 0, and
-                only until the date has passed.
-              </p>
-            </div>
-          </div>
-        </section>
+                <div>
+                  <label className={labelClass} htmlFor="expectedRestockDay">
+                    Expected restock date (optional)
+                  </label>
+                  <input
+                    id="expectedRestockDay"
+                    name="expectedRestockDay"
+                    type="date"
+                    defaultValue={product?.expectedRestockDay ?? ""}
+                    {...fieldProps("expectedRestockDay")}
+                    aria-describedby={
+                      state.field === "expectedRestockDay"
+                        ? "expectedRestockDay-hint product-form-error"
+                        : "expectedRestockDay-hint"
+                    }
+                  />
+                  <p id="expectedRestockDay-hint" className="mt-1 text-xs text-black/60">
+                    Shoppers see &ldquo;Back in stock&rdquo; with this date only while stock is 0,
+                    and only until the date has passed.
+                  </p>
+                </div>
+              </div>
+            </section>
 
-        {/*
+            {/*
           #912 — the vendor's own filters, one select each. Rendered only when the vendor has
           defined at least one at /staff/attributes: an empty section would be a heading with
           nothing to act on. The select's NAME carries the attribute id, because the set of filters
           is vendor data and cannot join the form's fixed field list; `readAttributeValues` reads
           them back. "Not set" (value "") clears the product's value for that filter.
         */}
-        {attributes.length > 0 && (
-          <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5">
-            <h2 className="text-sm font-bold text-primary">Product filters</h2>
-            <p className="text-xs text-black/60">
-              The values shoppers can filter by. Manage the filters themselves on the Product
-              filters page.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {attributes.map((attribute) => {
-                // #918 — a NUMBER filter is a number input under its own key prefix, so the save
-                // path knows each value's kind from its key before reading the database. Empty
-                // clears it, like "Not set".
-                if (attribute.kind === "NUMBER") {
-                  const numberName = `attributeNumber_${attribute.id}`;
-                  return (
-                    <div key={attribute.id}>
-                      <label className={labelClass} htmlFor={numberName}>
-                        {attribute.unit ? `${attribute.name} (${attribute.unit})` : attribute.name}
-                      </label>
-                      <input
-                        id={numberName}
-                        name={numberName}
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        defaultValue={product?.attributeNumbers[attribute.id] ?? ""}
-                        {...fieldProps(numberName)}
-                      />
-                    </div>
-                  );
-                }
-                const name = `attribute_${attribute.id}`;
-                return (
-                  <div key={attribute.id}>
-                    <label className={labelClass} htmlFor={name}>
-                      {attribute.name}
-                    </label>
-                    <select
-                      id={name}
-                      name={name}
-                      defaultValue={product?.attributeValues[attribute.id] ?? ""}
-                      {...fieldProps(name)}
-                    >
-                      <option value="">Not set</option>
-                      {attribute.options.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
+            {attributes.length > 0 && (
+              <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5">
+                <h2 className="text-sm font-bold text-primary">Product filters</h2>
+                <p className="text-xs text-black/60">
+                  The values shoppers can filter by. Manage the filters themselves on the Product
+                  filters page.
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {attributes.map((attribute) => {
+                    // #918 — a NUMBER filter is a number input under its own key prefix, so the save
+                    // path knows each value's kind from its key before reading the database. Empty
+                    // clears it, like "Not set".
+                    if (attribute.kind === "NUMBER") {
+                      const numberName = `attributeNumber_${attribute.id}`;
+                      return (
+                        <div key={attribute.id}>
+                          <label className={labelClass} htmlFor={numberName}>
+                            {attribute.unit
+                              ? `${attribute.name} (${attribute.unit})`
+                              : attribute.name}
+                          </label>
+                          <input
+                            id={numberName}
+                            name={numberName}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            defaultValue={product?.attributeNumbers[attribute.id] ?? ""}
+                            {...fieldProps(numberName)}
+                          />
+                        </div>
+                      );
+                    }
+                    const name = `attribute_${attribute.id}`;
+                    return (
+                      <div key={attribute.id}>
+                        <label className={labelClass} htmlFor={name}>
+                          {attribute.name}
+                        </label>
+                        <select
+                          id={name}
+                          name={name}
+                          defaultValue={product?.attributeValues[attribute.id] ?? ""}
+                          {...fieldProps(name)}
+                        >
+                          <option value="">Not set</option>
+                          {attribute.options.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
-        {/*
+            {/*
           P8.5d (#348) — the multi-buy tier. Its own section rather than another
           pair of fields in "Price & stock", because it is a different KIND of
           price: "Was-price" above marks one unit down, this prices a group. A
@@ -508,115 +519,54 @@ export function ProductForm({
           checkbox keeps the numbers but stops it applying, so a seasonal offer
           can be switched back on without being retyped.
         */}
-        <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5">
-          <h2 className="text-sm font-bold text-primary">Multi-buy offer</h2>
-          <p className="text-xs text-black/60">
-            Applies automatically — the shopper types nothing. Leave both fields blank for no
-            multi-buy.
-          </p>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelClass} htmlFor="tierGroupQuantity">
-                Quantity — how many the price covers
-              </label>
-              <input
-                id="tierGroupQuantity"
-                name="tierGroupQuantity"
-                type="number"
-                inputMode="numeric"
-                min={2}
-                step={1}
-                placeholder="3"
-                defaultValue={product?.tier?.groupQuantity ?? ""}
-                {...fieldProps("tierGroupQuantity")}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass} htmlFor="tierGroupPrice">
-                Multi-buy price (£) for that quantity
-              </label>
-              <input
-                id="tierGroupPrice"
-                name="tierGroupPrice"
-                inputMode="decimal"
-                placeholder="10.00"
-                defaultValue={poundsValue(product?.tier?.groupPricePence)}
-                {...fieldProps("tierGroupPrice")}
-              />
-            </div>
-          </div>
-
-          <Checkbox
-            name="tierIsActive"
-            label="Multi-buy is running"
-            defaultChecked={product?.tier?.isActive ?? true}
-          />
-        </section>
-
-        <section className="space-y-3 rounded-2xl border border-black/10 bg-white p-5">
-          <h2 className="text-sm font-bold text-primary">
-            {anyLabel ? <>Labels &amp; visibility</> : "Visibility"}
-          </h2>
-          <div className="flex flex-wrap gap-x-6 gap-y-3">
-            {labels.halal && (
-              <Checkbox name="isHalal" label="Halal" defaultChecked={product?.isHalal ?? false} />
-            )}
-            {labels.fresh && (
-              <Checkbox name="isFresh" label="Fresh" defaultChecked={product?.isFresh ?? false} />
-            )}
-            {labels.organic && (
-              <Checkbox
-                name="isOrganic"
-                label="Organic"
-                defaultChecked={product?.isOrganic ?? false}
-              />
-            )}
-            {labels.vegetarian && (
-              <Checkbox
-                name="isVegetarian"
-                label="Vegetarian"
-                defaultChecked={product?.isVegetarian ?? false}
-              />
-            )}
-            {labels.glutenFree && (
-              <Checkbox
-                name="isGlutenFree"
-                label="Gluten free"
-                defaultChecked={product?.isGlutenFree ?? false}
-              />
-            )}
-            <Checkbox
-              name="isFeatured"
-              label="Featured on homepage"
-              defaultChecked={product?.isFeatured ?? false}
-            />
-            {/* #1211 — a restricted product cannot be made visible from this form: a disabled box
-                submits nothing, so the save keeps it hidden. Clearing a restriction is the separate,
-                audited control in the Restriction section below. */}
-            {product?.restriction ? (
-              <p className="text-sm text-primary">
-                Hidden — restricted ({RESTRICTION_LABELS[product.restriction]}). See Restriction
-                below.
+            <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5">
+              <h2 className="text-sm font-bold text-primary">Multi-buy offer</h2>
+              <p className="text-xs text-black/60">
+                Applies automatically — the shopper types nothing. Leave both fields blank for no
+                multi-buy.
               </p>
-            ) : (
-              <Checkbox
-                name="isActive"
-                label="Visible in the shop"
-                defaultChecked={product?.isActive ?? true}
-              />
-            )}
-            {/* #1135 — also on when this product's category (or its parent) is ticked. */}
-            <Checkbox
-              name="allowsCustomNote"
-              label="Customers can add a note to this item"
-              defaultChecked={product?.allowsCustomNote ?? false}
-            />
-          </div>
-        </section>
 
-        {/*
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelClass} htmlFor="tierGroupQuantity">
+                    Quantity — how many the price covers
+                  </label>
+                  <input
+                    id="tierGroupQuantity"
+                    name="tierGroupQuantity"
+                    type="number"
+                    inputMode="numeric"
+                    min={2}
+                    step={1}
+                    placeholder="3"
+                    defaultValue={product?.tier?.groupQuantity ?? ""}
+                    {...fieldProps("tierGroupQuantity")}
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClass} htmlFor="tierGroupPrice">
+                    Multi-buy price (£) for that quantity
+                  </label>
+                  <input
+                    id="tierGroupPrice"
+                    name="tierGroupPrice"
+                    inputMode="decimal"
+                    placeholder="10.00"
+                    defaultValue={poundsValue(product?.tier?.groupPricePence)}
+                    {...fieldProps("tierGroupPrice")}
+                  />
+                </div>
+              </div>
+
+              <Checkbox
+                name="tierIsActive"
+                label="Multi-buy is running"
+                defaultChecked={product?.tier?.isActive ?? true}
+              />
+            </section>
+
+            {/*
           #569 — HMC certification is its OWN section, not another checkbox in "Labels & visibility",
           because it is a claim about a third party rather than a description of the product. #239
           was a real incident of asserting "100% Certified HMC Halal" with no basis; the reference
@@ -625,111 +575,208 @@ export function ProductForm({
           nulls both when it is unticked. #905 — rendered only while the vendor offers HMC (which
           needs Halal); when hidden, saveProduct leaves all three stored fields alone.
         */}
-        {labels.hmc && (
-          <section className="space-y-3 rounded-2xl border border-black/10 bg-white p-5">
-            <h2 className="text-sm font-bold text-primary">HMC certification</h2>
-            <p className="text-xs text-primary-muted">
-              Only tick this when you hold a current HMC certificate for the product. Both fields
-              below are required when it is ticked.
-            </p>
-            <Checkbox
-              name="isHmcCertified"
-              label="HMC certified"
-              defaultChecked={product?.isHmcCertified ?? false}
-            />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className={labelClass} htmlFor="hmcReference">
-                  Certificate reference
-                </label>
-                <input
-                  id="hmcReference"
-                  name="hmcReference"
-                  placeholder="HMC/2026/01234"
-                  defaultValue={product?.hmcReference ?? ""}
-                  {...fieldProps("hmcReference")}
+            {labels.hmc && (
+              <section className="space-y-3 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+                <h2 className="text-sm font-bold text-primary">HMC certification</h2>
+                <p className="text-xs text-primary-muted">
+                  Only tick this when you hold a current HMC certificate for the product. Both
+                  fields below are required when it is ticked.
+                </p>
+                <Checkbox
+                  name="isHmcCertified"
+                  label="HMC certified"
+                  defaultChecked={product?.isHmcCertified ?? false}
                 />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="hmcVerifiedAt">
-                  Verified on
-                </label>
-                {/*
-                `type="date"`, NOT datetime-local: a date-only ISO value has no timezone ambiguity,
-                so this needs none of lib/local-datetime.ts's machinery. See parseHmcFields.
-              */}
-                <input
-                  id="hmcVerifiedAt"
-                  name="hmcVerifiedAt"
-                  type="date"
-                  defaultValue={
-                    product?.hmcVerifiedAt
-                      ? new Date(product.hmcVerifiedAt).toISOString().slice(0, 10)
-                      : ""
-                  }
-                  {...fieldProps("hmcVerifiedAt")}
-                />
-              </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass} htmlFor="hmcReference">
+                      Certificate reference
+                    </label>
+                    <input
+                      id="hmcReference"
+                      name="hmcReference"
+                      placeholder="HMC/2026/01234"
+                      defaultValue={product?.hmcReference ?? ""}
+                      {...fieldProps("hmcReference")}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="hmcVerifiedAt">
+                      Verified on
+                    </label>
+                    <input
+                      id="hmcVerifiedAt"
+                      name="hmcVerifiedAt"
+                      type="date"
+                      defaultValue={
+                        product?.hmcVerifiedAt
+                          ? new Date(product.hmcVerifiedAt).toISOString().slice(0, 10)
+                          : ""
+                      }
+                      {...fieldProps("hmcVerifiedAt")}
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-md transition active:scale-95 motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Icon name="save" className="h-4 w-4" />
+                {saving ? "Saving…" : isNew ? "Create product" : "Save changes"}
+              </button>
+              <Link
+                href="/staff/products"
+                className="text-sm font-semibold text-primary-muted hover:underline"
+              >
+                Back to products
+              </Link>
             </div>
-          </section>
-        )}
-
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-md transition active:scale-95 motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Icon name="save" className="h-4 w-4" />
-            {saving ? "Saving…" : isNew ? "Create product" : "Save changes"}
-          </button>
-          <Link
-            href="/staff/products"
-            className="text-sm font-semibold text-primary-muted hover:underline"
-          >
-            Back to products
-          </Link>
+          </form>
         </div>
-      </form>
 
-      {/*
-        Images sit OUTSIDE the form, deliberately (P6b2, #167). Uploading is its
-        own immediate write with its own button — it does not wait for "Save
-        changes" and must not be submitted by it — and nesting a second set of
-        controls inside the product form would make a file input ride along with
-        every field save. A product must exist before its image can be keyed on
-        its id, so there is nothing to show while creating one.
-      */}
-      {product && (
-        <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5">
-          <h2 className="text-sm font-bold text-primary">Images</h2>
-          <ProductImageManager
-            productId={product.id}
-            productName={product.name}
-            images={imageUrls}
-            imageNeedsReview={product.imageNeedsReview}
-          />
-          <div className="border-t border-black/10 pt-4">
-            <p className="mb-1 text-xs font-medium text-primary-muted">
-              Replace the primary image (uploads directly over it, keeping its position)
-            </p>
-            <ProductImageUploader productId={product.id} productName={product.name} />
-          </div>
-          {imageLibrary?.configured && (
-            <div className="border-t border-black/10 pt-4">
-              <p className="mb-1 text-xs font-medium text-primary-muted">
-                Or pick an approved image from the library (closest matches first)
-              </p>
-              <ProductLibraryPicker
-                productId={product.id}
-                productName={product.name}
-                contextQuery={imageLibrary.contextQuery}
+        {/* Secondary Right Column (4 of 12 columns on desktop) */}
+        <div className="space-y-6 lg:col-span-4">
+          {/* Card 1: Status & Visibility */}
+          <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-black/10 pb-3">
+              <h2 className="text-sm font-bold text-primary">
+                {anyLabel ? "Labels & visibility" : "Visibility"}
+              </h2>
+              {product && (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    product.restriction
+                      ? "bg-amber-100 text-amber-800"
+                      : product.isActive
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-surface-muted text-primary-muted"
+                  }`}
+                >
+                  {product.restriction ? "Restricted" : product.isActive ? "Active" : "Archived"}
+                </span>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              form="product-form"
+              disabled={saving}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-action px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-action/90 active:scale-95 motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Icon name="save" className="h-4 w-4" />
+              {saving ? "Saving…" : isNew ? "Create product" : "Save changes"}
+            </button>
+
+            <div className="flex flex-col gap-3 pt-1">
+              {labels.halal && (
+                <Checkbox
+                  name="isHalal"
+                  label="Halal"
+                  defaultChecked={product?.isHalal ?? false}
+                  formId="product-form"
+                />
+              )}
+              {labels.fresh && (
+                <Checkbox
+                  name="isFresh"
+                  label="Fresh"
+                  defaultChecked={product?.isFresh ?? false}
+                  formId="product-form"
+                />
+              )}
+              {labels.organic && (
+                <Checkbox
+                  name="isOrganic"
+                  label="Organic"
+                  defaultChecked={product?.isOrganic ?? false}
+                  formId="product-form"
+                />
+              )}
+              {labels.vegetarian && (
+                <Checkbox
+                  name="isVegetarian"
+                  label="Vegetarian"
+                  defaultChecked={product?.isVegetarian ?? false}
+                  formId="product-form"
+                />
+              )}
+              {labels.glutenFree && (
+                <Checkbox
+                  name="isGlutenFree"
+                  label="Gluten free"
+                  defaultChecked={product?.isGlutenFree ?? false}
+                  formId="product-form"
+                />
+              )}
+              <Checkbox
+                name="isFeatured"
+                label="Featured on homepage"
+                defaultChecked={product?.isFeatured ?? false}
+                formId="product-form"
+              />
+              {product?.restriction ? (
+                <p className="text-xs font-medium text-primary">
+                  Hidden — restricted ({RESTRICTION_LABELS[product.restriction]}). See Restriction
+                  panel below.
+                </p>
+              ) : (
+                <Checkbox
+                  name="isActive"
+                  label="Visible in the shop"
+                  defaultChecked={product?.isActive ?? true}
+                  formId="product-form"
+                />
+              )}
+              <Checkbox
+                name="allowsCustomNote"
+                label="Customers can add a note to this item"
+                defaultChecked={product?.allowsCustomNote ?? false}
+                formId="product-form"
               />
             </div>
+          </section>
+
+          {/* Card 2: Images (OUTSIDE form) */}
+          {product && (
+            <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+              <h2 className="text-sm font-bold text-primary">Images</h2>
+              <ProductImageManager
+                productId={product.id}
+                productName={product.name}
+                images={imageUrls}
+                imageNeedsReview={product.imageNeedsReview}
+              />
+              <div className="border-t border-black/10 pt-4">
+                <p className="mb-1 text-xs font-medium text-primary-muted">
+                  Replace the primary image (uploads directly over it, keeping its position)
+                </p>
+                <ProductImageUploader productId={product.id} productName={product.name} />
+              </div>
+              {imageLibrary?.configured && (
+                <div className="border-t border-black/10 pt-4">
+                  <p className="mb-1 text-xs font-medium text-primary-muted">
+                    Or pick an approved image from the library (closest matches first)
+                  </p>
+                  <ProductLibraryPicker
+                    productId={product.id}
+                    productName={product.name}
+                    contextQuery={imageLibrary.contextQuery}
+                  />
+                </div>
+              )}
+            </section>
           )}
-        </section>
-      )}
-    </>
+
+          {/* Card 3: Restriction Panel Slot (OUTSIDE form) */}
+          {restrictionPanel && <div className="space-y-4">{restrictionPanel}</div>}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -737,20 +784,23 @@ function Checkbox({
   name,
   label,
   defaultChecked,
+  formId,
 }: {
   name: string;
   label: string;
   defaultChecked: boolean;
+  formId?: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-primary">
+    <label className="flex items-center gap-2 text-sm text-primary cursor-pointer select-none">
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="h-4 w-4 rounded border-black/20"
+        form={formId}
+        className="h-4 w-4 rounded border-black/20 text-action focus:ring-action cursor-pointer"
       />
-      {label}
+      <span>{label}</span>
     </label>
   );
 }
