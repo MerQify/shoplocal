@@ -76,9 +76,16 @@ describe("parseStaffProductsQuery", () => {
     expect(query.status).toBe("inactive");
   });
 
+  it("filters to archived products for status=archived", () => {
+    const query = parseStaffProductsQuery({ status: "archived" }, CATEGORIES);
+    expect(query.isActive).toBe(false);
+    expect(query.status).toBe("archived");
+  });
+
   it("accepts a status regardless of case", () => {
     expect(parseStaffProductsQuery({ status: "ACTIVE" }, CATEGORIES).isActive).toBe(true);
     expect(parseStaffProductsQuery({ status: "InActive" }, CATEGORIES).isActive).toBe(false);
+    expect(parseStaffProductsQuery({ status: "Archived" }, CATEGORIES).isActive).toBe(false);
   });
 
   it("trims the search term and treats a blank one as absent", () => {

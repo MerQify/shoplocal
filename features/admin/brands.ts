@@ -6,6 +6,7 @@ import { getBrandRepository } from "@/lib/brands-service";
 import type { CatalogueFormState } from "@/lib/catalogue-form";
 import type { CatalogueWriteResult } from "@/lib/repositories/products";
 import type { BrandProductQuickViewItem } from "@/lib/repositories/brands";
+import { invalidateVendorMetadata } from "@/lib/cloudflare-metadata";
 
 /**
  * Brand admin actions (P2.6 slice 6, #569) — the write half of /staff/brands.
@@ -42,7 +43,7 @@ function failure(result: Extract<CatalogueWriteResult, { ok: false }>): Catalogu
   return { error: result.error, field: result.field ?? null, saved: false };
 }
 
-function revalidateBrandSurfaces(): void {
+async function revalidateBrandSurfaces(vendorId?: string): Promise<void> {
   revalidatePath("/staff/brands");
   // The brand picker on the product form reads the same list.
   revalidatePath("/staff/products", "layout");
@@ -51,6 +52,13 @@ function revalidateBrandSurfaces(): void {
   revalidatePath("/categories", "layout");
   // Product pages and cards show the brand name, so a rename or a delete changes them too (#917).
   revalidatePath("/products", "layout");
+  if (vendorId) {
+    try {
+      await invalidateVendorMetadata(vendorId, "brands");
+    } catch (err) {
+      console.warn("[brands-admin] Failed to invalidate brand metadata:", err);
+    }
+  }
 }
 
 export async function createBrand(
@@ -68,7 +76,7 @@ export async function createBrand(
   const result = await getBrandRepository().create(name);
   if (!result.ok) return failure(result);
 
-  revalidateBrandSurfaces();
+  await revalidateBrandSurfaces(auth.vendorId);
   return { error: null, field: null, saved: true };
 }
 
@@ -87,7 +95,7 @@ export async function renameBrand(
   const result = await getBrandRepository().rename(id, name);
   if (!result.ok) return failure(result);
 
-  revalidateBrandSurfaces();
+  await revalidateBrandSurfaces(auth.vendorId);
   return { error: null, field: null, saved: true };
 }
 
@@ -109,7 +117,7 @@ export async function setBrandImage(
   const result = await getBrandRepository().setImageKey(id, imageKey === "" ? null : imageKey);
   if (!result.ok) return failure(result);
 
-  revalidateBrandSurfaces();
+  await revalidateBrandSurfaces(auth.vendorId);
   return { error: null, field: null, saved: true };
 }
 
@@ -130,7 +138,7 @@ export async function deleteBrand(
   const result = await getBrandRepository().delete(id, form.get("confirmDelete") === "on");
   if (!result.ok) return failure(result);
 
-  revalidateBrandSurfaces();
+  await revalidateBrandSurfaces(auth.vendorId);
   return { error: null, field: null, saved: true };
 }
 
@@ -178,6 +186,6 @@ export async function unassignProductFromBrandAction(productId: string): Promise
     return { ok: false, error: result.error };
   }
 
-  revalidateBrandSurfaces();
+  await revalidateBrandSurfaces(auth.vendorId);
   return { ok: true };
 }

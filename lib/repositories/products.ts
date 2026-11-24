@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { getPrisma, getPrismaWs } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/repositories/prisma-errors";
 import { visibleCategoryWhere } from "@/lib/category-visibility";
+import { sortAlphabetical, sortNamedEntities } from "@/lib/list-sorting";
 import { keysetCursorArgs, runKeysetPage } from "@/lib/repositories/pagination";
 import {
   comparePackSizes,
@@ -1824,12 +1825,14 @@ export async function getAvailableFacets(
     glutenFree: glutenFreeRes.available,
     hmcCertified: hmcCertifiedRes.available,
     onOffer: onOfferRes.available,
-    origins: originRows
-      .map((row) => row.origin)
-      .filter((origin): origin is string => origin !== null),
-    brands: brandRows
-      .map((row) => row.brand)
-      .filter((brand): brand is { id: string; name: string; slug: string } => brand !== null),
+    origins: sortAlphabetical(
+      originRows.map((row) => row.origin).filter((origin): origin is string => origin !== null),
+    ),
+    brands: sortNamedEntities(
+      brandRows
+        .map((row) => row.brand)
+        .filter((brand): brand is { id: string; name: string; slug: string } => brand !== null),
+    ),
     packSizes: packSizeRows
       .flatMap((row) =>
         row.netContentAmount !== null && row.netContentUnit !== null

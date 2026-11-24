@@ -184,10 +184,14 @@ export default async function StaffProductsPage({
         <div className="flex flex-wrap items-end gap-3">
           <label className={labelClass}>
             Status
-            <select name="status" defaultValue={query.status} className={selectClass}>
+            <select
+              name="status"
+              defaultValue={query.status === "inactive" ? "archived" : query.status}
+              className={selectClass}
+            >
               <option value={PRODUCT_STATUS_ALL}>All products</option>
-              <option value="active">Visible to shoppers</option>
-              <option value="inactive">Hidden</option>
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
             </select>
           </label>
 
@@ -374,7 +378,7 @@ export default async function StaffProductsPage({
         )}
       </div>
 
-      {items.length > 0 && <BulkProductActions />}
+      {items.length > 0 && <BulkProductActions categories={categories} />}
       {items.length > 0 && <BulkQuantityBar />}
 
       <Pagination
@@ -438,7 +442,7 @@ export default async function StaffProductsPage({
                       </Link>
                       {!product.isActive && (
                         <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-muted">
-                          Hidden
+                          Archived
                         </span>
                       )}
                       {product.basePrice <= 0 && (

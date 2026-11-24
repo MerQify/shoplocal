@@ -34,6 +34,8 @@ export const WARMUP_CRON = "*/4 * * * *";
 export const WARM_DB_PATH = "/api/jobs/warm-db";
 /** Republishes the warm-up windows on the daily run, so the 8-day schedule never goes stale. */
 export const REFRESH_WARMUP_PATH = "/api/jobs/refresh-warmup-schedule";
+/** Overnight pre-build & cache refresh for categories, visible brands, and navigation. */
+export const REFRESH_METADATA_PATH = "/api/jobs/refresh-metadata";
 
 /** One KV read: its value (absent is `null`), or that the read itself failed. */
 export type SignalRead = { ok: true; value: string | null } | { ok: false };
@@ -83,6 +85,7 @@ export function selectJobs(input: {
       CONTACT_OUTBOX_PATH,
       NOTIFICATION_OUTBOX_PATH,
       REFRESH_WARMUP_PATH,
+      REFRESH_METADATA_PATH,
     ];
   }
 
@@ -108,6 +111,7 @@ export const ALL_JOB_PATHS: readonly string[] = [
   CONTACT_OUTBOX_PATH,
   NOTIFICATION_OUTBOX_PATH,
   REFRESH_WARMUP_PATH,
+  REFRESH_METADATA_PATH,
 ];
 
 /**

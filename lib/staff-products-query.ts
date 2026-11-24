@@ -250,6 +250,9 @@ export function parseStaffProductsQuery(
   if (rawStatus === "active") {
     status = "active";
     isActive = true;
+  } else if (rawStatus === "archived") {
+    status = "archived";
+    isActive = false;
   } else if (rawStatus === "inactive") {
     status = "inactive";
     isActive = false;

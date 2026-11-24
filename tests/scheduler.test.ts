@@ -9,6 +9,7 @@ import {
   DATA_RETENTION_PATH,
   ERROR_RATE_PATH,
   REAPER_PATH,
+  REFRESH_METADATA_PATH,
   REFRESH_WARMUP_PATH,
   SWEEP_PATH,
   WARMUP_CRON,
@@ -102,6 +103,7 @@ describe("job scheduler", () => {
       "/api/jobs/retry-notification-outbox",
       // #1491 — the daily run republishes the database warm-up schedule.
       "/api/jobs/refresh-warmup-schedule",
+      REFRESH_METADATA_PATH,
     ]);
   });
 
@@ -190,6 +192,7 @@ describe("selectJobs (#1324)", () => {
         CONTACT_OUTBOX_PATH,
         NOTIFICATION_OUTBOX_PATH,
         REFRESH_WARMUP_PATH,
+        REFRESH_METADATA_PATH,
       ]);
     }
   });
@@ -324,7 +327,7 @@ describe("scheduled handler gating (#1324 R7)", () => {
     await scheduler.scheduled(TICK, { ...ENV, JOB_SIGNALS: kv({}) }, CTX);
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(tickLines()).toEqual([
-      `scheduler tick cron=*/15 * * * * ran=none skipped=${SWEEP_PATH},${REAPER_PATH},${DATA_RETENTION_PATH},${ERROR_RATE_PATH},${CONTACT_OUTBOX_PATH},${NOTIFICATION_OUTBOX_PATH},${REFRESH_WARMUP_PATH}`,
+      `scheduler tick cron=*/15 * * * * ran=none skipped=${SWEEP_PATH},${REAPER_PATH},${DATA_RETENTION_PATH},${ERROR_RATE_PATH},${CONTACT_OUTBOX_PATH},${NOTIFICATION_OUTBOX_PATH},${REFRESH_WARMUP_PATH},${REFRESH_METADATA_PATH}`,
     ]);
   });
 

@@ -27,6 +27,7 @@ export type BulkActionState =
       phase: "preview";
       action: BulkAction;
       productIds: string[];
+      destinationCategoryId?: string | null;
       plan: BulkPlanEntry[];
       /** True when the actor is an ADMIN and at least one overridable product is selected. */
       offersConfirmation: boolean;
@@ -44,8 +45,8 @@ export const initialBulkActionState: BulkActionState = { phase: "idle", error: n
 export const BULK_PRODUCTS_FORM_ID = "bulk-products";
 
 export const BULK_ACTION_LABELS: Record<BulkAction, string> = {
-  ENABLE: "Make available",
-  DISABLE: "Hide",
+  ENABLE: "Move to Active",
+  DISABLE: "Move to Archived",
   MARK_UNTRACKED: "Mark stock as not tracked",
 };
 
@@ -66,12 +67,19 @@ export function readRestriction(form: FormData, field: string): ProductRestricti
 }
 
 export type BulkRequest =
-  { ok: true; action: BulkAction; productIds: string[] } | { ok: false; error: string };
+  | {
+      ok: true;
+      action: BulkAction;
+      productIds: string[];
+      destinationCategoryId?: string | null;
+    }
+  | { ok: false; error: string };
 
 /** The bulk form's action and selection: de-duplicated, non-empty, at most MAX_BULK_SELECTION. */
 export function readBulkRequest(form: FormData): BulkRequest {
   const action = String(form.get("bulkAction") ?? "");
   if (!isBulkAction(action)) return { ok: false, error: "Choose an action." };
+  const destinationCategoryId = String(form.get("destinationCategoryId") ?? "").trim() || null;
   const productIds = [
     ...new Set(
       form
@@ -84,5 +92,5 @@ export function readBulkRequest(form: FormData): BulkRequest {
   if (productIds.length > MAX_BULK_SELECTION) {
     return { ok: false, error: `Select at most ${MAX_BULK_SELECTION} products at a time.` };
   }
-  return { ok: true, action, productIds };
+  return { ok: true, action, productIds, destinationCategoryId };
 }
