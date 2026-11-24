@@ -173,7 +173,7 @@ export function StickyBulkActionBar({
       {/* Sticky Bottom Floating Toolbar */}
       <aside
         aria-label="Bulk actions toolbar"
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-5xl rounded-2xl bg-[#0f172a] text-white shadow-2xl px-5 py-3 border border-white/10 transition-all duration-300 ease-out flex flex-wrap items-center justify-between gap-4 ${
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-5xl rounded-2xl bg-primary text-white shadow-2xl px-5 py-3 border border-white/10 transition-all duration-300 ease-out flex flex-wrap items-center justify-between gap-4 ${
           isVisible
             ? "translate-y-0 opacity-100 pointer-events-auto"
             : "translate-y-24 opacity-0 pointer-events-none"
@@ -216,7 +216,7 @@ export function StickyBulkActionBar({
               className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-action"
             >
               {BULK_ACTIONS.map((value) => (
-                <option key={value} value={value} className="bg-[#0f172a] text-white">
+                <option key={value} value={value} className="bg-primary text-white">
                   {BULK_ACTION_LABELS[value]}
                 </option>
               ))}
@@ -227,20 +227,20 @@ export function StickyBulkActionBar({
                 name="destinationCategoryId"
                 className="max-w-[180px] truncate rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-action"
               >
-                <option value="" className="bg-[#0f172a] text-white">
+                <option value="" className="bg-primary text-white">
                   Keep current category
                 </option>
                 {toCategoryOptionGroups(categories).map((group) => (
                   <optgroup
                     key={group.parent.id}
                     label={group.parent.name}
-                    className="bg-[#0f172a] text-white/70 font-bold"
+                    className="bg-primary text-white/70 font-bold"
                   >
-                    <option value={group.parent.id} className="bg-[#0f172a] text-white">
+                    <option value={group.parent.id} className="bg-primary text-white">
                       All of {group.parent.name}
                     </option>
                     {group.children.map((child) => (
-                      <option key={child.id} value={child.id} className="bg-[#0f172a] text-white">
+                      <option key={child.id} value={child.id} className="bg-primary text-white">
                         {child.name}
                         {!child.isActive && " (inactive)"}
                       </option>
