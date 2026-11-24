@@ -148,6 +148,9 @@ describe("Cloudflare Metadata Architecture", () => {
       brand: {
         findMany: vi.fn(async () => [{ id: "b1", name: "Tilda", slug: "tilda" }]),
       },
+      product: {
+        findMany: vi.fn(async () => []),
+      },
     } as any;
 
     const result = await refreshVendorMetadata(mockPrisma, vendorId);

@@ -189,5 +189,11 @@ export async function bulkProductAction(
   revalidatePath("/staff/products");
   revalidatePath("/staff/inventory");
   revalidatePath("/", "layout");
+  try {
+    const { invalidateVendorMetadata } = await import("@/lib/cloudflare-metadata");
+    await invalidateVendorMetadata(auth.vendorId, "all");
+  } catch (err) {
+    console.warn("[product-restrictions] Failed to invalidate metadata:", err);
+  }
   return { phase: "applied", action: request.action, result, error: null };
 }

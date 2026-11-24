@@ -6,6 +6,10 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Cascading catalogue filters & Cloudflare metadata facets.**
+  - **Cascading Filter Visibility:** `/staff/products` dynamically cascades options based on status and category. Filtering by Active shows only active categories, brands, restrictions, and stock modes; filtering by Archived shows only archived ones; selecting a category narrows brands to that category.
+  - **Cloudflare KV Facet Metadata:** Pre-computed `metadata:v1:facets:<vendorId>` cached in Cloudflare KV / edge cache with automatic Postgres fallback, scheduled overnight warming (`0 3 * * *`), and immediate invalidation on catalogue mutations.
+
 - **Category selector alphabetical sorting & staff category collation.**
   - **Alphabetical Category Option Groups:** Centralised default alphabetical (A–Z) sorting in `toCategoryOptionGroups` across departments and child subcategories, automatically applying to `/staff/products`, `BulkProductActions`, `ProductForm`, and `PromotionForm` category selectors.
   - **Staff Categories Collation:** Applied alphabetical natural tree collation on `/staff/categories`.

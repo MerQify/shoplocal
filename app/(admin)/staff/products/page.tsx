@@ -7,6 +7,7 @@ import { listCategoriesForAdmin } from "@/lib/categories-service";
 import { toCategoryOptionGroups } from "@/lib/catalogue-form";
 import { getBrandRepository } from "@/lib/brands-service";
 import { getLowStockDefault } from "@/lib/vendor-service";
+import { getCachedCatalogueFacets } from "@/lib/cloudflare-metadata";
 import { isLowStock } from "@/lib/low-stock";
 import { LowStockDefaultForm } from "@/components/staff/LowStockDefaultForm";
 import { deriveUnitPriceLabel } from "@/components/product/unit-price";
@@ -23,6 +24,8 @@ import {
   SORT_LABELS,
   SORT_OPTIONS,
   STOCK_ALL,
+  STOCK_FILTERS,
+  type StockFilter,
   parseStaffProductsQuery,
   staffProductsFilterFields,
   staffProductsHref,
@@ -102,12 +105,12 @@ export default async function StaffProductsPage({
   // are not independent (#503). Validating the selected id and expanding a
   // department to its subcategories both need this vendor's real category list,
   // and the product `where` depends on the result, so the calls are ordered.
-  // #1572 — brands and the store-wide low-stock default are independent of the category list, so
-  // the three load together.
-  const [categories, brands, lowStockDefault] = await Promise.all([
+  // #1572 — brands, store-wide low-stock default, and metadata facets load together.
+  const [categories, brands, lowStockDefault, facets] = await Promise.all([
     listCategoriesForAdmin(auth.vendorId),
     getBrandRepository().listSummaries(),
     getLowStockDefault(auth.vendorId),
+    getCachedCatalogueFacets(auth.vendorId),
   ]);
   const isStoreAdmin = auth.via !== "STAFF";
   const query = parseStaffProductsQuery(
@@ -125,6 +128,55 @@ export default async function StaffProductsPage({
     },
     categories,
     brands,
+  );
+
+  const facetSet =
+    query.status === "active"
+      ? facets.active
+      : query.status === "archived" || query.status === "inactive"
+        ? facets.archived
+        : facets.all;
+
+  // Filter categories to only those containing products under current status facet
+  const matchingCategoryIds = new Set(facetSet.categoryIds);
+  const parentIdsWithMatchingChildren = new Set<string>();
+  for (const cat of categories) {
+    if (cat.parentId && matchingCategoryIds.has(cat.id)) {
+      parentIdsWithMatchingChildren.add(cat.parentId);
+    }
+  }
+  const filteredCategories = categories.filter(
+    (c) => matchingCategoryIds.has(c.id) || parentIdsWithMatchingChildren.has(c.id),
+  );
+
+  // Filter brands based on current status facet AND selected category (cascading)
+  let eligibleBrandIds = new Set(facetSet.brandIds);
+  if (query.category !== CATEGORY_ALL) {
+    const selectedCategory = categories.find((c) => c.id === query.category);
+    const subcategoryIds =
+      selectedCategory?.parentId === null
+        ? categories.filter((c) => c.parentId === selectedCategory.id).map((c) => c.id)
+        : [];
+    const allTargetCategoryIds = [query.category, ...subcategoryIds];
+    const scopedBrandIds = new Set<string>();
+    for (const catId of allTargetCategoryIds) {
+      const brandIdsForCat = facetSet.categoryToBrandIds[catId] ?? [];
+      for (const bId of brandIdsForCat) scopedBrandIds.add(bId);
+    }
+    eligibleBrandIds = scopedBrandIds;
+  }
+  const filteredBrands = brands.filter((b) => eligibleBrandIds.has(b.id));
+
+  // Filter restrictions based on current status facet
+  const activeRestrictions = new Set(facetSet.restrictions);
+  const availableRestrictions = (
+    ["PROHIBITED", "AGE_RESTRICTED", "NOT_DELIVERABLE", "NEEDS_REVIEW"] as const
+  ).filter((val) => activeRestrictions.has(val));
+
+  // Filter stock modes based on current status facet
+  const activeStockModes = new Set<string>(facetSet.stockModes);
+  const availableStockFilters: StockFilter[] = STOCK_FILTERS.filter((mode: StockFilter) =>
+    activeStockModes.has(mode),
   );
 
   const { items, total, page, pageCount } = await listProductsForAdminPage(auth.vendorId, {
@@ -201,7 +253,7 @@ export default async function StaffProductsPage({
               <option value={CATEGORY_ALL}>All categories</option>
               {/* Same optgroup shape as the product form's picker (#630). As a FILTER the
                   department option means the department and everything beneath it. */}
-              {toCategoryOptionGroups(categories).map((group) => (
+              {toCategoryOptionGroups(filteredCategories).map((group) => (
                 <optgroup key={group.parent.id} label={group.parent.name}>
                   <option value={group.parent.id}>All of {group.parent.name}</option>
                   {group.children.map((child) => (
@@ -221,7 +273,7 @@ export default async function StaffProductsPage({
             <select name="brand" defaultValue={query.brand} className={selectClass}>
               <option value={BRAND_ALL}>All brands</option>
               <option value={BRAND_NONE}>No brand</option>
-              {brands.map((brand) => (
+              {filteredBrands.map((brand) => (
                 <option key={brand.id} value={brand.id}>
                   {brand.name}
                 </option>
@@ -239,14 +291,16 @@ export default async function StaffProductsPage({
               className={selectClass}
             >
               <option value={RESTRICTION_ALL}>Any</option>
-              <option value="any">Restricted</option>
-              <option value="none">Not restricted</option>
-              {(["PROHIBITED", "AGE_RESTRICTED", "NOT_DELIVERABLE", "NEEDS_REVIEW"] as const).map(
-                (value) => (
-                  <option key={value} value={value}>
-                    {RESTRICTION_LABELS[value]}
-                  </option>
-                ),
+              {availableRestrictions.length > 0 && (
+                <>
+                  <option value="any">Restricted</option>
+                  <option value="none">Not restricted</option>
+                  {availableRestrictions.map((value) => (
+                    <option key={value} value={value}>
+                      {RESTRICTION_LABELS[value]}
+                    </option>
+                  ))}
+                </>
               )}
             </select>
           </label>
@@ -255,11 +309,13 @@ export default async function StaffProductsPage({
             Stock
             <select name="stock" defaultValue={query.stockFilter} className={selectClass}>
               <option value={STOCK_ALL}>Any</option>
-              {(["TRACKED", "UNTRACKED", "UNKNOWN"] as const).map((value) => (
-                <option key={value} value={value}>
-                  {STOCK_MODE_LABELS[value]}
-                </option>
-              ))}
+              {(availableStockFilters.length > 0 ? availableStockFilters : STOCK_FILTERS).map(
+                (value) => (
+                  <option key={value} value={value}>
+                    {STOCK_MODE_LABELS[value]}
+                  </option>
+                ),
+              )}
             </select>
           </label>
 
