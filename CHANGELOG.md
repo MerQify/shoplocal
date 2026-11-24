@@ -6,6 +6,13 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Platform-wide list optimisation, Cloudflare metadata architecture, and staff active/archived management.**
+  - **Alphabetical Sorting (A–Z) by Default:** Case-insensitive natural collation across categories, subcategories, brands, selectors, and navigation menus (`lib/list-sorting.ts`). Preserves two-tier parent-child hierarchies.
+  - **Shopper Visibility Filtering:** Enforced `visibleCategoryWhere` and shopper-visible brands (`listShopperVisibleBrands`) ensuring inactive/hidden items never leak to shoppers while maintaining complete staff access.
+  - **Cloudflare-Native Metadata Cache:** Pre-built, versioned, validated category trees, visible brands, and navigation structures stored in Cloudflare KV with zero-failure database fallback (`lib/cloudflare-metadata.ts`).
+  - **Automated Metadata Refresh:** Overnight scheduled cron job (`/api/jobs/refresh-metadata`), post-deploy CI workflow hooks, and automatic invalidation on administrative category/brand mutations.
+  - **Staff Products Active & Archived Controls:** Added Active and Archived status filter options on `/staff/products` with bulk "Move to Active" action and category destination assignment.
+
 - Trial a tenant-keyed homepage promotions cache on Aheed staging with scheduled expiry (#439).
 
 - Trial streaming the homepage account and cart controls independently of the first render (#439).

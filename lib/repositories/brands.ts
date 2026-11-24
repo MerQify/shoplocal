@@ -1,6 +1,8 @@
 import type { getPrisma, getPrismaWs } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/repositories/prisma-errors";
 import type { CatalogueWriteResult } from "@/lib/repositories/products";
+import { visibleCategoryWhere } from "@/lib/category-visibility";
+import { sortNamedEntities } from "@/lib/list-sorting";
 
 /**
  * Brand reads and writes (P2.6 slice 6, #569).
@@ -54,6 +56,7 @@ export interface BrandProductQuickViewItem {
 export interface BrandRepository {
   listForAdmin(): Promise<AdminBrandRow[]>;
   listSummaries(): Promise<BrandSummary[]>;
+  listShopperVisible(): Promise<BrandSummary[]>;
   getBySlug(slug: string): Promise<BrandSummary | null>;
   listProducts(brandId: string): Promise<BrandProductQuickViewItem[]>;
   create(name: string): Promise<CatalogueWriteResult>;
@@ -81,7 +84,7 @@ const NOT_CONFIRMED: CatalogueWriteResult = {
   field: "confirmDelete",
 };
 
-/** Every brand for the vendor, with product counts, for the staff admin list. */
+/** Every brand for the vendor, with product counts, for the staff admin list. Naturally sorted A-Z. */
 export async function listBrandsForAdmin(prisma: Db, vendorId: string): Promise<AdminBrandRow[]> {
   const rows = await prisma.brand.findMany({
     where: { vendorId },
@@ -94,22 +97,49 @@ export async function listBrandsForAdmin(prisma: Db, vendorId: string): Promise<
       _count: { select: { products: true } },
     },
   });
-  return rows.map((row) => ({
+  const mapped = rows.map((row) => ({
     id: row.id,
     name: row.name,
     slug: row.slug,
     imageKey: row.imageKey,
     productCount: row._count.products,
   }));
+  return sortNamedEntities(mapped);
 }
 
-/** The vendor's brands, smallest useful shape — feeds the admin product form's picker. */
+/** The vendor's brands, smallest useful shape — feeds the admin product form's picker. Naturally sorted A-Z. */
 export async function listBrandSummaries(prisma: Db, vendorId: string): Promise<BrandSummary[]> {
-  return prisma.brand.findMany({
+  const rows = await prisma.brand.findMany({
     where: { vendorId },
     orderBy: { name: "asc" },
     select: { id: true, name: true, slug: true },
   });
+  return sortNamedEntities(rows);
+}
+
+/**
+ * Shopper-visible brands for this vendor (#1131, ADR-004):
+ * Only returns brands that have at least one active product in a shopper-visible category.
+ * Sorted naturally A–Z.
+ */
+export async function listShopperVisibleBrands(
+  prisma: Db,
+  vendorId: string,
+): Promise<BrandSummary[]> {
+  const rows = await prisma.brand.findMany({
+    where: {
+      vendorId,
+      products: {
+        some: {
+          isActive: true,
+          category: visibleCategoryWhere,
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, slug: true },
+  });
+  return sortNamedEntities(rows);
 }
 
 /**

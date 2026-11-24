@@ -76,7 +76,11 @@ export function applyBulkAction(
   ids: readonly string[],
   actor: RestrictionActor,
   actorUserId: string,
-  confirmation: { confirmed: boolean; reason: string | null },
+  confirmation: {
+    confirmed: boolean;
+    reason: string | null;
+    destinationCategoryId?: string | null;
+  },
 ): Promise<BulkResult> {
   return applyBulkActionRepo(
     getPrismaWs(),

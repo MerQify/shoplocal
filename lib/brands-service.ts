@@ -2,6 +2,7 @@ import { cache } from "react";
 import { getPrisma, getPrismaWs } from "@/lib/db";
 import { getCurrentVendorId } from "@/lib/tenant";
 import { slugify } from "@/lib/catalogue-form";
+import { getCachedShopperBrands } from "@/lib/cloudflare-metadata";
 import {
   createBrandForVendor,
   deleteBrandForVendor,
@@ -9,6 +10,7 @@ import {
   listBrandsForAdmin as listBrandsForAdminRepo,
   listBrandSummaries as listBrandSummariesRepo,
   listProductsForBrand as listProductsForBrandRepo,
+  listShopperVisibleBrands as listShopperVisibleBrandsRepo,
   renameBrandForVendor,
   setBrandImageKey as setBrandImageKeyRepo,
   unassignProductFromBrand as unassignProductFromBrandRepo,
@@ -44,6 +46,10 @@ export function getBrandRepository(): BrandRepository {
     async listSummaries() {
       return listBrandSummariesRepo(prisma, await vendorId());
     },
+    async listShopperVisible() {
+      const { brands } = await getCachedShopperBrands(prisma, await vendorId());
+      return brands;
+    },
     async getBySlug(slug: string) {
       return getBrandBySlug(prisma, await vendorId(), slug);
     },
@@ -74,3 +80,8 @@ export function getBrandRepository(): BrandRepository {
 export const listBrandsForAdmin = cache(async (vendorId: string) =>
   listBrandsForAdminRepo(getPrisma(), vendorId),
 );
+
+export const listShopperVisibleBrands = cache(async (vendorId: string) => {
+  const { brands } = await getCachedShopperBrands(getPrisma(), vendorId);
+  return brands;
+});

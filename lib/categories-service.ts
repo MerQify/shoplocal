@@ -2,6 +2,7 @@ import { cache } from "react";
 import { getPrisma } from "@/lib/db";
 import { getCurrentVendorId } from "@/lib/tenant";
 import { getEnv } from "@/lib/config";
+import { getCachedShopperCategories } from "@/lib/cloudflare-metadata";
 import {
   countHiddenWithCategory as countHiddenWithCategoryRepo,
   createCategoryForVendor as createCategoryForVendorRepo,
@@ -41,12 +42,22 @@ import type { CatalogueWriteResult } from "@/lib/repositories/products";
  */
 const listTopLevelForRequest = cache(async () => {
   const { CDN_BASE_URL } = getEnv();
-  return listTopLevelCategories(getPrisma(), await getCurrentVendorId(), CDN_BASE_URL);
+  const { topLevel } = await getCachedShopperCategories(
+    getPrisma(),
+    await getCurrentVendorId(),
+    CDN_BASE_URL,
+  );
+  return topLevel;
 });
 
 const listTreeForRequest = cache(async () => {
   const { CDN_BASE_URL } = getEnv();
-  return listCategoryTreeForStorefront(getPrisma(), await getCurrentVendorId(), CDN_BASE_URL);
+  const { tree } = await getCachedShopperCategories(
+    getPrisma(),
+    await getCurrentVendorId(),
+    CDN_BASE_URL,
+  );
+  return tree;
 });
 
 /**

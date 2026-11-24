@@ -1,20 +1,26 @@
 import type { StorefrontCategoryNode } from "@/lib/repositories/categories";
 import type { SearchDepartment } from "./DepartmentSearchBar";
+import { sortCategoryTreeAlphabetical } from "@/lib/list-sorting";
+
+export type { SearchDepartment };
 
 /**
  * #1169 — the header search selector's options: every visible department in tree order, each
  * followed straight away by its visible subcategories (flagged so the select indents them).
  *
- * Built from `listTree()`, which returns visible rows only, ordered `sortOrder` then `name` across
- * BOTH tiers at once. So a subcategory can arrive before its own department, and a one-pass grouping
- * (as `toCategoryOptionGroups` does) would silently drop it. Children are therefore collected first
- * and attached afterwards. A subcategory whose department is not in the list (hidden) is dropped,
+ * Built from `listTree()`, which returns visible rows naturally sorted A–Z across both tiers.
+ * Children are collected and attached straight after their respective department.
+ * A subcategory whose department is not in the list (hidden) is dropped,
  * matching `listTree()`'s own visibility rule. Pure, so it is tested without a database.
  */
-export function toSearchDepartments(tree: readonly StorefrontCategoryNode[]): SearchDepartment[] {
-  const departments = tree.filter((node) => node.parentId === null);
+export function toSearchDepartments(
+  tree: readonly StorefrontCategoryNode[],
+  options?: { sortAlphabetical?: boolean },
+): SearchDepartment[] {
+  const sourceTree = options?.sortAlphabetical ? sortCategoryTreeAlphabetical(tree) : tree;
+  const departments = sourceTree.filter((node) => node.parentId === null);
   const childrenByParent = new Map<string, StorefrontCategoryNode[]>();
-  for (const node of tree) {
+  for (const node of sourceTree) {
     if (node.parentId === null) continue;
     const siblings = childrenByParent.get(node.parentId) ?? [];
     siblings.push(node);

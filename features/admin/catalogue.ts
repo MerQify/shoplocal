@@ -23,6 +23,7 @@ import {
 } from "@/lib/low-stock";
 import { applyProductLabelSettings, labelSettingsFromProfile } from "@/lib/product-label-settings";
 import { readAttributeValues } from "@/lib/product-attribute-form";
+import { invalidateVendorMetadata } from "@/lib/cloudflare-metadata";
 
 /**
  * Catalogue admin actions (P6b1, #159) — the write half of /staff/products and
@@ -111,6 +112,12 @@ export async function saveProduct(
   revalidatePath(`/products/${parsed.value.slug}`);
   revalidatePath("/categories", "layout");
 
+  try {
+    await invalidateVendorMetadata(auth.vendorId, "all");
+  } catch (err) {
+    console.warn("[catalogue-admin] Failed to invalidate metadata:", err);
+  }
+
   // A newly created product has nowhere to go but its own edit page; redirect()
   // throws, so it sits outside every try block above by construction.
   if (productId === "") redirect(`/staff/products/${result.id}`);
@@ -152,6 +159,12 @@ export async function saveCategory(
   // storefront page renders — so the whole segment, not one path.
   revalidatePath("/categories", "layout");
   revalidatePath("/", "layout");
+
+  try {
+    await invalidateVendorMetadata(auth.vendorId, "categories");
+  } catch (err) {
+    console.warn("[catalogue-admin] Failed to invalidate category metadata:", err);
+  }
 
   if (categoryId === "") redirect(`/staff/categories/${result.id}`);
 
