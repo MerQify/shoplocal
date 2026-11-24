@@ -711,36 +711,32 @@ export default async function StaffProductsPage({
 
                           {/* Stock Count & Threshold */}
                           <td className="px-4 py-3 align-middle">
-                            {tracked ? (
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="number"
-                                  inputMode="numeric"
-                                  min={0}
-                                  max={MAX_BULK_QUANTITY}
-                                  step={1}
-                                  name={`${QTY_PREFIX}${product.id}`}
-                                  form={BULK_QUANTITY_FORM_ID}
-                                  defaultValue={currentQty}
-                                  placeholder="0"
-                                  aria-label={`Stock count for ${product.name}`}
-                                  className="w-16 rounded-xl border border-black/10 bg-white px-2 py-1 text-center text-xs font-semibold text-primary data-changed:border-action data-changed:bg-action-tint focus:outline-none focus:ring-1 focus:ring-action"
-                                />
-                                <input
-                                  type="hidden"
-                                  name={`${ORIG_PREFIX}${product.id}`}
-                                  form={BULK_QUANTITY_FORM_ID}
-                                  value={currentQty}
-                                />
-                                <span className="text-[11px] text-primary-muted">
-                                  {`Low at ${product.lowStockThreshold}`}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-xs font-medium text-primary-muted">
-                                {STOCK_MODE_LABELS[product.stockMode]}
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                min={0}
+                                max={MAX_BULK_QUANTITY}
+                                step={1}
+                                name={`${QTY_PREFIX}${product.id}`}
+                                form={BULK_QUANTITY_FORM_ID}
+                                defaultValue={currentQty}
+                                placeholder={tracked ? "0" : "—"}
+                                aria-label={`Stock count for ${product.name}`}
+                                className="w-16 rounded-xl border border-black/10 bg-white px-2 py-1 text-center text-xs font-semibold text-primary data-changed:border-action data-changed:bg-action-tint focus:outline-none focus:ring-1 focus:ring-action"
+                              />
+                              <input
+                                type="hidden"
+                                name={`${ORIG_PREFIX}${product.id}`}
+                                form={BULK_QUANTITY_FORM_ID}
+                                value={currentQty}
+                              />
+                              <span className="text-[11px] text-primary-muted">
+                                {tracked
+                                  ? `Low at ${product.lowStockThreshold}`
+                                  : STOCK_MODE_LABELS[product.stockMode]}
                               </span>
-                            )}
+                            </div>
                           </td>
 
                           {/* Price & Psychology */}

@@ -61,8 +61,14 @@ export default async function StorefrontAdminPage() {
     : null;
 
   return (
-    <PageContainer width="standard">
-      <h1 className="mb-8 text-3xl font-extrabold text-black">Storefront Branding</h1>
+    <PageContainer width="wide">
+      <div className="mb-8">
+        <h1 className="text-3xl font-extrabold text-black">Storefront Branding</h1>
+        <p className="mt-1 text-sm text-black/60">
+          Manage your store’s branding, visual assets, delivery rules and shopfront configuration.
+        </p>
+      </div>
+
       <StorefrontConfigForm
         initialConfig={config}
         initialBranding={branding}
@@ -72,39 +78,36 @@ export default async function StorefrontAdminPage() {
         logoUrl={logoUrl}
         markUrl={markUrl}
         whatsappQrUrl={whatsappQrUrl}
+        footerSlot={
+          <FooterSettingsForms
+            initial={{
+              contactPhone: config.contactPhone,
+              contactEmail: config.contactEmail,
+              companyNumber: config.companyNumber,
+              vatNumber: config.vatNumber,
+              registeredOffice: config.registeredOffice,
+              openingHoursNote: config.openingHoursNote,
+              showSecureCheckoutNote: config.showSecureCheckoutNote,
+              weeklyHours: profile.weeklyHours,
+              paymentBadges: profile.paymentBadges,
+              // #1060 — the store's calendar day; earlier overrides are pruned on the next save.
+              upcomingOverrides: profile.hoursOverrides.filter((o) => o.date >= today),
+              today,
+            }}
+          />
+        }
+        marketingSlot={
+          <section className="flex flex-col gap-4 rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-black">Marketing consent</h2>
+            <MarketingConsentSettingsForm enabled={config.marketingConsentEnabled} />
+          </section>
+        }
+        reviewsSlot={
+          <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+            <ReviewLinksManager links={reviewLinks} />
+          </div>
+        }
       />
-
-      {/* #1055 — the storefront footer's contact, legal, hours and payment-badge settings. */}
-      <div className="mt-10 border-t border-black/10 pt-8">
-        <FooterSettingsForms
-          initial={{
-            contactPhone: config.contactPhone,
-            contactEmail: config.contactEmail,
-            companyNumber: config.companyNumber,
-            vatNumber: config.vatNumber,
-            registeredOffice: config.registeredOffice,
-            openingHoursNote: config.openingHoursNote,
-            showSecureCheckoutNote: config.showSecureCheckoutNote,
-            weeklyHours: profile.weeklyHours,
-            paymentBadges: profile.paymentBadges,
-            // #1060 — the store's calendar day; earlier overrides are pruned on the next save.
-            upcomingOverrides: profile.hoursOverrides.filter((o) => o.date >= today),
-            today,
-          }}
-        />
-      </div>
-
-      {/* #1134 — whether this store asks shoppers for marketing consent. Off by default. */}
-      <section className="mt-10 border-t border-black/10 pt-8">
-        <h2 className="mb-4 text-xl font-bold text-black">Marketing consent</h2>
-        <MarketingConsentSettingsForm enabled={config.marketingConsentEnabled} />
-      </section>
-
-      {/* P9.2 (#818) — outbound review-site links. Here rather than on /staff/feedback
-          because these are storefront settings, which keeps that page purely moderation. */}
-      <div className="mt-10 border-t border-black/10 pt-8">
-        <ReviewLinksManager links={reviewLinks} />
-      </div>
     </PageContainer>
   );
 }

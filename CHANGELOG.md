@@ -6,8 +6,11 @@ every branch merges.
 
 ## [Unreleased]
 
-- **Staff products untracked stock input removal.**
-  - **Stock Column Cleanliness:** Hidden the quantity input box (`[ — ]`) for untracked and unknown products in `/staff/products`, rendering a clean status label (`Not tracked` or `Unknown — not for sale`) without an empty input box. Tracked products continue to display the interactive numeric quantity input with low-stock threshold alert indicator.
+- **Staff storefront 2-column responsive layout and untracked product inline quantity editing.**
+  - **Responsive 2-Column Storefront Layout:** Reorganised `/staff/storefront` from an overly tall, narrow single column into a modern, balanced 2-column responsive layout on desktop (`lg:grid-cols-12`, with `lg:col-span-7` primary settings column and `lg:col-span-5` secondary settings column) while smoothly collapsing to a single column on tablet and mobile viewports.
+  - **Page Container Width Upgrade:** Upgraded `PageContainer` width from `standard` (`max-w-4xl`) to `wide` (`max-w-7xl`) to make full use of widescreen real estate without cramped sections.
+  - **Modular Panel Card Architecture:** Grouped storefront configuration into clean, self-contained panel cards (`border border-black/10 bg-white p-6 shadow-sm rounded-2xl`) across themes, branding & colors (with an 8-color 2-column subgrid), delivery rules, footer hours/legal, visual asset uploaders, grid density, catalogue labels, social channels, marketing consent, and customer review links.
+  - **Inline Stock Quantity for Untracked Products:** Preserved the numeric quantity input for untracked and unknown products on `/staff/products`, displaying `placeholder="—"` alongside the `Not tracked` status label so staff can enter a count and immediately mark products as tracked right from the catalogue table.
 
 - **Staff products collapsible filters, compact age restriction, and bulk low-stock alerts.**
   - **Collapsible Sidebar Filters:** Added interactive sidebar collapse/expand controls (`ProductCatalogLayout`, `FilterToggleBtn`, `panel-left-close` / `panel-left-open`) on `/staff/products` to reclaim horizontal space on desktop and tablet displays, seamlessly expanding the product table across the full viewport (`w-full`) while remembering user preference via `localStorage`.
