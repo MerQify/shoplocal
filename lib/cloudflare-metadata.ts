@@ -121,6 +121,7 @@ export const CachedFacetSetSchema = z.object({
   restrictions: z.array(z.string()),
   stockModes: z.array(z.string()),
   categoryToBrandIds: z.record(z.string(), z.array(z.string())),
+  count: z.number().optional(),
 });
 
 export type CachedFacetSet = z.infer<typeof CachedFacetSetSchema>;
@@ -382,7 +383,16 @@ export async function buildCatalogueFacets(
   const allStockModes = new Set<string>();
   const allCatToBrands: Record<string, Set<string>> = {};
 
+  let activeCount = 0;
+  let archivedCount = 0;
+
   for (const p of products) {
+    if (p.isActive) {
+      activeCount++;
+    } else {
+      archivedCount++;
+    }
+
     const targetCats = p.isActive ? activeCategories : archivedCategories;
     const targetBrands = p.isActive ? activeBrands : archivedBrands;
     const targetRestrictions = p.isActive ? activeRestrictions : archivedRestrictions;
@@ -434,6 +444,7 @@ export async function buildCatalogueFacets(
     updatedAt: new Date().toISOString(),
     vendorId,
     active: {
+      count: activeCount,
       categoryIds: Array.from(activeCategories),
       brandIds: Array.from(activeBrands),
       restrictions: Array.from(activeRestrictions),
@@ -441,6 +452,7 @@ export async function buildCatalogueFacets(
       categoryToBrandIds: toMap(activeCatToBrands),
     },
     archived: {
+      count: archivedCount,
       categoryIds: Array.from(archivedCategories),
       brandIds: Array.from(archivedBrands),
       restrictions: Array.from(archivedRestrictions),
@@ -448,6 +460,7 @@ export async function buildCatalogueFacets(
       categoryToBrandIds: toMap(archivedCatToBrands),
     },
     all: {
+      count: products.length,
       categoryIds: Array.from(allCategories),
       brandIds: Array.from(allBrands),
       restrictions: Array.from(allRestrictions),

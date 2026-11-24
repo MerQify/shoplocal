@@ -55,6 +55,7 @@ describe("Catalogue Facets & Cascading Metadata Cache", () => {
     const facets = await buildCatalogueFacets(mockPrisma, vendorId);
 
     // Active products
+    expect(facets.active.count).toBe(2);
     expect(facets.active.categoryIds).toEqual(expect.arrayContaining(["cat-meat", "cat-veg"]));
     expect(facets.active.categoryIds).not.toContain("cat-fish");
     expect(facets.active.categoryIds).not.toContain("cat-prawns");
@@ -64,6 +65,7 @@ describe("Catalogue Facets & Cascading Metadata Cache", () => {
     expect(facets.active.stockModes).toEqual(expect.arrayContaining(["TRACKED", "UNTRACKED"]));
 
     // Archived products
+    expect(facets.archived.count).toBe(2);
     expect(facets.archived.categoryIds).toEqual(expect.arrayContaining(["cat-fish", "cat-prawns"]));
     expect(facets.archived.categoryIds).not.toContain("cat-meat");
     expect(facets.archived.categoryIds).not.toContain("cat-veg");
@@ -73,6 +75,7 @@ describe("Catalogue Facets & Cascading Metadata Cache", () => {
     expect(facets.archived.stockModes).toEqual(expect.arrayContaining(["TRACKED", "UNKNOWN"]));
 
     // All products
+    expect(facets.all.count).toBe(4);
     expect(facets.all.categoryIds).toHaveLength(4);
     expect(facets.all.brandIds).toEqual(expect.arrayContaining(["brand-a", "brand-b", "brand-c"]));
   });
