@@ -6,6 +6,12 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Staff products sidebar filters and docked sticky bulk action bar.**
+  - **Sidebar Filter Panel:** Moved the 8 product filter dimensions (Status, Category, Brand, Restriction, Stock, Needs attention, Sort by, Per page) into a dedicated `lg:w-72` left sidebar, decluttering the header and bringing the product data table directly above the fold.
+  - **Status Counts & Cascading Filters:** Displayed real-time counts for All statuses, Active, and Archived directly in the sidebar, powered by cached Cloudflare metadata facets.
+  - **Docked Floating Sticky Action Bar:** Replaced competing multi-row bulk controls with a unified, floating dark-navy toolbar docked to the bottom viewport (`StickyBulkActionBar`), appearing only when ≥ 1 product is checked or row quantities are altered.
+  - **Relocated Store Settings:** Compacted the global low-stock threshold configuration form into a clean header popover (`Low-stock default: {n}`) for store administrators.
+
 - **Staff products filter dropdown widths and layout stability.**
   - **Optimal Fixed Dropdown Widths:** Assigned dedicated, optimal fixed widths (`w-36` to `w-56`) and `shrink-0` to each filter dropdown label on `/staff/products`, preventing controls from shuffling across rows when selections or cascaded option sets change.
   - **Clean Closed Truncation:** Added `w-full truncate` to filter select elements ensuring long selected option names truncate cleanly with ellipsis inside the closed box while maintaining full readability in native dropdown menus upon interaction.
