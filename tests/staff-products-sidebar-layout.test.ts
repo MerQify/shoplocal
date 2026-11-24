@@ -42,7 +42,34 @@ describe("Staff products sidebar filter layout and sticky action bar", () => {
 
   it("mounts the SelectAllHeaderCheckbox and StickyBulkActionBar", () => {
     expect(pageSource).toContain("<SelectAllHeaderCheckbox />");
-    expect(pageSource).toContain("<StickyBulkActionBar categories={categories} />");
+    expect(pageSource).toContain("<StickyBulkActionBar");
+    expect(pageSource).toContain("categories={categories}");
+    expect(pageSource).toContain("lowStockDefault={lowStockDefault}");
+    expect(pageSource).toContain("isStoreAdmin={isStoreAdmin}");
+  });
+
+  it("StickyBulkActionBar includes Low-Stock Alert At option", () => {
+    const barSource = read("components/staff/StickyBulkActionBar.tsx");
+    expect(barSource).toContain("Low-stock alert at:");
+    expect(barSource).toContain('name="lowStockThreshold"');
+    expect(barSource).toContain("Save default");
+    expect(barSource).toContain("saveLowStockDefaultAction");
+  });
+
+  it("Product drilldown edit page includes back navigation and 2-column responsive layout", () => {
+    const editPageSource = read("app/(admin)/staff/products/[id]/page.tsx");
+    expect(editPageSource).toContain('<PageContainer width="wide"');
+    expect(editPageSource).toContain("Back to products");
+    expect(editPageSource).toContain('href="/staff/products"');
+    expect(editPageSource).toContain('<Icon name="arrow-left"');
+
+    const formSource = read("components/staff/ProductForm.tsx");
+    expect(formSource).toContain("grid-cols-1");
+    expect(formSource).toContain("lg:grid-cols-12");
+    expect(formSource).toContain("lg:col-span-8");
+    expect(formSource).toContain("lg:col-span-4");
+    expect(formSource).toContain('id="product-form"');
+    expect(formSource).toContain('form="product-form"');
   });
 
   it("renders low-stock default form inside a popover for store admins", () => {

@@ -37,6 +37,7 @@ const EXPECTED: Record<string, { width: string; padY: string }> = {
   "app/(admin)/staff/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/orders/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/products/page.tsx": { width: "wide", padY: "default" },
+  "app/(admin)/staff/products/[id]/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/inventory/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/customers/page.tsx": { width: "wide", padY: "default" },
   "app/(admin)/staff/abandoned-checkouts/page.tsx": { width: "wide", padY: "default" },
@@ -87,7 +88,6 @@ const EXPECTED: Record<string, { width: string; padY: string }> = {
   "app/(admin)/staff/onboarding/page.tsx": { width: "standard", padY: "default" },
   // --- admin: narrow
   "app/(admin)/staff/orders/[orderNumber]/page.tsx": { width: "narrow", padY: "default" },
-  "app/(admin)/staff/products/[id]/page.tsx": { width: "narrow", padY: "default" },
   "app/(admin)/staff/products/new/page.tsx": { width: "narrow", padY: "default" },
   "app/(admin)/staff/categories/[id]/page.tsx": { width: "narrow", padY: "default" },
   "app/(admin)/staff/bundles/[bundleId]/page.tsx": { width: "narrow", padY: "default" },

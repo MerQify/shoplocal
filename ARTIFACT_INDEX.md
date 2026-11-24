@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-24T11:52:04.466Z` · commit `6674c12a` · `398` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-24T13:00:45.474Z` · commit `658c9e52` · `399` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -380,6 +380,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Cascading Catalogue Filters & Cloudflare Metadata Architecture](specs/2026-11-24-cascading-filter-cloudflare-metadata/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for status-based cascading filters powered by Cloudflare KV facet caching. |
 | [Category Selector Alphabetical Sorting & Staff Category Collation](specs/2026-11-24-category-selector-alphabetical-sort/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Default alphabetical sorting for category option groups across staff and product forms. |
 | [Platform-Wide List Optimisation & Cloudflare Metadata Architecture](specs/2026-11-24-platform-wide-list-optimisation/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for list collation, edge metadata caching, and admin archive controls. |
+| [Staff Product Edit 2-Column Responsive Layout and Sticky Low-Stock Alert](specs/2026-11-24-staff-product-edit-2col-and-sticky-alert/plan.md) | spec | 1.0.0 | 2026-11-24 | approved | internal | Prominent back navigation, 2-column responsive layout for product detail/edit page, and low-stock alert at option in the sticky floating action bar. |
 | [Staff Products Filter Dropdown Widths & Layout Stability](specs/2026-11-24-staff-products-filter-dropdown-widths/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for fixed optimal widths and layout stability across staff catalogue filter dropdowns. |
 | [Staff Products Sidebar Filters & Contextual Sticky Action Toolbar](specs/2026-11-24-staff-products-sidebar-and-sticky-action-bar/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for a two-column sidebar layout, structured product table, and contextual sticky action bar on /staff/products. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
