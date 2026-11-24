@@ -5,13 +5,13 @@ import { parseLowStockThreshold, MAX_LOW_STOCK_THRESHOLD } from "@/lib/low-stock
 describe("bulkSetLowStockThresholds repository", () => {
   it("rejects non-integer, negative, or excessive threshold values", async () => {
     const dummyPrismaWs = {} as never;
-    await expect(
-      bulkSetLowStockThresholds(dummyPrismaWs, "v-1", ["p-1"], -1),
-    ).rejects.toThrow("bulkSetLowStockThresholds: threshold must be an integer");
+    await expect(bulkSetLowStockThresholds(dummyPrismaWs, "v-1", ["p-1"], -1)).rejects.toThrow(
+      "bulkSetLowStockThresholds: threshold must be an integer",
+    );
 
-    await expect(
-      bulkSetLowStockThresholds(dummyPrismaWs, "v-1", ["p-1"], 3.5),
-    ).rejects.toThrow("bulkSetLowStockThresholds: threshold must be an integer");
+    await expect(bulkSetLowStockThresholds(dummyPrismaWs, "v-1", ["p-1"], 3.5)).rejects.toThrow(
+      "bulkSetLowStockThresholds: threshold must be an integer",
+    );
 
     await expect(
       bulkSetLowStockThresholds(dummyPrismaWs, "v-1", ["p-1"], MAX_LOW_STOCK_THRESHOLD + 1),
@@ -42,12 +42,7 @@ describe("bulkSetLowStockThresholds repository", () => {
     const $transaction = vi.fn(async (cb: (t: typeof tx) => Promise<unknown>) => cb(tx));
     const prismaWs = { $transaction } as never;
 
-    const result = await bulkSetLowStockThresholds(
-      prismaWs,
-      "v-1",
-      ["p-1", "p-2", "p-missing"],
-      5,
-    );
+    const result = await bulkSetLowStockThresholds(prismaWs, "v-1", ["p-1", "p-2", "p-missing"], 5);
 
     expect(result.updated).toBe(1);
     expect(result.unchanged).toBe(1);
