@@ -666,7 +666,7 @@ export function ProductForm({
               type="submit"
               form="product-form"
               disabled={saving}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-action px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-action/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-action px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-action/90 active:scale-95 motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Icon name="save" className="h-4 w-4" />
               {saving ? "Saving…" : isNew ? "Create product" : "Save changes"}

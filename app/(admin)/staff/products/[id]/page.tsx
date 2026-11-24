@@ -96,7 +96,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         <div className="flex items-center gap-3">
           <Link
             href="/staff/products"
-            className="inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-3.5 py-2 text-xs font-bold text-primary shadow-sm transition hover:bg-surface-muted active:scale-95"
+            className="inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-3.5 py-2 text-xs font-bold text-primary shadow-sm transition hover:bg-surface-muted active:scale-95 motion-reduce:active:scale-100"
             aria-label="Back to products catalogue"
           >
             <Icon name="arrow-left" className="h-4 w-4" />
