@@ -6,6 +6,12 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Staff product edit 2-column responsive layout and sticky low-stock alert.**
+  - **Sticky Action Bar Low-Stock Alert:** Added a dedicated `Low-stock alert at:` threshold input and `Save default` action to `StickyBulkActionBar` on `/staff/products`, allowing store admins to adjust and save the default low-stock alert threshold directly from the floating toolbar.
+  - **Product Drilldown Top Navigation & Back Option:** Added a prominent `← Back to products` navigation button, breadcrumbs (`Products / {product.name}`), and status/stock/price metrics pill group at the top of `/staff/products/[id]`.
+  - **Responsive 2-Column Product Edit Layout:** Upgraded `/staff/products/[id]` to `width="wide"` (`max-w-7xl`). On desktop (`lg:` breakpoint and above), the screen presents an elegant 2-column layout (`lg:col-span-8` main form for details, pricing, stock, attributes, multi-buy, and HMC; `lg:col-span-4` sidebar for status/visibility, images, and restrictions). Smoothly collapses into a single-column layout on smaller devices.
+  - **Form Association Cleanliness:** Used standard HTML form association (`form="product-form"`) across sidebar controls to ensure all fields submit to `saveProduct` without invalid nested form tags.
+
 - **Staff products sidebar filters and docked sticky bulk action bar.**
   - **Sidebar Filter Panel:** Moved the 8 product filter dimensions (Status, Category, Brand, Restriction, Stock, Needs attention, Sort by, Per page) into a dedicated `lg:w-72` left sidebar, decluttering the header and bringing the product data table directly above the fold.
   - **Status Counts & Cascading Filters:** Displayed real-time counts for All statuses, Active, and Archived directly in the sidebar, powered by cached Cloudflare metadata facets.

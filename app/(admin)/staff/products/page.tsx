@@ -852,7 +852,13 @@ export default async function StaffProductsPage({
       </div>
 
       {/* Unified Docked Sticky Bulk Action Bar */}
-      {items.length > 0 && <StickyBulkActionBar categories={categories} />}
+      {items.length > 0 && (
+        <StickyBulkActionBar
+          categories={categories}
+          lowStockDefault={lowStockDefault}
+          isStoreAdmin={isStoreAdmin}
+        />
+      )}
     </PageContainer>
   );
 }
