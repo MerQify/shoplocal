@@ -93,4 +93,9 @@ describe("Staff products sidebar filter layout and sticky action bar", () => {
     expect(pageSource).toContain("<LowStockDefaultForm current={lowStockDefault} />");
     expect(pageSource).toContain("Low-stock default: {lowStockDefault}");
   });
+
+  it("renders quantity input only for tracked products, hiding empty input for untracked items", () => {
+    expect(pageSource).toContain("{tracked ? (");
+    expect(pageSource).toContain("STOCK_MODE_LABELS[product.stockMode]");
+  });
 });

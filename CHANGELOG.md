@@ -6,6 +6,9 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Staff products untracked stock input removal.**
+  - **Stock Column Cleanliness:** Hidden the quantity input box (`[ — ]`) for untracked and unknown products in `/staff/products`, rendering a clean status label (`Not tracked` or `Unknown — not for sale`) without an empty input box. Tracked products continue to display the interactive numeric quantity input with low-stock threshold alert indicator.
+
 - **Staff products collapsible filters, compact age restriction, and bulk low-stock alerts.**
   - **Collapsible Sidebar Filters:** Added interactive sidebar collapse/expand controls (`ProductCatalogLayout`, `FilterToggleBtn`, `panel-left-close` / `panel-left-open`) on `/staff/products` to reclaim horizontal space on desktop and tablet displays, seamlessly expanding the product table across the full viewport (`w-full`) while remembering user preference via `localStorage`.
   - **Compact Age Restriction Badge:** Replaced the bulky, multi-line `"AGE-RESTRICTED — CANNOT BE SOLD ONLINE YET"` banner in the Status column with a clean, compact **`Age Restricted`** label underneath the product name alongside PLU and net content, complete with informative tooltip. Clears the Status column for crisp `Active`, `Archived`, and `Image Review` tags without row height inflation.
