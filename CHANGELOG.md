@@ -6,6 +6,11 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Staff products collapsible filters, compact age restriction, and bulk low-stock alerts.**
+  - **Collapsible Sidebar Filters:** Added interactive sidebar collapse/expand controls (`ProductCatalogLayout`, `FilterToggleBtn`, `panel-left-close` / `panel-left-open`) on `/staff/products` to reclaim horizontal space on desktop and tablet displays, seamlessly expanding the product table across the full viewport (`w-full`) while remembering user preference via `localStorage`.
+  - **Compact Age Restriction Badge:** Replaced the bulky, multi-line `"AGE-RESTRICTED — CANNOT BE SOLD ONLINE YET"` banner in the Status column with a clean, compact **`Age Restricted`** label underneath the product name alongside PLU and net content, complete with informative tooltip. Clears the Status column for crisp `Active`, `Archived`, and `Image Review` tags without row height inflation.
+  - **Bulk Low-Stock Threshold on Selected Products:** Differentiated store-wide default management (in the top popover) from selection-scoped low-stock alert updates in `StickyBulkActionBar` (`bulkSetLowStockThresholdAction` and `bulkSetLowStockThresholds`), allowing staff to apply custom low-stock thresholds directly to checked products.
+
 - **Staff product edit 2-column responsive layout and sticky low-stock alert.**
   - **Sticky Action Bar Low-Stock Alert:** Added a dedicated `Low-stock alert at:` threshold input and `Save default` action to `StickyBulkActionBar` on `/staff/products`, allowing store admins to adjust and save the default low-stock alert threshold directly from the floating toolbar.
   - **Product Drilldown Top Navigation & Back Option:** Added a prominent `← Back to products` navigation button, breadcrumbs (`Products / {product.name}`), and status/stock/price metrics pill group at the top of `/staff/products/[id]`.

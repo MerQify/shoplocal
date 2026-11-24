@@ -131,11 +131,13 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
                     : "bg-black/30"
               }`}
             />
-            {product.restriction
-              ? RESTRICTION_LABELS[product.restriction]
-              : product.isActive
-                ? "Active in shop"
-                : "Hidden / Archived"}
+            {product.restriction === "AGE_RESTRICTED"
+              ? "Age Restricted"
+              : product.restriction
+                ? RESTRICTION_LABELS[product.restriction]
+                : product.isActive
+                  ? "Active in shop"
+                  : "Hidden / Archived"}
           </span>
 
           <span className="inline-flex items-center rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-primary">

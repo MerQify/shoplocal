@@ -12,13 +12,18 @@ import {
   readSubmittedCategory,
   type CatalogueFormState,
 } from "@/lib/catalogue-form";
-import { createProductForVendor, updateProductForVendor } from "@/lib/products-service";
+import {
+  bulkSetLowStockThresholds,
+  createProductForVendor,
+  updateProductForVendor,
+} from "@/lib/products-service";
 import type { CatalogueWriteResult } from "@/lib/repositories/products";
 import { createCategoryForVendor, updateCategoryForVendor } from "@/lib/categories-service";
 import { fetchVendorProfile, saveLowStockDefault } from "@/lib/vendor-service";
 import {
   lowStockSavedMessage,
   parseLowStockThreshold,
+  type BulkLowStockThresholdState,
   type LowStockDefaultState,
 } from "@/lib/low-stock";
 import { applyProductLabelSettings, labelSettingsFromProfile } from "@/lib/product-label-settings";
@@ -203,4 +208,51 @@ export async function saveLowStockDefaultAction(
     error: null,
     message: lowStockSavedMessage(result.previous, parsed.value, result.moved),
   };
+}
+
+/**
+ * #1753 — Bulk set low-stock alert threshold for selected products.
+ * Available to both STAFF and ADMIN managing inventory.
+ */
+export async function bulkSetLowStockThresholdAction(
+  _prev: BulkLowStockThresholdState,
+  form: FormData,
+): Promise<BulkLowStockThresholdState> {
+  const auth = await requireVendorRole("STAFF", "ADMIN");
+  if (!auth.ok) {
+    return {
+      status: "error",
+      message:
+        auth.status === 401
+          ? "Please sign in to change low-stock thresholds."
+          : "You do not have permission to manage this store's stock.",
+    };
+  }
+
+  const parsed = parseLowStockThreshold(form.get("lowStockThreshold"));
+  if (!parsed.ok) {
+    return { status: "error", message: parsed.error };
+  }
+
+  const productIds = form.getAll("productId").map(String).filter(Boolean);
+  if (productIds.length === 0) {
+    return { status: "error", message: "No products selected." };
+  }
+
+  try {
+    const result = await bulkSetLowStockThresholds(auth.vendorId, productIds, parsed.value);
+    revalidatePath("/staff/products");
+    revalidatePath("/staff/inventory");
+    return {
+      status: "ok",
+      message: `Updated low-stock alert to ${parsed.value} for ${result.updated} ${
+        result.updated === 1 ? "product" : "products"
+      }.`,
+    };
+  } catch {
+    return {
+      status: "error",
+      message: "Could not update low-stock alerts. Please try again.",
+    };
+  }
 }

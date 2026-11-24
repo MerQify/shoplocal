@@ -48,6 +48,16 @@ export interface LowStockDefaultState {
 
 export const LOW_STOCK_DEFAULT_IDLE: LowStockDefaultState = { error: null, message: null };
 
+export interface BulkLowStockThresholdState {
+  status: "idle" | "ok" | "error";
+  message: string | null;
+}
+
+export const BULK_LOW_STOCK_THRESHOLD_IDLE: BulkLowStockThresholdState = {
+  status: "idle",
+  message: null,
+};
+
 /** The confirmation line for a save that moved `moved` products from `previous` to `value`. */
 export function lowStockSavedMessage(previous: number, value: number, moved: number): string {
   if (previous === value) return `No change: the default is already ${value}.`;
