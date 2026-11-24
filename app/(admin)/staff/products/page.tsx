@@ -67,7 +67,7 @@ function one(value: Param): string | undefined {
 }
 
 const selectClass =
-  "rounded-2xl border border-black/10 bg-white px-3 py-2 text-sm font-normal normal-case tracking-normal text-primary";
+  "w-full truncate rounded-2xl border border-black/10 bg-white px-3 py-2 text-sm font-normal normal-case tracking-normal text-primary";
 const labelClass = "flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-primary";
 
 /**
@@ -234,7 +234,7 @@ export default async function StaffProductsPage({
           a new filter makes the old page number meaningless. */}
       <form method="get" action="/staff/products" className="mb-4 space-y-3">
         <div className="flex flex-wrap items-end gap-3">
-          <label className={labelClass}>
+          <label className={`${labelClass} shrink-0 w-36`}>
             Status
             <select
               name="status"
@@ -247,7 +247,7 @@ export default async function StaffProductsPage({
             </select>
           </label>
 
-          <label className={labelClass}>
+          <label className={`${labelClass} shrink-0 w-56`}>
             Category
             <select name="category" defaultValue={query.category} className={selectClass}>
               <option value={CATEGORY_ALL}>All categories</option>
@@ -268,7 +268,7 @@ export default async function StaffProductsPage({
           </label>
 
           {/* #1572 — brand, with "No brand" as the import worklist. */}
-          <label className={labelClass}>
+          <label className={`${labelClass} shrink-0 w-44`}>
             Brand
             <select name="brand" defaultValue={query.brand} className={selectClass}>
               <option value={BRAND_ALL}>All brands</option>
@@ -283,7 +283,7 @@ export default async function StaffProductsPage({
 
           {/* #1211 — review filters: a client import arrives hidden, restricted and stock-UNKNOWN,
               and these are how a reviewer finds each group. */}
-          <label className={labelClass}>
+          <label className={`${labelClass} shrink-0 w-40`}>
             Restriction
             <select
               name="restriction"
@@ -305,7 +305,7 @@ export default async function StaffProductsPage({
             </select>
           </label>
 
-          <label className={labelClass}>
+          <label className={`${labelClass} shrink-0 w-40`}>
             Stock
             <select name="stock" defaultValue={query.stockFilter} className={selectClass}>
               <option value={STOCK_ALL}>Any</option>
@@ -319,7 +319,7 @@ export default async function StaffProductsPage({
             </select>
           </label>
 
-          <label className={labelClass}>
+          <label className={`${labelClass} shrink-0 w-44`}>
             Needs attention
             <select name="needs" defaultValue={query.needsFilter} className={selectClass}>
               <option value={NEEDS_ALL}>Any</option>
@@ -331,7 +331,7 @@ export default async function StaffProductsPage({
             </select>
           </label>
 
-          <label className={labelClass}>
+          <label className={`${labelClass} shrink-0 w-44`}>
             Sort
             <select name="sort" defaultValue={query.sort} className={selectClass}>
               {SORT_OPTIONS.map((value) => (
@@ -342,7 +342,7 @@ export default async function StaffProductsPage({
             </select>
           </label>
 
-          <label className={labelClass}>
+          <label className={`${labelClass} shrink-0 w-24`}>
             Per page
             <select name="perPage" defaultValue={String(query.perPage)} className={selectClass}>
               {PER_PAGE_OPTIONS.map((size) => (
@@ -353,20 +353,22 @@ export default async function StaffProductsPage({
             </select>
           </label>
 
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-2.5 text-sm font-bold text-primary hover:bg-surface-muted"
-          >
-            Apply filters
-          </button>
-          {isFiltered && (
-            <Link
-              href="/staff/products"
-              className="px-1 py-2.5 text-sm font-semibold text-primary-muted hover:underline"
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-2.5 text-sm font-bold text-primary hover:bg-surface-muted"
             >
-              Clear all
-            </Link>
-          )}
+              Apply filters
+            </button>
+            {isFiltered && (
+              <Link
+                href="/staff/products"
+                className="px-1 py-2.5 text-sm font-semibold text-primary-muted hover:underline"
+              >
+                Clear all
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* #1523 — search gets its own full-width row: it is the most-used control. Below the

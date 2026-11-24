@@ -4623,6 +4623,18 @@ export const DOC_ARTICLES: any[] = [
     "content": "\n# Plan: Platform-Wide List Optimisation & Cloudflare Metadata Architecture\n\n## 1. Shared List Management Utilities\n- Create `lib/list-sorting.ts` with `compareAlphabetical`, `sortCategoryTreeAlphabetical`, `sortNamedEntities`, and shared pagination/filtering helpers.\n- Add unit tests in `tests/list-sorting.test.ts`.\n\n## 2. Platform-Wide Default Collation & Visibility\n- Update `lib/repositories/categories.ts`, `lib/repositories/brands.ts`, and `lib/repositories/products.ts`.\n- Add `listShopperVisibleBrands` enforcing `visibleCategoryWhere` for shopper brand lists.\n- Update `components/layout/search-departments.ts` for natural alphabetical navigation order.\n\n## 3. Cloudflare-Native Metadata Cache\n- Implement `lib/cloudflare-metadata.ts` with Zod schema validation and KV storage.\n- Route `lib/categories-service.ts` and `lib/brands-service.ts` through cache with automatic DB fallback.\n\n## 4. Automated Refresh Lifecycle\n- Add `/api/jobs/refresh-metadata` to scheduler under `DAILY_CRON = \"0 3 * * *\"`.\n- Implement `scripts/refresh-metadata-cache.ts` for full-platform batch cache warming and verification.\n- Invalidate metadata in `features/admin/catalogue.ts` and `features/admin/brands.ts`.\n\n## 5. Staff Product Archive UI\n- Update `app/(admin)/staff/products/page.tsx` and `components/staff/BulkProductActions.tsx`.\n"
   },
   {
+    "id": "specs/2026-11-24-staff-products-filter-dropdown-widths/plan.md",
+    "title": "Staff Products Filter Dropdown Widths & Layout Stability",
+    "audience": [
+      "dev"
+    ],
+    "visibility": "internal",
+    "category": "spec",
+    "summary": "Implementation plan for fixed optimal widths and layout stability across staff catalogue filter dropdowns.",
+    "lastUpdated": "2026-11-24",
+    "content": "\n# Plan: Staff Products Filter Dropdown Widths & Layout Stability\n\n## 1. Filter Dropdown Styling in `app/(admin)/staff/products/page.tsx`\n- Update `selectClass` with `w-full truncate` to ensure uniform box sizing and clean ellipsis truncation for long selected names.\n- Assign dedicated optimal fixed width and `shrink-0` classes to each filter `<label>`:\n  - Status: `shrink-0 w-36`\n  - Category: `shrink-0 w-56`\n  - Brand: `shrink-0 w-44`\n  - Restriction: `shrink-0 w-40`\n  - Stock: `shrink-0 w-40`\n  - Needs attention: `shrink-0 w-44`\n  - Sort: `shrink-0 w-44`\n  - Per page: `shrink-0 w-24`\n- Group the submit/clear actions with `shrink-0` to prevent awkward orphan wrapping.\n\n## 2. Regression Testing\n- Create `tests/staff-products-filter-widths.test.ts` verifying that every filter label retains its optimal width and `shrink-0`, and that `selectClass` retains `w-full truncate`.\n\n## 3. KMS & Quality Verification\n- Run `npm run kms:build-index`, `npm run format`, `npm run kms:validate`, `npm run typecheck`, and `npm test`.\n"
+  },
+  {
     "id": "specs/architecture.md",
     "title": "System Architecture — Merqify Platform",
     "audience": [

@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-24T09:51:57.722Z` · commit `43175a0f` · `396` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-24T10:24:32.703Z` · commit `aae938d8` · `397` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -380,6 +380,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Cascading Catalogue Filters & Cloudflare Metadata Architecture](specs/2026-11-24-cascading-filter-cloudflare-metadata/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for status-based cascading filters powered by Cloudflare KV facet caching. |
 | [Category Selector Alphabetical Sorting & Staff Category Collation](specs/2026-11-24-category-selector-alphabetical-sort/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Default alphabetical sorting for category option groups across staff and product forms. |
 | [Platform-Wide List Optimisation & Cloudflare Metadata Architecture](specs/2026-11-24-platform-wide-list-optimisation/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for list collation, edge metadata caching, and admin archive controls. |
+| [Staff Products Filter Dropdown Widths & Layout Stability](specs/2026-11-24-staff-products-filter-dropdown-widths/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for fixed optimal widths and layout stability across staff catalogue filter dropdowns. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
 | [ADR-002 — Authentication Library](specs/decisions/ADR-002-auth-library.md) | adr | 1.0.0 | 2026-08-06 | approved | internal | Decision to use Better Auth (self-hosted, bearer tokens, RBAC) for email/password and Google Sign-In, rejecting hosted IdPs like Clerk/Auth0 for the MVP. |

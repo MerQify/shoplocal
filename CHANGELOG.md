@@ -6,6 +6,11 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Staff products filter dropdown widths and layout stability.**
+  - **Optimal Fixed Dropdown Widths:** Assigned dedicated, optimal fixed widths (`w-36` to `w-56`) and `shrink-0` to each filter dropdown label on `/staff/products`, preventing controls from shuffling across rows when selections or cascaded option sets change.
+  - **Clean Closed Truncation:** Added `w-full truncate` to filter select elements ensuring long selected option names truncate cleanly with ellipsis inside the closed box while maintaining full readability in native dropdown menus upon interaction.
+  - **Action Group Alignment:** Anchored "Apply filters" and "Clear all" buttons with `shrink-0` to eliminate orphan line-wrapping.
+
 - **Cascading catalogue filters & Cloudflare metadata facets.**
   - **Cascading Filter Visibility:** `/staff/products` dynamically cascades options based on status and category. Filtering by Active shows only active categories, brands, restrictions, and stock modes; filtering by Archived shows only archived ones; selecting a category narrows brands to that category.
   - **Cloudflare KV Facet Metadata:** Pre-computed `metadata:v1:facets:<vendorId>` cached in Cloudflare KV / edge cache with automatic Postgres fallback, scheduled overnight warming (`0 3 * * *`), and immediate invalidation on catalogue mutations.
