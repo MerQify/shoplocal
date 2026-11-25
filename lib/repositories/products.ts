@@ -3881,6 +3881,7 @@ export interface FindTargetProductsForImageOptions {
   brandId?: string | null;
   search?: string | null;
   limit?: number;
+  filters?: Record<string, unknown>;
 }
 
 /**
@@ -3910,17 +3911,24 @@ export async function findTargetProductsForImage(
     if (uniqueIds.length === 0) return [];
     where = { vendorId, id: { in: uniqueIds } };
   } else if (mode === "filtered") {
+    const f = (options.filters ?? {}) as Record<string, any>;
+    const isActive = options.isActive ?? f.isActive;
+    const categoryIds = options.categoryIds ?? f.categoryIds;
+    const restriction = options.restriction ?? f.restriction;
+    const stockMode = options.stockMode ?? f.stockMode;
+    const needs = options.needs ?? f.needs;
+    const brandId = options.brandId ?? f.brandId;
+    const search = options.search ?? f.search;
+
     where = combineWhere(
       { vendorId },
-      options.isActive === undefined ? undefined : { isActive: options.isActive },
-      options.categoryIds && options.categoryIds.length > 0
-        ? { categoryId: { in: [...options.categoryIds] } }
-        : undefined,
-      restrictionWhere(options.restriction),
-      stockModeWhere(options.stockMode),
-      adminNeedsWhere(options.needs, () => prisma.inventory.fields.lowStockThreshold),
-      options.brandId === undefined ? undefined : { brandId: options.brandId },
-      adminProductSearchWhere(options.search),
+      isActive === undefined ? undefined : { isActive },
+      categoryIds && categoryIds.length > 0 ? { categoryId: { in: [...categoryIds] } } : undefined,
+      restrictionWhere(restriction),
+      stockModeWhere(stockMode),
+      adminNeedsWhere(needs, () => prisma.inventory.fields.lowStockThreshold),
+      brandId === undefined ? undefined : { brandId },
+      adminProductSearchWhere(search),
       // Missing images only for filtered mode:
       { images: { every: { storageKey: { endsWith: PLACEHOLDER_IMAGE_SUFFIX } } } },
     );
