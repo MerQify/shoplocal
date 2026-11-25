@@ -6,6 +6,12 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Targeted product image generation for selected items and multi-scenario bulk actions.**
+  - **Selected Items Image Generation:** Scoped the "Auto-fill Missing Images" action on `/staff/products` to explicitly selected products by default, avoiding unintended catalogue-wide generation when specific products are checked.
+  - **Multi-Scenario Generic Service:** Consolidated image generation onto a unified, reusable `generateProductImages` service in `lib/products-service.ts` and repository query `findTargetProductsForImage` in `lib/repositories/products.ts`, supporting 5 operational modes: selected items, single product, filtered sets, all missing, and retrying failed generations without interfering with background jobs.
+  - **Edge-Case & Overwrite Protection:** Added deduplication, empty selection validation, and guarded against overwriting existing real images unless explicitly requested (`overwriteExisting: true`).
+  - **Rich Action Drawer & Feedback:** Added target scope selection, safety toggles (Open Food Facts preference, overwrite protection), live generation progress, and granular post-run outcome breakdown pills (generated, skipped with reasons, failed with errors) to `BackfillImagesButton`.
+
 - **Staff storefront 2-column responsive layout and untracked product inline quantity editing.**
   - **Responsive 2-Column Storefront Layout:** Reorganised `/staff/storefront` from an overly tall, narrow single column into a modern, balanced 2-column responsive layout on desktop (`lg:grid-cols-12`, with `lg:col-span-7` primary settings column and `lg:col-span-5` secondary settings column) while smoothly collapsing to a single column on tablet and mobile viewports.
   - **Page Container Width Upgrade:** Upgraded `PageContainer` width from `standard` (`max-w-4xl`) to `wide` (`max-w-7xl`) to make full use of widescreen real estate without cramped sections.

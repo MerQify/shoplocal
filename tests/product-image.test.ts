@@ -11,6 +11,7 @@ import {
   hasExhaustedImageAttempts,
   isProductImageKey,
   isPlaceholderImageKey,
+  hasRealProductImage,
 } from "@/lib/product-image";
 
 /**
@@ -281,5 +282,31 @@ describe("hasExhaustedImageAttempts", () => {
     // Every attempt that reaches AI generation is a paid call, repeated on every
     // scheduled run until the product gives up.
     expect(MAX_IMAGE_ATTEMPT_FAILURES).toBeLessThanOrEqual(5);
+  });
+});
+
+describe("hasRealProductImage", () => {
+  it("returns false for null, undefined, or empty images list", () => {
+    expect(hasRealProductImage(null)).toBe(false);
+    expect(hasRealProductImage(undefined)).toBe(false);
+    expect(hasRealProductImage([])).toBe(false);
+  });
+
+  it("returns false when all images are placeholder keys (main.svg)", () => {
+    expect(
+      hasRealProductImage([
+        { storageKey: "products/test/main.svg" },
+        { storageKey: "products/gen-halal/main.svg" },
+      ]),
+    ).toBe(false);
+  });
+
+  it("returns true when at least one image has a non-placeholder key", () => {
+    expect(
+      hasRealProductImage([
+        { storageKey: "products/test/main.svg" },
+        { storageKey: "products/test/a1b2c3d4-1234-4000-8000-1234567890ab.webp" },
+      ]),
+    ).toBe(true);
   });
 });
