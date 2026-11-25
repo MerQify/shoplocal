@@ -197,6 +197,20 @@ export function isPlaceholderImageKey(key: string): boolean {
 }
 
 /**
+ * Does a product already have a real (non-placeholder) image?
+ *
+ * A product with no images or carrying only placeholders is considered to have
+ * a missing image. If at least one image has a non-placeholder key, the product
+ * has a real image and should not be overwritten unless explicitly requested.
+ */
+export function hasRealProductImage(
+  images: readonly { storageKey: string }[] | null | undefined,
+): boolean {
+  if (!images || images.length === 0) return false;
+  return images.some((img) => !isPlaceholderImageKey(img.storageKey));
+}
+
+/**
  * How many failed pipeline attempts before a product stops being offered for
  * automatic image filling (#523).
  *

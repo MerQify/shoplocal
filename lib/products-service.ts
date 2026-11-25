@@ -4,13 +4,21 @@ import { getCurrentVendorId } from "@/lib/tenant";
 import { getCurrentVendorProfile } from "@/lib/vendor-service";
 import { calendarDayInZone, STORE_TIMEZONE } from "@/lib/local-datetime";
 import { currentRestockDay } from "@/lib/restock";
-import type { GeneratedImageSource } from "@/lib/product-image";
+import {
+  hasRealProductImage,
+  hasExhaustedImageAttempts,
+  type GeneratedImageSource,
+} from "@/lib/product-image";
+import { runProductImagePipeline } from "@/lib/product-image-pipeline";
+import { getVendorAiMeter } from "@/lib/ai-meter-service";
+import { describeAiBudgetRefusal } from "@/lib/ai-meter";
 import { recordSearchQuery } from "@/lib/repositories/search-query-log";
 import { listApprovedAliasMap } from "@/lib/repositories/search-synonyms";
 import {
   addProductImage as addProductImageRepo,
   approveProductImageRow as approveProductImageRowRepo,
   createProductForVendor as createProductForVendorRepo,
+  findTargetProductsForImage as findTargetProductsForImageRepo,
   getAvailableFacets,
   getProductBySlug,
   getProductForAdmin as getProductForAdminRepo,
@@ -50,6 +58,8 @@ import {
   type ProductWriteInput,
   type RemoveImageResult,
   type StaffInventoryPage,
+  type TargetProductForImage,
+  type FindTargetProductsForImageOptions,
 } from "@/lib/repositories/products";
 
 /**
@@ -278,6 +288,240 @@ export async function toggleProductImageConfirmedPhoto(
 
 export async function getProductsWithoutImages(vendorId: string, limit: number) {
   return getProductsWithoutImagesRepo(getPrisma(), vendorId, limit);
+}
+
+export interface GenerateProductImagesParams {
+  target: FindTargetProductsForImageOptions;
+  options?: {
+    useOpenFoodFacts?: boolean;
+    overwriteExisting?: boolean;
+    retryFailed?: boolean;
+  };
+}
+
+export interface GenerateProductImagesResult {
+  ok: boolean;
+  message: string;
+  totalTargeted: number;
+  processed: number;
+  succeeded: number;
+  failed: number;
+  skipped: number;
+  details: {
+    succeeded: Array<{ id: string; name: string; source: string; imageKey: string }>;
+    failed: Array<{ id: string; name: string; error: string }>;
+    skipped: Array<{ id: string; name: string; reason: string }>;
+  };
+  budgetRefused?: boolean;
+}
+
+/**
+ * Reusable generic product image generation function.
+ * Supports:
+ * - Selected products with missing images
+ * - Single product generation (with optional overwrite)
+ * - Filtered products with missing images
+ * - Catalogue-wide missing images
+ * - Retrying failed generations
+ *
+ * Edge cases handled:
+ * - Empty selections (early return with clear error feedback)
+ * - Products that already have real images (skipped unless overwriteExisting=true)
+ * - Duplicate IDs (de-duplicated before query)
+ * - Partial failures (each product caught and recorded, batch continues)
+ * - AI budget refusal (stops gracefully without penalizing unattempted products)
+ */
+export async function generateProductImages(
+  vendorId: string,
+  params: GenerateProductImagesParams,
+): Promise<GenerateProductImagesResult> {
+  const { target, options = {} } = params;
+  const { useOpenFoodFacts = true, overwriteExisting = false, retryFailed = false } = options;
+
+  // 1. Handle empty selection upfront:
+  if (
+    target.mode === "selected" &&
+    (!target.productIds || target.productIds.filter(Boolean).length === 0)
+  ) {
+    return {
+      ok: false,
+      message: "No products selected.",
+      totalTargeted: 0,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      skipped: 0,
+      details: { succeeded: [], failed: [], skipped: [] },
+    };
+  }
+
+  // 2. De-duplicate productIds if selected mode
+  const effectiveTarget: FindTargetProductsForImageOptions = {
+    ...target,
+    productIds: target.productIds
+      ? Array.from(new Set(target.productIds.filter(Boolean)))
+      : undefined,
+  };
+
+  const targetedProducts = await findTargetProductsForImageRepo(
+    getPrisma(),
+    vendorId,
+    effectiveTarget,
+  );
+
+  if (targetedProducts.length === 0) {
+    return {
+      ok: true,
+      message: "No matching products found.",
+      totalTargeted: 0,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      skipped: 0,
+      details: { succeeded: [], failed: [], skipped: [] },
+    };
+  }
+
+  const succeeded: Array<{ id: string; name: string; source: string; imageKey: string }> = [];
+  const failed: Array<{ id: string; name: string; error: string }> = [];
+  const skipped: Array<{ id: string; name: string; reason: string }> = [];
+
+  // 3. Filter products based on overwriteExisting and retry limit
+  const eligibleProducts: TargetProductForImage[] = [];
+
+  for (const product of targetedProducts) {
+    // Check if product already has a real image
+    if (!overwriteExisting && hasRealProductImage(product.images)) {
+      skipped.push({
+        id: product.id,
+        name: product.name,
+        reason: "Already has an image",
+      });
+      continue;
+    }
+
+    // Check if product exceeded failure threshold (unless retry is requested)
+    if (
+      !retryFailed &&
+      target.mode !== "retry_failed" &&
+      hasExhaustedImageAttempts(product.imageAttemptFailures)
+    ) {
+      skipped.push({
+        id: product.id,
+        name: product.name,
+        reason: "Exceeded maximum generation attempts (retry required)",
+      });
+      continue;
+    }
+
+    eligibleProducts.push(product);
+  }
+
+  if (eligibleProducts.length === 0) {
+    const reasonMsg =
+      skipped.length > 0
+        ? `No products needed generation (${skipped.length} skipped: ${skipped[0].reason}).`
+        : "No eligible products to process.";
+    return {
+      ok: true,
+      message: reasonMsg,
+      totalTargeted: targetedProducts.length,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      skipped: skipped.length,
+      details: { succeeded, failed, skipped },
+    };
+  }
+
+  const aiMeter = getVendorAiMeter(vendorId, "PRODUCT_IMAGE");
+  let budgetRefused = false;
+  let budgetRefusalMessage = "";
+
+  // 4. Process eligible products sequentially
+  for (const product of eligibleProducts) {
+    // Check budget before proceeding
+    const budgetCheck = await aiMeter.check();
+    if (!budgetCheck.allowed) {
+      budgetRefused = true;
+      budgetRefusalMessage = describeAiBudgetRefusal(budgetCheck);
+      break;
+    }
+
+    try {
+      const barcodeOrPlu = product.barcode || product.plu || null;
+      const result = await runProductImagePipeline(product.id, product.name, barcodeOrPlu, {
+        useOpenFoodFacts,
+        aiMeter,
+      });
+
+      if (result && "budgetRefused" in result) {
+        budgetRefused = true;
+        budgetRefusalMessage = describeAiBudgetRefusal(result.budgetRefused);
+        break;
+      }
+
+      if (result && "imageKey" in result) {
+        await saveGeneratedProductImageRepo(
+          getPrisma(),
+          vendorId,
+          product.id,
+          result.imageKey,
+          product.name,
+          result.needsReview,
+          result.source,
+        );
+        succeeded.push({
+          id: product.id,
+          name: product.name,
+          source: result.source,
+          imageKey: result.imageKey,
+        });
+      } else {
+        await recordImageAttemptFailureRepo(getPrisma(), vendorId, product.id);
+        failed.push({
+          id: product.id,
+          name: product.name,
+          error: "No image found or generated",
+        });
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      try {
+        await recordImageAttemptFailureRepo(getPrisma(), vendorId, product.id);
+      } catch (recErr) {
+        console.error(`Failed to record image attempt failure for ${product.id}`, recErr);
+      }
+      failed.push({
+        id: product.id,
+        name: product.name,
+        error: errorMsg,
+      });
+    }
+  }
+
+  const processed = succeeded.length + failed.length;
+  let summaryMessage = "";
+
+  if (budgetRefused) {
+    summaryMessage = `${budgetRefusalMessage}${succeeded.length > 0 ? ` (${succeeded.length} generated before stopped)` : ""}`;
+  } else if (failed.length === 0 && skipped.length === 0) {
+    summaryMessage = `Successfully generated ${succeeded.length} product image${succeeded.length === 1 ? "" : "s"}.`;
+  } else {
+    summaryMessage = `Processed ${eligibleProducts.length} product${eligibleProducts.length === 1 ? "" : "s"}: ${succeeded.length} generated, ${skipped.length} skipped, ${failed.length} failed.`;
+  }
+
+  return {
+    ok: !budgetRefused && failed.length === 0,
+    message: summaryMessage,
+    totalTargeted: targetedProducts.length,
+    processed,
+    succeeded: succeeded.length,
+    failed: failed.length,
+    skipped: skipped.length,
+    details: { succeeded, failed, skipped },
+    ...(budgetRefused ? { budgetRefused: true } : {}),
+  };
 }
 
 export async function approveProductImageRow(

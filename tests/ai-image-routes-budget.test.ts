@@ -155,7 +155,8 @@ describe("campaign image (R31)", () => {
     const response = await campaign.POST(post({ categoryId: "c1" }));
 
     expect(response.status).toBe(200);
-    expect(recordImage).toHaveBeenCalledExactlyOnceWith({
+    expect(recordImage).toHaveBeenCalledTimes(1);
+    expect(recordImage).toHaveBeenCalledWith({
       model: "@cf/black-forest-labs/flux-1-schnell",
     });
   });
