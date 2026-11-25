@@ -37,6 +37,7 @@ import {
   MAX_IMAGE_ATTEMPT_FAILURES,
   PLACEHOLDER_IMAGE_SUFFIX,
   isPlaceholderImageKey,
+  hasRealProductImage,
   nextConfirmedPhotoSource,
   type ProductImageSource,
 } from "@/lib/product-image";
@@ -3856,6 +3857,105 @@ export async function getProductsWithoutImages(prisma: Db, vendorId: string, lim
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
     select: { id: true, name: true },
+  });
+}
+
+export interface TargetProductForImage {
+  id: string;
+  name: string;
+  plu: string | null;
+  barcode: string | null;
+  imageAttemptFailures: number;
+  images: { id: string; storageKey: string; isPrimary: boolean }[];
+}
+
+export interface FindTargetProductsForImageOptions {
+  mode: "selected" | "single" | "filtered" | "all_missing" | "retry_failed";
+  productIds?: string[];
+  productId?: string;
+  categoryIds?: readonly string[];
+  isActive?: boolean;
+  restriction?: "any" | "none" | ProductRestriction;
+  stockMode?: StockMode;
+  needs?: "price" | "ready" | "image" | "low";
+  brandId?: string | null;
+  search?: string | null;
+  limit?: number;
+}
+
+/**
+ * Finds targeted products for image generation across multiple scenarios:
+ * - "selected": Explicitly user-selected product IDs (de-duplicated).
+ * - "single": A single product ID.
+ * - "filtered": Products matching the current catalogue filters that have missing images.
+ * - "all_missing": Products across the store catalogue with missing images.
+ * - "retry_failed": Products with recorded image attempt failures (> 0).
+ */
+export async function findTargetProductsForImage(
+  prisma: Db,
+  vendorId: string,
+  options: FindTargetProductsForImageOptions,
+): Promise<TargetProductForImage[]> {
+  const { mode, limit = 50 } = options;
+  const take = Math.min(Math.max(1, limit), 100);
+
+  let where: Prisma.ProductWhereInput = { vendorId };
+
+  if (mode === "single") {
+    if (!options.productId) return [];
+    where = { vendorId, id: options.productId };
+  } else if (mode === "selected") {
+    if (!options.productIds || options.productIds.length === 0) return [];
+    const uniqueIds = Array.from(new Set(options.productIds.filter(Boolean)));
+    if (uniqueIds.length === 0) return [];
+    where = { vendorId, id: { in: uniqueIds } };
+  } else if (mode === "filtered") {
+    where = combineWhere(
+      { vendorId },
+      options.isActive === undefined ? undefined : { isActive: options.isActive },
+      options.categoryIds && options.categoryIds.length > 0
+        ? { categoryId: { in: [...options.categoryIds] } }
+        : undefined,
+      restrictionWhere(options.restriction),
+      stockModeWhere(options.stockMode),
+      adminNeedsWhere(options.needs, () => prisma.inventory.fields.lowStockThreshold),
+      options.brandId === undefined ? undefined : { brandId: options.brandId },
+      adminProductSearchWhere(options.search),
+      // Missing images only for filtered mode:
+      { images: { every: { storageKey: { endsWith: PLACEHOLDER_IMAGE_SUFFIX } } } },
+    );
+  } else if (mode === "all_missing") {
+    where = {
+      vendorId,
+      images: { every: { storageKey: { endsWith: PLACEHOLDER_IMAGE_SUFFIX } } },
+      imageAttemptFailures: { lt: MAX_IMAGE_ATTEMPT_FAILURES },
+    };
+  } else if (mode === "retry_failed") {
+    const idFilter =
+      options.productIds && options.productIds.length > 0
+        ? { id: { in: Array.from(new Set(options.productIds.filter(Boolean))) } }
+        : {};
+    where = {
+      vendorId,
+      imageAttemptFailures: { gt: 0 },
+      ...idFilter,
+    };
+  }
+
+  return await prisma.product.findMany({
+    where,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: mode === "selected" ? undefined : take,
+    select: {
+      id: true,
+      name: true,
+      plu: true,
+      barcode: true,
+      imageAttemptFailures: true,
+      images: {
+        select: { id: true, storageKey: true, isPrimary: true },
+      },
+    },
   });
 }
 

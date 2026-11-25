@@ -1,6 +1,10 @@
 import { requireVendorRole } from "@/lib/auth-rbac";
 import { runProductImagePipeline } from "@/lib/product-image-pipeline";
-import { saveGeneratedProductImage } from "@/lib/products-service";
+import {
+  generateProductImages,
+  saveGeneratedProductImage,
+  type GenerateProductImagesParams,
+} from "@/lib/products-service";
 import { NextResponse } from "next/server";
 import { describeAiBudgetRefusal } from "@/lib/ai-meter";
 import { getVendorAiMeter } from "@/lib/ai-meter-service";
@@ -13,36 +17,60 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as any;
-    const { productId, productName } = body;
-    if (!productId || !productName) {
-      return NextResponse.json({ error: "Missing productId or productName" }, { status: 400 });
-    }
 
-    const result = await runProductImagePipeline(productId, productName, null, {
-      aiMeter: getVendorAiMeter(auth.vendorId, "PRODUCT_IMAGE"),
-    });
-    if (result && "budgetRefused" in result) {
-      return NextResponse.json(
-        { error: describeAiBudgetRefusal(result.budgetRefused) },
-        { status: 429 },
+    // 1. Backward-compatible single-product flow (e.g. ProductImageManager & unit test expectations)
+    if (body.productId && body.productName && !body.mode) {
+      const result = await runProductImagePipeline(body.productId, body.productName, null, {
+        useOpenFoodFacts: body.useOpenFoodFacts ?? true,
+        aiMeter: getVendorAiMeter(auth.vendorId, "PRODUCT_IMAGE"),
+      });
+      if (result && "budgetRefused" in result) {
+        return NextResponse.json(
+          { error: describeAiBudgetRefusal(result.budgetRefused) },
+          { status: 429 },
+        );
+      }
+      if (!result) {
+        return NextResponse.json({ error: "Failed to fetch or generate image" }, { status: 500 });
+      }
+
+      await saveGeneratedProductImage(
+        auth.vendorId,
+        body.productId,
+        result.imageKey,
+        body.productName,
+        result.needsReview,
+        result.source,
       );
-    }
-    if (!result) {
-      return NextResponse.json({ error: "Failed to fetch or generate image" }, { status: 500 });
+
+      return NextResponse.json(result);
     }
 
-    await saveGeneratedProductImage(
-      auth.vendorId,
-      productId,
-      result.imageKey,
-      productName,
-      result.needsReview,
-      result.source,
-    );
+    // 2. Generic targeted image generation (selected, single, filtered, all_missing, retry_failed)
+    const mode =
+      body.mode ??
+      (body.productIds?.length ? "selected" : body.productId ? "single" : "all_missing");
 
-    return NextResponse.json(result);
+    const params: GenerateProductImagesParams = {
+      target: {
+        mode,
+        productIds: body.productIds,
+        productId: body.productId,
+        filters: body.filters,
+        limit: body.limit,
+      },
+      options: {
+        useOpenFoodFacts: body.useOpenFoodFacts !== false,
+        overwriteExisting: body.overwriteExisting === true,
+        retryFailed: body.retryFailed === true || mode === "retry_failed",
+      },
+    };
+
+    const result = await generateProductImages(auth.vendorId, params);
+
+    return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error("Image generation error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }
