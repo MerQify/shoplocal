@@ -149,7 +149,12 @@ describe("generateProductImages (generic targeted image generation)", () => {
     });
     expect(result.succeeded).toBe(1);
     expect(runProductImagePipeline).toHaveBeenCalledTimes(1);
-    expect(runProductImagePipeline).toHaveBeenCalledWith("p2", "Atta (placeholder only)", null, expect.any(Object));
+    expect(runProductImagePipeline).toHaveBeenCalledWith(
+      "p2",
+      "Atta (placeholder only)",
+      null,
+      expect.any(Object),
+    );
   });
 
   it("overwrites existing images when overwriteExisting is true", async () => {

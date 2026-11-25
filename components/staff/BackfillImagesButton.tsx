@@ -109,20 +109,29 @@ export function BackfillImagesButton() {
     setLoading(true);
     setResult(null);
 
-    // Determine effective mode:
-    // If targetMode is "auto", target "selected" if items are checked, otherwise "all_missing"
+    // Read directly from DOM to ensure immediate consistency with user check action
+    const checked = document.querySelectorAll<HTMLInputElement>(
+      'input[type="checkbox"][name="productId"]:checked',
+    );
+    const activeSelectedIds =
+      checked.length > 0 ? Array.from(checked).map((el) => el.value) : selectedIds;
+
     let effectiveMode: "selected" | "all_missing" | "filtered" | "retry_failed";
     if (targetMode === "auto") {
-      effectiveMode = selectedIds.length > 0 ? "selected" : "all_missing";
+      effectiveMode = activeSelectedIds.length > 0 ? "selected" : "all_missing";
     } else {
       effectiveMode = targetMode;
     }
 
-    // Check empty selection if selected mode was explicitly chosen
-    if (effectiveMode === "selected" && selectedIds.length === 0) {
+    // Reject empty selection if in selected or retry mode
+    if (
+      (effectiveMode === "selected" || effectiveMode === "retry_failed") &&
+      activeSelectedIds.length === 0
+    ) {
       setResult({
         tone: "error",
-        message: "No products selected. Select products with checkboxes, or choose 'All with missing images'.",
+        message:
+          "No products selected. Select products with checkboxes, or choose 'All with missing images'.",
       });
       setLoading(false);
       return;
@@ -131,7 +140,10 @@ export function BackfillImagesButton() {
     try {
       const payload: Record<string, unknown> = {
         mode: effectiveMode,
-        productIds: effectiveMode === "selected" || effectiveMode === "retry_failed" ? selectedIds : undefined,
+        productIds:
+          effectiveMode === "selected" || effectiveMode === "retry_failed"
+            ? activeSelectedIds
+            : undefined,
         filters: effectiveMode === "filtered" ? getActiveFiltersFromUrl() : undefined,
         useOpenFoodFacts,
         overwriteExisting,
@@ -203,7 +215,7 @@ export function BackfillImagesButton() {
   const hasSelection = selectedIds.length > 0;
   const buttonLabel = loading
     ? "Generating..."
-    : hasSelection && (targetMode === "auto" || targetMode === "selected")
+    : hasSelection && (targetMode === "selected" || targetMode === "auto")
       ? `Auto-fill Missing Images (${selectedIds.length} selected)`
       : "Auto-fill Missing Images";
 
@@ -226,7 +238,10 @@ export function BackfillImagesButton() {
           title="Image generation options"
           className="inline-flex items-center justify-center rounded-2xl border border-black/10 bg-white p-2.5 text-primary transition hover:bg-surface-muted disabled:opacity-50"
         >
-          <Icon name="chevron-down" className={`h-4 w-4 transition-transform ${showOptions ? "rotate-180" : ""}`} />
+          <Icon
+            name="chevron-down"
+            className={`h-4 w-4 transition-transform ${showOptions ? "rotate-180" : ""}`}
+          />
         </button>
       </div>
 
