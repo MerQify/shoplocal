@@ -3,7 +3,12 @@
 import { useActionState, useEffect, useState } from "react";
 import { bulkProductAction } from "@/features/admin/product-restrictions";
 import { saveBulkQuantities } from "@/features/admin/product-quantities";
-import { bulkSetLowStockThresholdAction } from "@/features/admin/catalogue";
+import {
+  bulkSetLowStockThresholdAction,
+  bulkUpdateLabelsAndVisibilityAction,
+  initialBulkLabelsAndVisibilityState,
+} from "@/features/admin/catalogue";
+import type { AdminProductListRow } from "@/lib/repositories/products";
 import {
   BULK_LOW_STOCK_THRESHOLD_IDLE,
   DEFAULT_LOW_STOCK_THRESHOLD,
@@ -62,10 +67,12 @@ export function StickyBulkActionBar({
   categories = [],
   lowStockDefault = DEFAULT_LOW_STOCK_THRESHOLD,
   isStoreAdmin = false,
+  products = [],
 }: {
   categories?: readonly CategoryOption[];
   lowStockDefault?: number;
   isStoreAdmin?: boolean;
+  products?: readonly AdminProductListRow[];
 }) {
   const [productState, productAction, productPending] = useActionState(
     bulkProductAction,
@@ -79,12 +86,70 @@ export function StickyBulkActionBar({
     bulkSetLowStockThresholdAction,
     BULK_LOW_STOCK_THRESHOLD_IDLE,
   );
+  const [labelsResult, labelsAction, labelsPending] = useActionState(
+    bulkUpdateLabelsAndVisibilityAction,
+    initialBulkLabelsAndVisibilityState,
+  );
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [prevPhase, setPrevPhase] = useState(productState.phase);
   const [selectedAction, setSelectedAction] = useState<BulkAction>("ENABLE");
   const [changedQuantities, setChangedQuantities] = useState(0);
   const [setTo, setSetTo] = useState("");
+  const [showLabelsModal, setShowLabelsModal] = useState(false);
+
+  const [labelsState, setLabelsState] = useState({
+    isHalal: false,
+    isFresh: false,
+    isOrganic: false,
+    isVegetarian: false,
+    isGlutenFree: false,
+    isFeatured: false,
+    isActive: true,
+    allowsCustomNote: false,
+  });
+
+  // Find single product when exactly 1 product is selected
+  const singleProduct =
+    selectedIds.size === 1 ? products.find((p) => p.id === Array.from(selectedIds)[0]) : null;
+
+  // Sync checkboxes to selected product attributes when single product is selected
+  useEffect(() => {
+    if (selectedIds.size === 1) {
+      const singleId = Array.from(selectedIds)[0];
+      const p = products.find((item) => item.id === singleId);
+      if (p) {
+        setLabelsState({
+          isHalal: p.isHalal ?? false,
+          isFresh: p.isFresh ?? false,
+          isOrganic: p.isOrganic ?? false,
+          isVegetarian: p.isVegetarian ?? false,
+          isGlutenFree: p.isGlutenFree ?? false,
+          isFeatured: p.isFeatured ?? false,
+          isActive: p.isActive ?? true,
+          allowsCustomNote: p.allowsCustomNote ?? false,
+        });
+      }
+    } else {
+      setLabelsState({
+        isHalal: false,
+        isFresh: false,
+        isOrganic: false,
+        isVegetarian: false,
+        isGlutenFree: false,
+        isFeatured: false,
+        isActive: true,
+        allowsCustomNote: false,
+      });
+    }
+  }, [selectedIds, products]);
+
+  // Close modal when labels update succeeds
+  useEffect(() => {
+    if (labelsResult.status === "ok") {
+      setShowLabelsModal(false);
+    }
+  }, [labelsResult]);
 
   // Sync selection state during render when phase transitions
   if (productState.phase !== prevPhase) {
@@ -216,6 +281,28 @@ export function StickyBulkActionBar({
 
         {/* Action Controls Group */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* Labels & Visibility Trigger */}
+          <button
+            type="button"
+            onClick={() => setShowLabelsModal((prev) => !prev)}
+            disabled={!hasSelection}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-action disabled:opacity-50 ${
+              showLabelsModal
+                ? "border-action bg-action text-white shadow"
+                : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <Icon name="tag" className="h-3.5 w-3.5" />
+            <span>Labels &amp; visibility</span>
+            <Icon
+              name="chevron-down"
+              className={`h-3 w-3 transition-transform ${showLabelsModal ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {/* Divider */}
+          <div className="hidden sm:block h-5 w-px bg-white/20" />
+
           {/* Status & Category Actions Form */}
           <form
             id={BULK_PRODUCTS_FORM_ID}
@@ -371,6 +458,178 @@ export function StickyBulkActionBar({
         </div>
       )}
 
+      {/* Labels & Visibility Floating Card Modal */}
+      {showLabelsModal && hasSelection && (
+        <div
+          role="dialog"
+          aria-labelledby="labels-visibility-title"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-80 max-h-[85vh] overflow-y-auto rounded-3xl border border-black/10 bg-white p-5 shadow-2xl text-primary space-y-4"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between pb-1">
+            <h3 id="labels-visibility-title" className="text-base font-bold text-primary">
+              Labels &amp; visibility
+            </h3>
+            <div className="flex items-center gap-2">
+              {singleProduct ? (
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    labelsState.isActive
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                      : "bg-slate-100 text-slate-600 border border-slate-200"
+                  }`}
+                >
+                  {labelsState.isActive ? "Active" : "Archived"}
+                </span>
+              ) : (
+                <span className="rounded-full bg-blue-50 text-action border border-action/20 px-2.5 py-0.5 text-xs font-semibold">
+                  {selectedIds.size} selected
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowLabelsModal(false)}
+                aria-label="Close"
+                className="rounded-lg p-1 text-primary-muted hover:bg-surface-muted hover:text-primary transition text-xs font-bold leading-none"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <form action={labelsAction} className="space-y-4">
+            {Array.from(selectedIds).map((id) => (
+              <input key={id} type="hidden" name="productId" value={id} />
+            ))}
+
+            {/* Save changes button */}
+            <button
+              type="submit"
+              disabled={labelsPending}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-action hover:bg-action/90 text-white font-bold py-2.5 text-sm shadow transition disabled:opacity-50"
+            >
+              <Icon name="save" className="h-4 w-4" />
+              <span>{labelsPending ? "Saving changes…" : "Save changes"}</span>
+            </button>
+
+            {/* Checkbox list */}
+            <div className="space-y-3.5 pt-1">
+              <label className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="isHalal"
+                  value="true"
+                  checked={labelsState.isHalal}
+                  onChange={(e) =>
+                    setLabelsState((prev) => ({ ...prev, isHalal: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                />
+                <span>Halal</span>
+              </label>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="isFresh"
+                  value="true"
+                  checked={labelsState.isFresh}
+                  onChange={(e) =>
+                    setLabelsState((prev) => ({ ...prev, isFresh: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                />
+                <span>Fresh</span>
+              </label>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="isOrganic"
+                  value="true"
+                  checked={labelsState.isOrganic}
+                  onChange={(e) =>
+                    setLabelsState((prev) => ({ ...prev, isOrganic: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                />
+                <span>Organic</span>
+              </label>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="isVegetarian"
+                  value="true"
+                  checked={labelsState.isVegetarian}
+                  onChange={(e) =>
+                    setLabelsState((prev) => ({ ...prev, isVegetarian: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                />
+                <span>Vegetarian</span>
+              </label>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="isGlutenFree"
+                  value="true"
+                  checked={labelsState.isGlutenFree}
+                  onChange={(e) =>
+                    setLabelsState((prev) => ({ ...prev, isGlutenFree: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                />
+                <span>Gluten free</span>
+              </label>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="isFeatured"
+                  value="true"
+                  checked={labelsState.isFeatured}
+                  onChange={(e) =>
+                    setLabelsState((prev) => ({ ...prev, isFeatured: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                />
+                <span>Featured on homepage</span>
+              </label>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  value="true"
+                  checked={labelsState.isActive}
+                  onChange={(e) =>
+                    setLabelsState((prev) => ({ ...prev, isActive: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                />
+                <span>Visible in the shop</span>
+              </label>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="allowsCustomNote"
+                  value="true"
+                  checked={labelsState.allowsCustomNote}
+                  onChange={(e) =>
+                    setLabelsState((prev) => ({ ...prev, allowsCustomNote: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                />
+                <span>Customers can add a note to this item</span>
+              </label>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Applied Feedback Notice */}
       {productState.phase === "applied" && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-emerald-600 text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
@@ -390,6 +649,20 @@ export function StickyBulkActionBar({
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-danger text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
           <Icon name="circle-alert" className="h-4 w-4" />
           {thresholdState.message}
+        </div>
+      )}
+
+      {/* Labels & Visibility notification */}
+      {labelsResult.status === "ok" && labelsResult.message && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-emerald-600 text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
+          <Icon name="check" className="h-4 w-4" />
+          {labelsResult.message}
+        </div>
+      )}
+      {labelsResult.status === "error" && labelsResult.message && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-danger text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
+          <Icon name="circle-alert" className="h-4 w-4" />
+          {labelsResult.message}
         </div>
       )}
     </>
