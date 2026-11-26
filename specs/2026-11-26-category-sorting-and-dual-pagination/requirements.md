@@ -1,12 +1,11 @@
 # Requirements: Category Sorting (Icon sortOrder vs Text Alphabetical) and Dual Top/Bottom Pagination
 
 ## 1. Category Sorting Rules
-- **R1 (Icon Category Sorting):** Wherever categories are displayed as icons or visual department cards (e.g. `DepartmentScroller`, `DepartmentHero` across landing, category browse, and search), their ordering MUST preserve the database `sortOrder` (`orderBy: [{ sortOrder: "asc" }, { name: "asc" }]`). `listTopLevelCategories` in `lib/repositories/categories.ts` must return categories in database `sortOrder` without overriding them with alphabetical collation.
+- **R1 (Icon Category Sorting):** Wherever categories are displayed as icons or visual department cards (e.g. `DepartmentScroller`, `DepartmentHero` across landing, category browse, and search, and subcategory medallion links in `SubcategoryLinks.tsx`), their ordering MUST preserve the database `sortOrder` (`orderBy: [{ sortOrder: "asc" }, { name: "asc" }]`). `listTopLevelCategories` and `getCategoryBySlug` in `lib/repositories/categories.ts` must return categories and subcategories in database `sortOrder` without overriding them with alphabetical collation. Invalidate Cloudflare KV cache by incrementing `METADATA_VERSION` to ensure edge cache reflects database `sortOrder` immediately upon deployment.
 - **R2 (Text / List Category Sorting):** Wherever categories are displayed as text or lists (without icons, including dropdown selectors, forms, filters, and admin management tables), categories MUST be sorted alphabetically:
   - Parent/department options and child subcategory options in `toCategoryOptionGroups` (`lib/catalogue-form.ts`) sort alphabetically A–Z by default.
   - Storefront category tree (`listCategoryTreeForStorefront` in `lib/repositories/categories.ts`) sorts departments and subcategories alphabetically A–Z.
   - Staff categories administration (`/staff/categories`) displays departments and subcategories sorted alphabetically A–Z.
-  - Subcategory link lists (`getCategoryBySlug` -> `SubcategoryLinks.tsx`) sort child subcategories alphabetically A–Z.
 
 ## 2. Dual Pagination (Top and Bottom)
 - **R3 (Top and Bottom Placement):** All paginated table and list views MUST render pagination controls at **both the top** (above the table/list) and **the bottom** (below the table/list) for seamless navigation without requiring users to scroll down the entire page.

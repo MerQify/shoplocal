@@ -16,8 +16,9 @@ summary: Preserves database sortOrder for icon categories while collating text/l
 ## 1. Category Sorting Realignment
 - In `lib/repositories/categories.ts`:
   - Update `listTopLevelCategories` to return `summaries` directly without calling `sortNamedEntities(summaries)`. This preserves database `sortOrder` for icon rails (`DepartmentScroller`, `DepartmentHero`) on the homepage, `/categories`, `/categories/[slug]`, `/search`, `/bundles`, and `/help`.
+  - Update `getCategoryBySlug` to preserve database `sortOrder` for `children` and `parent.children` rendered in `SubcategoryLinks` (circular medallion icons).
+  - In `lib/cloudflare-metadata.ts`, bump `METADATA_VERSION` to 2 to invalidate stale edge KV cache and force instant fetch of `sortOrder`-sorted categories.
   - Maintain `sortCategoryTreeAlphabetical` in `listCategoryTreeForStorefront` for text/select filter views.
-  - Maintain `sortNamedEntities` in `getCategoryBySlug` for subcategory link pills.
   - Maintain alphabetical ordering in `toCategoryOptionGroups` (`lib/catalogue-form.ts`) and `app/(admin)/staff/categories/page.tsx`.
 
 ## 2. Dual Top & Bottom Pagination Implementation
