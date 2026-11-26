@@ -29,7 +29,7 @@ import { JOB_SIGNALS_BINDING } from "@/lib/job-signal-keys";
  * 4. Purity & Multi-Tenancy: All keys are vendor-scoped (`metadata:v1:<type>:<vendorId>`).
  */
 
-export const METADATA_VERSION = 1;
+export const METADATA_VERSION = 2;
 
 export interface MetadataStore {
   get(key: string): Promise<string | null>;

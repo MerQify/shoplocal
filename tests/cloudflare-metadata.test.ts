@@ -22,14 +22,14 @@ describe("Cloudflare Metadata Architecture", () => {
   });
 
   it("generates correctly formatted, versioned vendor cache keys", () => {
-    expect(getCategoriesCacheKey(vendorId)).toBe(`metadata:v1:categories:${vendorId}`);
-    expect(getBrandsCacheKey(vendorId)).toBe(`metadata:v1:brands:${vendorId}`);
-    expect(getNavigationCacheKey(vendorId)).toBe(`metadata:v1:navigation:${vendorId}`);
+    expect(getCategoriesCacheKey(vendorId)).toBe(`metadata:v2:categories:${vendorId}`);
+    expect(getBrandsCacheKey(vendorId)).toBe(`metadata:v2:brands:${vendorId}`);
+    expect(getNavigationCacheKey(vendorId)).toBe(`metadata:v2:navigation:${vendorId}`);
   });
 
   it("validates valid payload schemas and rejects malformed data", () => {
     const validCategoryPayload = {
-      version: 1,
+      version: 2,
       updatedAt: new Date().toISOString(),
       vendorId,
       topLevel: [{ id: "c1", slug: "fruit", name: "Fruit" }],
@@ -39,7 +39,7 @@ describe("Cloudflare Metadata Architecture", () => {
     expect(CachedCategoriesPayloadSchema.safeParse(validCategoryPayload).success).toBe(true);
 
     const invalidCategoryPayload = {
-      version: 1,
+      version: 2,
       // Missing topLevel and tree
       vendorId,
     };
