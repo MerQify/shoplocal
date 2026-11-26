@@ -865,6 +865,7 @@ export default async function StaffProductsPage({
           categories={categories}
           lowStockDefault={lowStockDefault}
           isStoreAdmin={isStoreAdmin}
+          products={items}
         />
       )}
     </PageContainer>

@@ -14,6 +14,7 @@ import {
 } from "@/lib/catalogue-form";
 import {
   bulkSetLowStockThresholds,
+  bulkUpdateProductLabelsAndVisibility,
   createProductForVendor,
   updateProductForVendor,
 } from "@/lib/products-service";
@@ -253,6 +254,86 @@ export async function bulkSetLowStockThresholdAction(
     return {
       status: "error",
       message: "Could not update low-stock alerts. Please try again.",
+    };
+  }
+}
+
+export interface BulkLabelsAndVisibilityState {
+  status: "idle" | "ok" | "error";
+  message: string | null;
+}
+
+export const initialBulkLabelsAndVisibilityState: BulkLabelsAndVisibilityState = {
+  status: "idle",
+  message: null,
+};
+
+/**
+ * #1759 — Bulk update product labels and visibility for selected products.
+ * Available to both STAFF and ADMIN managing catalogue.
+ */
+export async function bulkUpdateLabelsAndVisibilityAction(
+  _prev: BulkLabelsAndVisibilityState,
+  form: FormData,
+): Promise<BulkLabelsAndVisibilityState> {
+  const auth = await requireVendorRole("STAFF", "ADMIN");
+  if (!auth.ok) {
+    return {
+      status: "error",
+      message:
+        auth.status === 401
+          ? "Please sign in to update product labels and visibility."
+          : "You do not have permission to manage this store's catalogue.",
+    };
+  }
+
+  const productIds = form.getAll("productId").map(String).filter(Boolean);
+  if (productIds.length === 0) {
+    return { status: "error", message: "No products selected." };
+  }
+
+  const isHalal = form.get("isHalal") === "true" || form.get("isHalal") === "on";
+  const isFresh = form.get("isFresh") === "true" || form.get("isFresh") === "on";
+  const isOrganic = form.get("isOrganic") === "true" || form.get("isOrganic") === "on";
+  const isVegetarian = form.get("isVegetarian") === "true" || form.get("isVegetarian") === "on";
+  const isGlutenFree = form.get("isGlutenFree") === "true" || form.get("isGlutenFree") === "on";
+  const isFeatured = form.get("isFeatured") === "true" || form.get("isFeatured") === "on";
+  const isActive = form.get("isActive") === "true" || form.get("isActive") === "on";
+  const allowsCustomNote =
+    form.get("allowsCustomNote") === "true" || form.get("allowsCustomNote") === "on";
+
+  try {
+    const result = await bulkUpdateProductLabelsAndVisibility(auth.vendorId, productIds, {
+      isHalal,
+      isFresh,
+      isOrganic,
+      isVegetarian,
+      isGlutenFree,
+      isFeatured,
+      isActive,
+      allowsCustomNote,
+    });
+
+    await invalidateVendorMetadata(auth.vendorId);
+    revalidatePath("/staff/products");
+    revalidatePath("/staff/inventory");
+
+    const count = result.updated;
+    const label = count === 1 ? "product" : "products";
+    const restrictedNotice =
+      result.skippedRestricted > 0
+        ? ` (${result.skippedRestricted} restricted ${result.skippedRestricted === 1 ? "product kept hidden" : "products kept hidden"})`
+        : "";
+
+    return {
+      status: "ok",
+      message: `Updated labels and visibility for ${count} ${label}${restrictedNotice}.`,
+    };
+  } catch (err) {
+    console.error("Failed to update product labels and visibility", err);
+    return {
+      status: "error",
+      message: "Could not update product labels and visibility. Please try again.",
     };
   }
 }

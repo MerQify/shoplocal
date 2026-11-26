@@ -2457,6 +2457,13 @@ export interface AdminProductListRow extends AdminProductRow {
   lowStockThreshold: number;
   /** The multi-buy tier, or null. Shaped for lib/tier-pricing.ts's ProductTier. */
   tier: { groupQuantity: number; groupPricePence: number; isActive: boolean } | null;
+  isHalal: boolean;
+  isFresh: boolean;
+  isOrganic: boolean;
+  isVegetarian: boolean;
+  isGlutenFree: boolean;
+  isFeatured: boolean;
+  allowsCustomNote: boolean;
 }
 
 export interface AdminProductNumberedPage {
@@ -2606,6 +2613,13 @@ export async function listProductsForAdminPage(
       netContentUnit: true,
       inventory: { select: { quantity: true, stockMode: true, lowStockThreshold: true } },
       priceTier: { select: { groupQuantity: true, groupPricePence: true, isActive: true } },
+      isHalal: true,
+      isFresh: true,
+      isOrganic: true,
+      isVegetarian: true,
+      isGlutenFree: true,
+      isFeatured: true,
+      allowsCustomNote: true,
     },
   });
 
@@ -2628,6 +2642,13 @@ export async function listProductsForAdminPage(
       stockMode: stockModeOf(row.inventory),
       lowStockThreshold: row.inventory?.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD,
       tier: row.priceTier ?? null,
+      isHalal: row.isHalal,
+      isFresh: row.isFresh,
+      isOrganic: row.isOrganic,
+      isVegetarian: row.isVegetarian,
+      isGlutenFree: row.isGlutenFree,
+      isFeatured: row.isFeatured,
+      allowsCustomNote: row.allowsCustomNote,
     })),
     total,
     page: served,
@@ -4020,4 +4041,108 @@ export async function toggleProductImageConfirmedPhoto(
 
   await prisma.productImage.update({ where: { id: image.id }, data: { source: next } });
   return { ok: true, source: next };
+}
+
+export interface BulkUpdateLabelsAndVisibilityInput {
+  isHalal: boolean;
+  isFresh: boolean;
+  isOrganic: boolean;
+  isVegetarian: boolean;
+  isGlutenFree: boolean;
+  isFeatured: boolean;
+  isActive: boolean;
+  allowsCustomNote: boolean;
+}
+
+export interface BulkUpdateLabelsAndVisibilityResult {
+  updated: number;
+  skippedRestricted: number;
+}
+
+/**
+ * Bulk updates labels and visibility across selected products (#1759).
+ * Operates in an interactive transaction using DbWs.
+ *
+ * Enforces the Product_restricted_inactive_check rule:
+ * If isActive=true is requested, restricted products (restriction !== null)
+ * keep isActive=false to satisfy database integrity constraints, and are reported
+ * in skippedRestricted.
+ */
+export async function bulkUpdateProductLabelsAndVisibility(
+  prismaWs: DbWs,
+  vendorId: string,
+  productIds: readonly string[],
+  data: BulkUpdateLabelsAndVisibilityInput,
+): Promise<BulkUpdateLabelsAndVisibilityResult> {
+  const ids = Array.from(new Set(productIds.filter(Boolean)));
+  if (ids.length === 0) return { updated: 0, skippedRestricted: 0 };
+
+  return prismaWs.$transaction(async (tx) => {
+    let skippedRestricted = 0;
+
+    if (data.isActive) {
+      const restricted = await tx.product.findMany({
+        where: {
+          vendorId,
+          id: { in: ids },
+          restriction: { not: null },
+        },
+        select: { id: true },
+      });
+      skippedRestricted = restricted.length;
+      const restrictedIdSet = new Set(restricted.map((p) => p.id));
+      const unrestrictedIds = ids.filter((id) => !restrictedIdSet.has(id));
+
+      if (restricted.length > 0) {
+        await tx.product.updateMany({
+          where: { vendorId, id: { in: restricted.map((p) => p.id) } },
+          data: {
+            isHalal: data.isHalal,
+            isFresh: data.isFresh,
+            isOrganic: data.isOrganic,
+            isVegetarian: data.isVegetarian,
+            isGlutenFree: data.isGlutenFree,
+            isFeatured: data.isFeatured,
+            allowsCustomNote: data.allowsCustomNote,
+            // Keep isActive false to satisfy Product_restricted_inactive_check
+          },
+        });
+      }
+
+      if (unrestrictedIds.length > 0) {
+        const { count } = await tx.product.updateMany({
+          where: { vendorId, id: { in: unrestrictedIds } },
+          data: {
+            isHalal: data.isHalal,
+            isFresh: data.isFresh,
+            isOrganic: data.isOrganic,
+            isVegetarian: data.isVegetarian,
+            isGlutenFree: data.isGlutenFree,
+            isFeatured: data.isFeatured,
+            isActive: true,
+            allowsCustomNote: data.allowsCustomNote,
+          },
+        });
+        return { updated: count + restricted.length, skippedRestricted };
+      }
+
+      return { updated: restricted.length, skippedRestricted };
+    }
+
+    const { count } = await tx.product.updateMany({
+      where: { vendorId, id: { in: ids } },
+      data: {
+        isHalal: data.isHalal,
+        isFresh: data.isFresh,
+        isOrganic: data.isOrganic,
+        isVegetarian: data.isVegetarian,
+        isGlutenFree: data.isGlutenFree,
+        isFeatured: data.isFeatured,
+        isActive: false,
+        allowsCustomNote: data.allowsCustomNote,
+      },
+    });
+
+    return { updated: count, skippedRestricted: 0 };
+  });
 }
