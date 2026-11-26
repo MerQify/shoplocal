@@ -4044,14 +4044,14 @@ export async function toggleProductImageConfirmedPhoto(
 }
 
 export interface BulkUpdateLabelsAndVisibilityInput {
-  isHalal: boolean;
-  isFresh: boolean;
-  isOrganic: boolean;
-  isVegetarian: boolean;
-  isGlutenFree: boolean;
-  isFeatured: boolean;
-  isActive: boolean;
-  allowsCustomNote: boolean;
+  isHalal?: boolean;
+  isFresh?: boolean;
+  isOrganic?: boolean;
+  isVegetarian?: boolean;
+  isGlutenFree?: boolean;
+  isFeatured?: boolean;
+  isActive?: boolean;
+  allowsCustomNote?: boolean;
 }
 
 export interface BulkUpdateLabelsAndVisibilityResult {
@@ -4062,6 +4062,9 @@ export interface BulkUpdateLabelsAndVisibilityResult {
 /**
  * Bulk updates labels and visibility across selected products (#1759).
  * Operates in an interactive transaction using DbWs.
+ *
+ * Supports partial updates: only attributes explicitly provided in `data`
+ * are updated in PostgreSQL; omitted (undefined) attributes remain untouched.
  *
  * Enforces the Product_restricted_inactive_check rule:
  * If isActive=true is requested, restricted products (restriction !== null)
@@ -4077,10 +4080,22 @@ export async function bulkUpdateProductLabelsAndVisibility(
   const ids = Array.from(new Set(productIds.filter(Boolean)));
   if (ids.length === 0) return { updated: 0, skippedRestricted: 0 };
 
-  return prismaWs.$transaction(async (tx) => {
-    let skippedRestricted = 0;
+  const labelUpdateData: Record<string, boolean> = {};
+  if (data.isHalal !== undefined) labelUpdateData.isHalal = data.isHalal;
+  if (data.isFresh !== undefined) labelUpdateData.isFresh = data.isFresh;
+  if (data.isOrganic !== undefined) labelUpdateData.isOrganic = data.isOrganic;
+  if (data.isVegetarian !== undefined) labelUpdateData.isVegetarian = data.isVegetarian;
+  if (data.isGlutenFree !== undefined) labelUpdateData.isGlutenFree = data.isGlutenFree;
+  if (data.isFeatured !== undefined) labelUpdateData.isFeatured = data.isFeatured;
+  if (data.allowsCustomNote !== undefined) labelUpdateData.allowsCustomNote = data.allowsCustomNote;
 
-    if (data.isActive) {
+  const hasLabelUpdates = Object.keys(labelUpdateData).length > 0;
+  if (!hasLabelUpdates && data.isActive === undefined) {
+    return { updated: 0, skippedRestricted: 0 };
+  }
+
+  return prismaWs.$transaction(async (tx) => {
+    if (data.isActive === true) {
       const restricted = await tx.product.findMany({
         where: {
           vendorId,
@@ -4089,23 +4104,14 @@ export async function bulkUpdateProductLabelsAndVisibility(
         },
         select: { id: true },
       });
-      skippedRestricted = restricted.length;
+      const skippedRestricted = restricted.length;
       const restrictedIdSet = new Set(restricted.map((p) => p.id));
       const unrestrictedIds = ids.filter((id) => !restrictedIdSet.has(id));
 
-      if (restricted.length > 0) {
+      if (restricted.length > 0 && hasLabelUpdates) {
         await tx.product.updateMany({
           where: { vendorId, id: { in: restricted.map((p) => p.id) } },
-          data: {
-            isHalal: data.isHalal,
-            isFresh: data.isFresh,
-            isOrganic: data.isOrganic,
-            isVegetarian: data.isVegetarian,
-            isGlutenFree: data.isGlutenFree,
-            isFeatured: data.isFeatured,
-            allowsCustomNote: data.allowsCustomNote,
-            // Keep isActive false to satisfy Product_restricted_inactive_check
-          },
+          data: labelUpdateData,
         });
       }
 
@@ -4113,36 +4119,37 @@ export async function bulkUpdateProductLabelsAndVisibility(
         const { count } = await tx.product.updateMany({
           where: { vendorId, id: { in: unrestrictedIds } },
           data: {
-            isHalal: data.isHalal,
-            isFresh: data.isFresh,
-            isOrganic: data.isOrganic,
-            isVegetarian: data.isVegetarian,
-            isGlutenFree: data.isGlutenFree,
-            isFeatured: data.isFeatured,
+            ...labelUpdateData,
             isActive: true,
-            allowsCustomNote: data.allowsCustomNote,
           },
         });
-        return { updated: count + restricted.length, skippedRestricted };
+        const restrictedUpdatedCount =
+          restricted.length > 0 && hasLabelUpdates ? restricted.length : 0;
+        return { updated: count + restrictedUpdatedCount, skippedRestricted };
       }
 
-      return { updated: restricted.length, skippedRestricted };
+      return {
+        updated: restricted.length > 0 && hasLabelUpdates ? restricted.length : 0,
+        skippedRestricted,
+      };
     }
 
+    if (data.isActive === false) {
+      const { count } = await tx.product.updateMany({
+        where: { vendorId, id: { in: ids } },
+        data: {
+          ...labelUpdateData,
+          isActive: false,
+        },
+      });
+      return { updated: count, skippedRestricted: 0 };
+    }
+
+    // data.isActive is undefined: update only specified labels, keep isActive untouched
     const { count } = await tx.product.updateMany({
       where: { vendorId, id: { in: ids } },
-      data: {
-        isHalal: data.isHalal,
-        isFresh: data.isFresh,
-        isOrganic: data.isOrganic,
-        isVegetarian: data.isVegetarian,
-        isGlutenFree: data.isGlutenFree,
-        isFeatured: data.isFeatured,
-        isActive: false,
-        allowsCustomNote: data.allowsCustomNote,
-      },
+      data: labelUpdateData,
     });
-
     return { updated: count, skippedRestricted: 0 };
   });
 }
