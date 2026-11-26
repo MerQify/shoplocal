@@ -95,7 +95,9 @@ export default async function OrdersPage({
             mode="sequential"
             label="Order pages"
             position="top"
-            nextHref={nextCursor ? `/account/orders?cursor=${encodeURIComponent(nextCursor)}` : null}
+            nextHref={
+              nextCursor ? `/account/orders?cursor=${encodeURIComponent(nextCursor)}` : null
+            }
             firstHref={cursor ? "/account/orders" : null}
           />
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -130,7 +132,9 @@ export default async function OrdersPage({
                       <span className="text-primary-muted">
                         {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
                       </span>
-                      <span className="font-bold text-primary">{formatPrice(order.totalPence)}</span>
+                      <span className="font-bold text-primary">
+                        {formatPrice(order.totalPence)}
+                      </span>
                     </div>
                   </Link>
 

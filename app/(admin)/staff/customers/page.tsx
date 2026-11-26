@@ -131,7 +131,9 @@ export default async function StaffCustomersPage({
                     )}
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="font-bold text-primary">{formatPrice(customer.totalSpendPence)}</p>
+                    <p className="font-bold text-primary">
+                      {formatPrice(customer.totalSpendPence)}
+                    </p>
                     <p className="text-xs text-primary-muted">
                       {customer.orderCount} {customer.orderCount === 1 ? "order" : "orders"}
                     </p>
