@@ -78,60 +78,76 @@ export default async function StaffCustomersPage({
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {items.map((customer) => (
-            <Card as="li" key={customer.userId ?? customer.email ?? "erased"}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-primary">
-                      {customer.kind === "ACCOUNT"
-                        ? (customer.name ?? customer.email ?? "Account holder")
-                        : customer.kind === "GUEST"
-                          ? customer.email
-                          : "Erased customers"}
-                    </span>
-                    {customer.kind === "GUEST" && (
-                      <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-muted">
-                        Guest
+        <>
+          <Pagination
+            mode="numbered"
+            label="Customer pages"
+            position="top"
+            page={requestedPage}
+            pageCount={pageCount}
+            total={total}
+            perPage={PAGE_SIZE}
+            shown={items.length}
+            noun={["customer", "customers"]}
+            hrefFor={customersHref}
+            jump={{ action: "/staff/customers", hidden: [] }}
+          />
+          <ul className="space-y-3">
+            {items.map((customer) => (
+              <Card as="li" key={customer.userId ?? customer.email ?? "erased"}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-primary">
+                        {customer.kind === "ACCOUNT"
+                          ? (customer.name ?? customer.email ?? "Account holder")
+                          : customer.kind === "GUEST"
+                            ? customer.email
+                            : "Erased customers"}
                       </span>
-                    )}
-                    {customer.kind === "ERASED" && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-muted">
-                        <Icon name="user-x" className="h-3 w-3" />
-                        Erased
-                      </span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-primary-muted">
-                    {customer.kind === "ACCOUNT" && customer.email
-                      ? customer.email
-                      : customer.kind === "ERASED"
-                        ? "Personal details removed under a data-erasure request. Orders still count towards store revenue."
-                        : "No account — ordered as a guest."}
-                  </p>
-                  {customer.loyaltyPoints !== null && (
-                    <p className="mt-1 text-xs text-primary-muted">
-                      {customer.loyaltyPoints.toLocaleString("en-GB")} loyalty points
+                      {customer.kind === "GUEST" && (
+                        <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-muted">
+                          Guest
+                        </span>
+                      )}
+                      {customer.kind === "ERASED" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-muted">
+                          <Icon name="user-x" className="h-3 w-3" />
+                          Erased
+                        </span>
+                      )}
                     </p>
-                  )}
+                    <p className="mt-0.5 truncate text-xs text-primary-muted">
+                      {customer.kind === "ACCOUNT" && customer.email
+                        ? customer.email
+                        : customer.kind === "ERASED"
+                          ? "Personal details removed under a data-erasure request. Orders still count towards store revenue."
+                          : "No account — ordered as a guest."}
+                    </p>
+                    {customer.loyaltyPoints !== null && (
+                      <p className="mt-1 text-xs text-primary-muted">
+                        {customer.loyaltyPoints.toLocaleString("en-GB")} loyalty points
+                      </p>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-bold text-primary">{formatPrice(customer.totalSpendPence)}</p>
+                    <p className="text-xs text-primary-muted">
+                      {customer.orderCount} {customer.orderCount === 1 ? "order" : "orders"}
+                    </p>
+                  </div>
                 </div>
-                <div className="shrink-0 text-right">
-                  <p className="font-bold text-primary">{formatPrice(customer.totalSpendPence)}</p>
-                  <p className="text-xs text-primary-muted">
-                    {customer.orderCount} {customer.orderCount === 1 ? "order" : "orders"}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </ul>
+              </Card>
+            ))}
+          </ul>
+        </>
       )}
 
       {total > 0 && (
         <Pagination
           mode="numbered"
           label="Customer pages"
+          position="bottom"
           page={requestedPage}
           pageCount={pageCount}
           total={total}

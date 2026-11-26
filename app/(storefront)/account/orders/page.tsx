@@ -90,74 +90,84 @@ export default async function OrdersPage({
           </Link>
         </div>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {items.map((order) => (
-            <li key={order.orderNumber} className="flex">
-              {/* A form cannot sit inside a link, so the card is a wrapper: the details are the
-                  link, the two actions are a separate row beneath it. */}
-              <div className="flex flex-1 flex-col rounded-2xl border border-black/10 bg-white transition hover:border-black/20">
-                <Link
-                  href={`/account/orders/${order.orderNumber}`}
-                  className="block flex-1 p-5 pb-3"
-                >
-                  <div className="mb-2 flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-primary">{order.orderNumber}</p>
-                      <p className="text-xs text-primary-muted">
-                        {formatOrderDate(order.createdAt)}
-                      </p>
+        <>
+          <Pagination
+            mode="sequential"
+            label="Order pages"
+            position="top"
+            nextHref={nextCursor ? `/account/orders?cursor=${encodeURIComponent(nextCursor)}` : null}
+            firstHref={cursor ? "/account/orders" : null}
+          />
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {items.map((order) => (
+              <li key={order.orderNumber} className="flex">
+                {/* A form cannot sit inside a link, so the card is a wrapper: the details are the
+                    link, the two actions are a separate row beneath it. */}
+                <div className="flex flex-1 flex-col rounded-2xl border border-black/10 bg-white transition hover:border-black/20">
+                  <Link
+                    href={`/account/orders/${order.orderNumber}`}
+                    className="block flex-1 p-5 pb-3"
+                  >
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-primary">{order.orderNumber}</p>
+                        <p className="text-xs text-primary-muted">
+                          {formatOrderDate(order.createdAt)}
+                        </p>
+                      </div>
+                      <OrderStatusBadge status={order.status} neverPaid={order.neverPaid} />
                     </div>
-                    <OrderStatusBadge status={order.status} neverPaid={order.neverPaid} />
+
+                    <p className="mb-2 line-clamp-2 text-sm text-primary-muted">
+                      {order.previewItems
+                        .map((item) => `${item.quantity} × ${item.productName}`)
+                        .join(", ")}
+                      {order.itemCount >
+                        order.previewItems.reduce((sum, item) => sum + item.quantity, 0) && " …"}
+                    </p>
+
+                    <div className="flex justify-between text-sm">
+                      <span className="text-primary-muted">
+                        {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
+                      </span>
+                      <span className="font-bold text-primary">{formatPrice(order.totalPence)}</span>
+                    </div>
+                  </Link>
+
+                  <div className="mt-auto flex flex-wrap items-center gap-2 px-5 pb-4">
+                    <form action={reorderItems}>
+                      <input type="hidden" name="orderNumber" value={order.orderNumber} />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
+                      >
+                        <Icon name="rotate-ccw" className="h-3.5 w-3.5" />
+                        Reorder items
+                      </button>
+                    </form>
+                    <form action={saveOrderAsList}>
+                      <input type="hidden" name="orderNumber" value={order.orderNumber} />
+                      <input type="hidden" name="from" value="orders-list" />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 px-3.5 py-1.5 text-xs font-bold text-primary transition-colors hover:border-primary/40"
+                      >
+                        <Icon name="bookmark-plus" className="h-3.5 w-3.5" />
+                        Save as list
+                      </button>
+                    </form>
                   </div>
-
-                  <p className="mb-2 line-clamp-2 text-sm text-primary-muted">
-                    {order.previewItems
-                      .map((item) => `${item.quantity} × ${item.productName}`)
-                      .join(", ")}
-                    {order.itemCount >
-                      order.previewItems.reduce((sum, item) => sum + item.quantity, 0) && " …"}
-                  </p>
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-primary-muted">
-                      {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
-                    </span>
-                    <span className="font-bold text-primary">{formatPrice(order.totalPence)}</span>
-                  </div>
-                </Link>
-
-                <div className="mt-auto flex flex-wrap items-center gap-2 px-5 pb-4">
-                  <form action={reorderItems}>
-                    <input type="hidden" name="orderNumber" value={order.orderNumber} />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
-                    >
-                      <Icon name="rotate-ccw" className="h-3.5 w-3.5" />
-                      Reorder items
-                    </button>
-                  </form>
-                  <form action={saveOrderAsList}>
-                    <input type="hidden" name="orderNumber" value={order.orderNumber} />
-                    <input type="hidden" name="from" value="orders-list" />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 px-3.5 py-1.5 text-xs font-bold text-primary transition-colors hover:border-primary/40"
-                    >
-                      <Icon name="bookmark-plus" className="h-3.5 w-3.5" />
-                      Save as list
-                    </button>
-                  </form>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <Pagination
         mode="sequential"
         label="Order pages"
+        position="bottom"
         nextHref={nextCursor ? `/account/orders?cursor=${encodeURIComponent(nextCursor)}` : null}
         firstHref={cursor ? "/account/orders" : null}
       />

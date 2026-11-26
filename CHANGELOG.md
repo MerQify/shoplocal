@@ -6,6 +6,11 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Category sortOrder preservation for icon displays, alphabetical sorting for text/lists, and dual top/bottom pagination (#1763).**
+  - **Icon Categories Sort Order Preservation:** Updated `listTopLevelCategories` in `lib/repositories/categories.ts` to return categories respecting the database `sortOrder` (`orderBy: [{ sortOrder: "asc" }, { name: "asc" }]`) rather than overriding them with alphabetical collation. Ensures visual category icon rails (`DepartmentScroller`, `DepartmentHero`) across the homepage, `/categories`, `/categories/[slug]`, `/search`, `/bundles`, and `/help` honour store-configured department ordering.
+  - **Alphabetical Collation for Text & Lists:** Preserved natural A–Z alphabetical collation across text lists, dropdown selectors, category forms, and filters (`toCategoryOptionGroups`, `listCategoryTreeForStorefront`, `/staff/categories`, and `SubcategoryLinks`).
+  - **Dual Top & Bottom Table & List Pagination:** Deployed pagination controls at both the top (above table/list) and bottom (below table/list) across all 6 paginated views in the application: `/staff/products`, `/staff/orders`, `/staff/customers`, `/categories/[slug]`, `/search`, and `/account/orders`. Each instance passes its explicit `position="top"` or `position="bottom"` prop, providing unique accessible landmarks and jump-form element IDs.
+
 - **Tri-state partial label preservation in bulk action bar (#1759).**
   - **Tri-State Attribute Controls (Keep / Yes / No):** Upgraded bulk mode in `StickyBulkActionBar` to initialize all 8 labels to `— Keep current` (`"keep"`). Clicking any label cycles through `Keep current` -> `✓ Set to Yes` (`"set-true"`) -> `✕ Set to No` (`"set-false"`) -> `Keep current`, allowing staff to update one or a subset of labels across selected products without unintentionally overwriting other attributes.
   - **Partial Database Updates:** Modified `bulkUpdateProductLabelsAndVisibility` in `lib/repositories/products.ts` and `bulkUpdateLabelsAndVisibilityAction` in `features/admin/catalogue.ts` to execute partial SQL updates that only modify explicitly targeted attributes, preserving all untouched columns in PostgreSQL.

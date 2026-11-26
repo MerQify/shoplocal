@@ -370,6 +370,32 @@ export default async function SearchPage({
                 categories={allCategories}
               />
               <SearchSuggestionsNotice suggestions={suggestions} categories={allCategories} />
+              {rankedTotal !== undefined ? (
+                <Pagination
+                  mode="numbered"
+                  label="Search result pages"
+                  position="top"
+                  page={searchPage}
+                  pageCount={pageCountFor(rankedTotal, PAGE_SIZE)}
+                  total={rankedTotal}
+                  perPage={PAGE_SIZE}
+                  shown={items.length}
+                  noun={["result", "results"]}
+                  hrefFor={(target) =>
+                    target === 1
+                      ? searchFirstPageHref(params)
+                      : searchPageHref(params, String((target - 1) * PAGE_SIZE))
+                  }
+                />
+              ) : (
+                <Pagination
+                  mode="sequential"
+                  label="Product pages"
+                  position="top"
+                  nextHref={nextCursor ? searchPageHref(params, nextCursor) : null}
+                  firstHref={params.cursor ? searchFirstPageHref(params) : null}
+                />
+              )}
               <ProductGrid density={gridDensity}>
                 {items.map((product) => (
                   <ProductCard
@@ -392,6 +418,7 @@ export default async function SearchPage({
               <Pagination
                 mode="sequential"
                 label="Search result pages"
+                position="bottom"
                 firstHref={searchFirstPageHref(params)}
               />
             ) : (
@@ -401,6 +428,7 @@ export default async function SearchPage({
               <Pagination
                 mode="numbered"
                 label="Search result pages"
+                position="bottom"
                 page={searchPage}
                 pageCount={pageCountFor(rankedTotal, PAGE_SIZE)}
                 total={rankedTotal}
@@ -419,6 +447,7 @@ export default async function SearchPage({
             <Pagination
               mode="sequential"
               label="Product pages"
+              position="bottom"
               nextHref={nextCursor ? searchPageHref(params, nextCursor) : null}
               firstHref={params.cursor ? searchFirstPageHref(params) : null}
             />

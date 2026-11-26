@@ -120,6 +120,19 @@ describe("a hidden department's promotion stays out of the landing carousel (R6a
     expect(slugs).toEqual(["fruit"]);
   });
 
+  it("listTopLevelCategories preserves database sortOrder instead of sorting alphabetically", async () => {
+    const mockPrisma = {
+      category: {
+        findMany: async () => [
+          { id: "1", slug: "meat", name: "Meat & Poultry", imageKey: null },
+          { id: "2", slug: "bakery", name: "Bakery", imageKey: null },
+        ],
+      },
+    } as never;
+    const result = await listTopLevelCategories(mockPrisma, VENDOR);
+    expect(result.map((c) => c.slug)).toEqual(["meat", "bakery"]);
+  });
+
   it("the landing page asks for live promotions independently (#1412)", () => {
     const source = readFileSync(join(__dirname, "..", "app", "(landing)", "page.tsx"), "utf8");
     expect(source).toContain("getLivePromotionsForStorefront()");

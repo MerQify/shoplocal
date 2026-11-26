@@ -92,7 +92,7 @@ export async function listTopLevelCategories(
     imageKey: c.imageKey,
     imageUrl: composeCategoryImageUrl(c.imageKey, c.slug, cdnBaseUrl),
   }));
-  return sortNamedEntities(summaries);
+  return summaries;
 }
 
 /**
