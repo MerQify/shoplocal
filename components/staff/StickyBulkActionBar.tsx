@@ -641,7 +641,7 @@ export function StickyBulkActionBar({
                     <label
                       htmlFor={`sticky-label-${item.id}`}
                       className={`flex items-center gap-3 text-sm cursor-pointer select-none flex-1 ${
-                        state !== "keep" ? "font-semibold text-primary" : "text-primary/90"
+                        state !== "keep" ? "font-semibold text-primary" : "text-primary-muted"
                       }`}
                     >
                       <input
