@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-24T13:57:44.680Z` · commit `dc4b3a84` · `400` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-26T03:24:41.986Z` · commit `52695d29` · `401` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -384,6 +384,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Staff Products Collapsible Filters and Compact Age Restriction](specs/2026-11-24-staff-products-collapsible-filters-and-compact-age-restriction/plan.md) | spec | 1.0.0 | 2026-11-24 | approved | internal | Interactive collapsible filter sidebar to save table space, compact 'Age Restricted' label with tooltip beneath product name, and selection-scoped low-stock alert updates in the sticky bulk action bar. |
 | [Staff Products Filter Dropdown Widths & Layout Stability](specs/2026-11-24-staff-products-filter-dropdown-widths/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for fixed optimal widths and layout stability across staff catalogue filter dropdowns. |
 | [Staff Products Sidebar Filters & Contextual Sticky Action Toolbar](specs/2026-11-24-staff-products-sidebar-and-sticky-action-bar/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for a two-column sidebar layout, structured product table, and contextual sticky action bar on /staff/products. |
+| [Sticky Action Bar Labels & Visibility (plan)](specs/2026-11-26-sticky-bar-labels-and-visibility/plan.md) | spec | 1.0.0 | 2026-11-26 | approved | internal | Add a dedicated Labels & visibility popover to the sticky action bar on /staff/products matching the staff product edit card. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
 | [ADR-002 — Authentication Library](specs/decisions/ADR-002-auth-library.md) | adr | 1.0.0 | 2026-08-06 | approved | internal | Decision to use Better Auth (self-hosted, bearer tokens, RBAC) for email/password and Google Sign-In, rejecting hosted IdPs like Clerk/Auth0 for the MVP. |

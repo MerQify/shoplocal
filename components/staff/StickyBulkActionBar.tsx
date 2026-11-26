@@ -109,12 +109,25 @@ export function StickyBulkActionBar({
     allowsCustomNote: false,
   });
 
+  const [prevLabelsResult, setPrevLabelsResult] = useState(labelsResult);
+  const [prevSelectedKey, setPrevSelectedKey] = useState<string>("");
+
+  // Sync state during render when labelsResult succeeds
+  if (labelsResult !== prevLabelsResult) {
+    setPrevLabelsResult(labelsResult);
+    if (labelsResult.status === "ok") {
+      setShowLabelsModal(false);
+    }
+  }
+
   // Find single product when exactly 1 product is selected
   const singleProduct =
     selectedIds.size === 1 ? products.find((p) => p.id === Array.from(selectedIds)[0]) : null;
 
-  // Sync checkboxes to selected product attributes when single product is selected
-  useEffect(() => {
+  // Sync checkboxes to selected product attributes during render when selection changes
+  const currentSelectionKey = Array.from(selectedIds).sort().join(",");
+  if (currentSelectionKey !== prevSelectedKey) {
+    setPrevSelectedKey(currentSelectionKey);
     if (selectedIds.size === 1) {
       const singleId = Array.from(selectedIds)[0];
       const p = products.find((item) => item.id === singleId);
@@ -142,14 +155,7 @@ export function StickyBulkActionBar({
         allowsCustomNote: false,
       });
     }
-  }, [selectedIds, products]);
-
-  // Close modal when labels update succeeds
-  useEffect(() => {
-    if (labelsResult.status === "ok") {
-      setShowLabelsModal(false);
-    }
-  }, [labelsResult]);
+  }
 
   // Sync selection state during render when phase transitions
   if (productState.phase !== prevPhase) {
