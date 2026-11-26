@@ -283,27 +283,36 @@ export async function bulkUpdateLabelsAndVisibilityAction(
     return { status: "error", message: "No products selected." };
   }
 
-  const isHalal = form.get("isHalal") === "true" || form.get("isHalal") === "on";
-  const isFresh = form.get("isFresh") === "true" || form.get("isFresh") === "on";
-  const isOrganic = form.get("isOrganic") === "true" || form.get("isOrganic") === "on";
-  const isVegetarian = form.get("isVegetarian") === "true" || form.get("isVegetarian") === "on";
-  const isGlutenFree = form.get("isGlutenFree") === "true" || form.get("isGlutenFree") === "on";
-  const isFeatured = form.get("isFeatured") === "true" || form.get("isFeatured") === "on";
-  const isActive = form.get("isActive") === "true" || form.get("isActive") === "on";
-  const allowsCustomNote =
-    form.get("allowsCustomNote") === "true" || form.get("allowsCustomNote") === "on";
+  const attributes = [
+    "isHalal",
+    "isFresh",
+    "isOrganic",
+    "isVegetarian",
+    "isGlutenFree",
+    "isFeatured",
+    "isActive",
+    "allowsCustomNote",
+  ] as const;
+
+  const data: Parameters<typeof bulkUpdateProductLabelsAndVisibility>[2] = {};
+  for (const attr of attributes) {
+    const val = form.get(attr);
+    if (val === "true" || val === "on") {
+      data[attr] = true;
+    } else if (val === "false") {
+      data[attr] = false;
+    }
+  }
+
+  if (Object.keys(data).length === 0) {
+    return {
+      status: "error",
+      message: "No changes selected. Set at least one label or visibility option to apply.",
+    };
+  }
 
   try {
-    const result = await bulkUpdateProductLabelsAndVisibility(auth.vendorId, productIds, {
-      isHalal,
-      isFresh,
-      isOrganic,
-      isVegetarian,
-      isGlutenFree,
-      isFeatured,
-      isActive,
-      allowsCustomNote,
-    });
+    const result = await bulkUpdateProductLabelsAndVisibility(auth.vendorId, productIds, data);
 
     await invalidateVendorMetadata(auth.vendorId);
     revalidatePath("/staff/products");

@@ -127,6 +127,36 @@ describe("bulkUpdateProductLabelsAndVisibility repository", () => {
     });
   });
 
+  it("updates only specified attributes without touching omitted fields", async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 2 });
+    const tx = {
+      product: { updateMany },
+    };
+    const $transaction = vi.fn(async (cb: (t: typeof tx) => Promise<unknown>) => cb(tx));
+    const prismaWs = { $transaction } as never;
+
+    const result = await bulkUpdateProductLabelsAndVisibility(prismaWs, "v-1", ["p-1", "p-2"], {
+      isHalal: true,
+    });
+
+    expect(result).toEqual({ updated: 2, skippedRestricted: 0 });
+    expect(updateMany).toHaveBeenCalledTimes(1);
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { vendorId: "v-1", id: { in: ["p-1", "p-2"] } },
+      data: { isHalal: true },
+    });
+  });
+
+  it("returns zero counts and does not run queries when all fields are undefined", async () => {
+    const $transaction = vi.fn();
+    const prismaWs = { $transaction } as never;
+
+    const result = await bulkUpdateProductLabelsAndVisibility(prismaWs, "v-1", ["p-1", "p-2"], {});
+
+    expect(result).toEqual({ updated: 0, skippedRestricted: 0 });
+    expect($transaction).not.toHaveBeenCalled();
+  });
+
   it("deduplicates product IDs before executing query", async () => {
     const updateMany = vi.fn().mockResolvedValue({ count: 1 });
     const tx = {
@@ -200,7 +230,25 @@ describe("bulkUpdateLabelsAndVisibilityAction server action", () => {
     expect(result.message).toBe("No products selected.");
   });
 
-  it("processes bulk update successfully, invalidates cache and revalidates paths", async () => {
+  it("returns error when product IDs are provided but no label changes are selected", async () => {
+    vi.spyOn(authRbac, "requireVendorRole").mockResolvedValue({
+      ok: true,
+      vendorId: "v-1",
+      role: "STAFF",
+    } as never);
+
+    const formData = new FormData();
+    formData.append("productId", "p-1");
+
+    const result = await bulkUpdateLabelsAndVisibilityAction(
+      { status: "idle", message: null },
+      formData,
+    );
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("No changes selected");
+  });
+
+  it("processes bulk update successfully with only modified fields (partial update), invalidates cache and revalidates paths", async () => {
     vi.spyOn(authRbac, "requireVendorRole").mockResolvedValue({
       ok: true,
       vendorId: "v-1",
@@ -219,7 +267,7 @@ describe("bulkUpdateLabelsAndVisibilityAction server action", () => {
     formData.append("productId", "p-1");
     formData.append("productId", "p-2");
     formData.append("isHalal", "true");
-    formData.append("isFresh", "on");
+    formData.append("isFresh", "false");
     formData.append("isActive", "true");
     formData.append("allowsCustomNote", "true");
 
@@ -231,13 +279,10 @@ describe("bulkUpdateLabelsAndVisibilityAction server action", () => {
     expect(result.status).toBe("ok");
     expect(result.message).toContain("Updated labels and visibility for 2 products.");
 
+    // Only explicitly provided fields are passed; omitted fields remain untouched
     expect(bulkUpdateSpy).toHaveBeenCalledWith("v-1", ["p-1", "p-2"], {
       isHalal: true,
-      isFresh: true,
-      isOrganic: false,
-      isVegetarian: false,
-      isGlutenFree: false,
-      isFeatured: false,
+      isFresh: false,
       isActive: true,
       allowsCustomNote: true,
     });

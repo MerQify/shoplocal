@@ -6,6 +6,11 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Tri-state partial label preservation in bulk action bar (#1759).**
+  - **Tri-State Attribute Controls (Keep / Yes / No):** Upgraded bulk mode in `StickyBulkActionBar` to initialize all 8 labels to `— Keep current` (`"keep"`). Clicking any label cycles through `Keep current` -> `✓ Set to Yes` (`"set-true"`) -> `✕ Set to No` (`"set-false"`) -> `Keep current`, allowing staff to update one or a subset of labels across selected products without unintentionally overwriting other attributes.
+  - **Partial Database Updates:** Modified `bulkUpdateProductLabelsAndVisibility` in `lib/repositories/products.ts` and `bulkUpdateLabelsAndVisibilityAction` in `features/admin/catalogue.ts` to execute partial SQL updates that only modify explicitly targeted attributes, preserving all untouched columns in PostgreSQL.
+  - **Single vs. Bulk Mode Distinction:** Retained direct 2-state toggling (`Yes` / `No`) when a single product is selected, reflecting that product's current attribute values.
+
 - **Fix server action export for sticky bar labels state (#1759).**
   - **Server Action Purity Compliance:** Moved `initialBulkLabelsAndVisibilityState` from `features/admin/catalogue.ts` (`"use server"`) to plain module `lib/catalogue-form.ts`, resolving Next.js `ensureServerEntryExports` runtime violation.
 

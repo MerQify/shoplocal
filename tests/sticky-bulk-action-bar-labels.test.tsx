@@ -149,4 +149,83 @@ describe("StickyBulkActionBar — Labels & Visibility Option", () => {
     fireEvent.click(closeBtn);
     expect(screen.queryByRole("dialog")).toBeNull();
   });
+
+  it("supports tri-state cycling (Keep -> Yes -> No -> Keep) in bulk mode when multiple products are selected", () => {
+    render(
+      <div>
+        <StickyBulkActionBar products={mockProducts} />
+        <input
+          type="checkbox"
+          name="productId"
+          value="prod-1"
+          form={BULK_PRODUCTS_FORM_ID}
+          data-testid="cb-1"
+        />
+        <input
+          type="checkbox"
+          name="productId"
+          value="prod-2"
+          form={BULK_PRODUCTS_FORM_ID}
+          data-testid="cb-2"
+        />
+      </div>,
+    );
+
+    // Select both products
+    fireEvent.click(screen.getByTestId("cb-1"));
+    fireEvent.click(screen.getByTestId("cb-2"));
+
+    const triggerBtn = screen.getByRole("button", {
+      name: /Labels & visibility/i,
+    });
+    fireEvent.click(triggerBtn);
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).not.toBeNull();
+    expect(screen.getByText("2 selected")).not.toBeNull();
+
+    const saveBtn = screen.getByRole("button", { name: /Save changes/i }) as HTMLButtonElement;
+    // Initially disabled because all fields default to Keep current (no changes)
+    expect(saveBtn.disabled).toBe(true);
+
+    const halalInput = screen.getByLabelText("Halal") as HTMLInputElement;
+    expect(halalInput.getAttribute("aria-checked")).toBe("mixed");
+    expect(screen.getAllByText("— Keep current")).toHaveLength(8);
+
+    // 1st click: cycles to Set to Yes
+    fireEvent.click(halalInput);
+    expect(halalInput.getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByText("✓ Set to Yes")).not.toBeNull();
+    expect(saveBtn.disabled).toBe(false);
+    expect(saveBtn.textContent).toContain("Save changes (1 update)");
+
+    // 2nd click: cycles to Set to No
+    fireEvent.click(halalInput);
+    expect(halalInput.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByText("✕ Set to No")).not.toBeNull();
+    expect(saveBtn.disabled).toBe(false);
+    expect(saveBtn.textContent).toContain("Save changes (1 update)");
+
+    // 3rd click: cycles back to Keep current
+    fireEvent.click(halalInput);
+    expect(halalInput.getAttribute("aria-checked")).toBe("mixed");
+    expect(screen.getAllByText("— Keep current")).toHaveLength(8);
+    expect(saveBtn.disabled).toBe(true);
+
+    // Toggle Halal to Yes and Fresh to No
+    fireEvent.click(halalInput); // Halal -> Set to Yes
+    const freshInput = screen.getByLabelText("Fresh") as HTMLInputElement;
+    fireEvent.click(freshInput); // Fresh -> Set to Yes
+    fireEvent.click(freshInput); // Fresh -> Set to No
+    expect(saveBtn.textContent).toContain("Save changes (2 updates)");
+
+    // Click "Reset all"
+    const resetBtn = screen.getByRole("button", { name: /Reset all/i });
+    fireEvent.click(resetBtn);
+
+    // Both should be back to mixed / Keep current
+    expect(halalInput.getAttribute("aria-checked")).toBe("mixed");
+    expect(freshInput.getAttribute("aria-checked")).toBe("mixed");
+    expect(saveBtn.disabled).toBe(true);
+  });
 });
