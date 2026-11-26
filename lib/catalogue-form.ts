@@ -163,6 +163,16 @@ export const initialCatalogueState: CatalogueFormState = {
   saved: false,
 };
 
+export interface BulkLabelsAndVisibilityState {
+  status: "idle" | "ok" | "error";
+  message: string | null;
+}
+
+export const initialBulkLabelsAndVisibilityState: BulkLabelsAndVisibilityState = {
+  status: "idle",
+  message: null,
+};
+
 /** First and last code point of Unicode's Combining Diacritical Marks block. */
 const COMBINING_MARK_FIRST = 0x300;
 const COMBINING_MARK_LAST = 0x36f;

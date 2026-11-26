@@ -6,7 +6,6 @@ import { saveBulkQuantities } from "@/features/admin/product-quantities";
 import {
   bulkSetLowStockThresholdAction,
   bulkUpdateLabelsAndVisibilityAction,
-  initialBulkLabelsAndVisibilityState,
 } from "@/features/admin/catalogue";
 import type { AdminProductListRow } from "@/lib/repositories/products";
 import {
@@ -37,7 +36,11 @@ import {
   initialBulkQuantityState,
 } from "@/lib/bulk-quantity";
 import { inputClass, labelClass } from "@/lib/form-classes";
-import { toCategoryOptionGroups, type CategoryOption } from "@/lib/catalogue-form";
+import {
+  toCategoryOptionGroups,
+  initialBulkLabelsAndVisibilityState,
+  type CategoryOption,
+} from "@/lib/catalogue-form";
 import { Icon } from "@/components/icons/Icon";
 
 function quantityInputs(): HTMLInputElement[] {
