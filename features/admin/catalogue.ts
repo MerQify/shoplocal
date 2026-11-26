@@ -10,10 +10,12 @@ import {
   parseProductForm,
   readForm,
   readSubmittedCategory,
+  type BulkLabelsAndVisibilityState,
   type CatalogueFormState,
 } from "@/lib/catalogue-form";
 import {
   bulkSetLowStockThresholds,
+  bulkUpdateProductLabelsAndVisibility,
   createProductForVendor,
   updateProductForVendor,
 } from "@/lib/products-service";
@@ -253,6 +255,85 @@ export async function bulkSetLowStockThresholdAction(
     return {
       status: "error",
       message: "Could not update low-stock alerts. Please try again.",
+    };
+  }
+}
+
+/**
+ * #1759 — Bulk update product labels and visibility for selected products.
+ * Available to both STAFF and ADMIN managing catalogue.
+ */
+export async function bulkUpdateLabelsAndVisibilityAction(
+  _prev: BulkLabelsAndVisibilityState,
+  form: FormData,
+): Promise<BulkLabelsAndVisibilityState> {
+  const auth = await requireVendorRole("STAFF", "ADMIN");
+  if (!auth.ok) {
+    return {
+      status: "error",
+      message:
+        auth.status === 401
+          ? "Please sign in to update product labels and visibility."
+          : "You do not have permission to manage this store's catalogue.",
+    };
+  }
+
+  const productIds = form.getAll("productId").map(String).filter(Boolean);
+  if (productIds.length === 0) {
+    return { status: "error", message: "No products selected." };
+  }
+
+  const attributes = [
+    "isHalal",
+    "isFresh",
+    "isOrganic",
+    "isVegetarian",
+    "isGlutenFree",
+    "isFeatured",
+    "isActive",
+    "allowsCustomNote",
+  ] as const;
+
+  const data: Parameters<typeof bulkUpdateProductLabelsAndVisibility>[2] = {};
+  for (const attr of attributes) {
+    const val = form.get(attr);
+    if (val === "true" || val === "on") {
+      data[attr] = true;
+    } else if (val === "false") {
+      data[attr] = false;
+    }
+  }
+
+  if (Object.keys(data).length === 0) {
+    return {
+      status: "error",
+      message: "No changes selected. Set at least one label or visibility option to apply.",
+    };
+  }
+
+  try {
+    const result = await bulkUpdateProductLabelsAndVisibility(auth.vendorId, productIds, data);
+
+    await invalidateVendorMetadata(auth.vendorId);
+    revalidatePath("/staff/products");
+    revalidatePath("/staff/inventory");
+
+    const count = result.updated;
+    const label = count === 1 ? "product" : "products";
+    const restrictedNotice =
+      result.skippedRestricted > 0
+        ? ` (${result.skippedRestricted} restricted ${result.skippedRestricted === 1 ? "product kept hidden" : "products kept hidden"})`
+        : "";
+
+    return {
+      status: "ok",
+      message: `Updated labels and visibility for ${count} ${label}${restrictedNotice}.`,
+    };
+  } catch (err) {
+    console.error("Failed to update product labels and visibility", err);
+    return {
+      status: "error",
+      message: "Could not update product labels and visibility. Please try again.",
     };
   }
 }

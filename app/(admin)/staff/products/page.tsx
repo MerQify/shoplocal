@@ -567,13 +567,25 @@ export default async function StaffProductsPage({
             </div>
           </div>
 
-          {/* Subheader: Item Count Info */}
-          <div className="flex items-center justify-between px-1 text-sm text-primary-muted font-medium">
-            <span>
-              Showing {items.length > 0 ? (page - 1) * query.perPage + 1 : 0}–
-              {Math.min(page * query.perPage, total)} of {total.toLocaleString()} products
-            </span>
-          </div>
+          {/* Top Pagination */}
+          {items.length > 0 && (
+            <Pagination
+              mode="numbered"
+              label="Product pages"
+              position="top"
+              page={page}
+              pageCount={pageCount}
+              total={total}
+              perPage={query.perPage}
+              shown={items.length}
+              noun={["product", "products"]}
+              hrefFor={(target) => staffProductsHref(query, target)}
+              jump={{
+                action: "/staff/products",
+                hidden: staffProductsFilterFields(query),
+              }}
+            />
+          )}
 
           {/* Product Data Table View */}
           {items.length === 0 ? (
@@ -865,6 +877,7 @@ export default async function StaffProductsPage({
           categories={categories}
           lowStockDefault={lowStockDefault}
           isStoreAdmin={isStoreAdmin}
+          products={items}
         />
       )}
     </PageContainer>

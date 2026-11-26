@@ -175,6 +175,8 @@ describe("every paginated page uses the shared component", () => {
       const source = readFileSync(page, "utf8");
       expect(source).toContain('from "@/components/ui/Pagination"');
       expect(source).not.toMatch(/>\s*(Older orders|Next page|Previous page)\s*</);
+      expect(source).toContain('position="top"');
+      expect(source).toContain('position="bottom"');
     });
   }
 

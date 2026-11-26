@@ -3,7 +3,11 @@
 import { useActionState, useEffect, useState } from "react";
 import { bulkProductAction } from "@/features/admin/product-restrictions";
 import { saveBulkQuantities } from "@/features/admin/product-quantities";
-import { bulkSetLowStockThresholdAction } from "@/features/admin/catalogue";
+import {
+  bulkSetLowStockThresholdAction,
+  bulkUpdateLabelsAndVisibilityAction,
+} from "@/features/admin/catalogue";
+import type { AdminProductListRow } from "@/lib/repositories/products";
 import {
   BULK_LOW_STOCK_THRESHOLD_IDLE,
   DEFAULT_LOW_STOCK_THRESHOLD,
@@ -32,7 +36,15 @@ import {
   initialBulkQuantityState,
 } from "@/lib/bulk-quantity";
 import { inputClass, labelClass } from "@/lib/form-classes";
-import { toCategoryOptionGroups, type CategoryOption } from "@/lib/catalogue-form";
+import {
+  toCategoryOptionGroups,
+  initialBulkLabelsAndVisibilityState,
+  initialBulkLabelsAndVisibilityFields,
+  type CategoryOption,
+  type TriState,
+  type ProductLabelAttribute,
+  type BulkLabelsAndVisibilityFields,
+} from "@/lib/catalogue-form";
 import { Icon } from "@/components/icons/Icon";
 
 function quantityInputs(): HTMLInputElement[] {
@@ -58,14 +70,36 @@ function countChanged(): number {
   }).length;
 }
 
+const LABEL_ITEMS: readonly {
+  id: ProductLabelAttribute;
+  label: string;
+}[] = [
+  { id: "isHalal", label: "Halal" },
+  { id: "isFresh", label: "Fresh" },
+  { id: "isOrganic", label: "Organic" },
+  { id: "isVegetarian", label: "Vegetarian" },
+  { id: "isGlutenFree", label: "Gluten free" },
+  { id: "isFeatured", label: "Featured on homepage" },
+  { id: "isActive", label: "Visible in the shop" },
+  { id: "allowsCustomNote", label: "Customers can add a note to this item" },
+];
+
+function cycleTriState(current: TriState): TriState {
+  if (current === "keep") return "set-true";
+  if (current === "set-true") return "set-false";
+  return "keep";
+}
+
 export function StickyBulkActionBar({
   categories = [],
   lowStockDefault = DEFAULT_LOW_STOCK_THRESHOLD,
   isStoreAdmin = false,
+  products = [],
 }: {
   categories?: readonly CategoryOption[];
   lowStockDefault?: number;
   isStoreAdmin?: boolean;
+  products?: readonly AdminProductListRow[];
 }) {
   const [productState, productAction, productPending] = useActionState(
     bulkProductAction,
@@ -79,12 +113,74 @@ export function StickyBulkActionBar({
     bulkSetLowStockThresholdAction,
     BULK_LOW_STOCK_THRESHOLD_IDLE,
   );
+  const [labelsResult, labelsAction, labelsPending] = useActionState(
+    bulkUpdateLabelsAndVisibilityAction,
+    initialBulkLabelsAndVisibilityState,
+  );
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [prevPhase, setPrevPhase] = useState(productState.phase);
   const [selectedAction, setSelectedAction] = useState<BulkAction>("ENABLE");
   const [changedQuantities, setChangedQuantities] = useState(0);
   const [setTo, setSetTo] = useState("");
+  const [showLabelsModal, setShowLabelsModal] = useState(false);
+
+  const [singleLabelsState, setSingleLabelsState] = useState<
+    Record<ProductLabelAttribute, boolean>
+  >({
+    isHalal: false,
+    isFresh: false,
+    isOrganic: false,
+    isVegetarian: false,
+    isGlutenFree: false,
+    isFeatured: false,
+    isActive: true,
+    allowsCustomNote: false,
+  });
+
+  const [bulkFields, setBulkFields] = useState<BulkLabelsAndVisibilityFields>(
+    initialBulkLabelsAndVisibilityFields,
+  );
+
+  const [prevLabelsResult, setPrevLabelsResult] = useState(labelsResult);
+  const [prevSelectedKey, setPrevSelectedKey] = useState<string>("");
+
+  // Sync state during render when labelsResult succeeds
+  if (labelsResult !== prevLabelsResult) {
+    setPrevLabelsResult(labelsResult);
+    if (labelsResult.status === "ok") {
+      setShowLabelsModal(false);
+      setBulkFields({ ...initialBulkLabelsAndVisibilityFields });
+    }
+  }
+
+  // Find single product when exactly 1 product is selected
+  const isSingle = selectedIds.size === 1;
+  const singleProduct = isSingle ? products.find((p) => p.id === Array.from(selectedIds)[0]) : null;
+
+  // Sync checkboxes to selected product attributes during render when selection changes
+  const currentSelectionKey = Array.from(selectedIds).sort().join(",");
+  if (currentSelectionKey !== prevSelectedKey) {
+    setPrevSelectedKey(currentSelectionKey);
+    if (selectedIds.size === 1) {
+      const singleId = Array.from(selectedIds)[0];
+      const p = products.find((item) => item.id === singleId);
+      if (p) {
+        setSingleLabelsState({
+          isHalal: p.isHalal ?? false,
+          isFresh: p.isFresh ?? false,
+          isOrganic: p.isOrganic ?? false,
+          isVegetarian: p.isVegetarian ?? false,
+          isGlutenFree: p.isGlutenFree ?? false,
+          isFeatured: p.isFeatured ?? false,
+          isActive: p.isActive ?? true,
+          allowsCustomNote: p.allowsCustomNote ?? false,
+        });
+      }
+    } else {
+      setBulkFields({ ...initialBulkLabelsAndVisibilityFields });
+    }
+  }
 
   // Sync selection state during render when phase transitions
   if (productState.phase !== prevPhase) {
@@ -181,6 +277,7 @@ export function StickyBulkActionBar({
   const hasSelection = selectedIds.size > 0;
   const hasChanges = changedQuantities > 0;
   const isVisible = hasSelection || hasChanges;
+  const modifiedBulkCount = Object.values(bulkFields).filter((v) => v !== "keep").length;
 
   return (
     <>
@@ -216,6 +313,28 @@ export function StickyBulkActionBar({
 
         {/* Action Controls Group */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* Labels & Visibility Trigger */}
+          <button
+            type="button"
+            onClick={() => setShowLabelsModal((prev) => !prev)}
+            disabled={!hasSelection}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-action disabled:opacity-50 ${
+              showLabelsModal
+                ? "border-action bg-action text-white shadow"
+                : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <Icon name="tag" className="h-3.5 w-3.5" />
+            <span>Labels &amp; visibility</span>
+            <Icon
+              name="chevron-down"
+              className={`h-3 w-3 transition-transform ${showLabelsModal ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {/* Divider */}
+          <div className="hidden sm:block h-5 w-px bg-white/20" />
+
           {/* Status & Category Actions Form */}
           <form
             id={BULK_PRODUCTS_FORM_ID}
@@ -371,6 +490,261 @@ export function StickyBulkActionBar({
         </div>
       )}
 
+      {/* Labels & Visibility Floating Card Modal */}
+      {showLabelsModal && hasSelection && (
+        <div
+          role="dialog"
+          aria-labelledby="labels-visibility-title"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-80 max-h-[85vh] overflow-y-auto rounded-3xl border border-black/10 bg-white p-5 shadow-2xl text-primary space-y-4"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between pb-1">
+            <h3 id="labels-visibility-title" className="text-base font-bold text-primary">
+              Labels &amp; visibility
+            </h3>
+            <div className="flex items-center gap-2">
+              {isSingle ? (
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    singleLabelsState.isActive
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                      : "bg-slate-100 text-slate-600 border border-slate-200"
+                  }`}
+                >
+                  {singleLabelsState.isActive ? "Active" : "Archived"}
+                </span>
+              ) : (
+                <span className="rounded-full bg-blue-50 text-action border border-action/20 px-2.5 py-0.5 text-xs font-semibold">
+                  {selectedIds.size} selected
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowLabelsModal(false)}
+                aria-label="Close"
+                className="rounded-lg p-1 text-primary-muted hover:bg-surface-muted hover:text-primary transition text-xs font-bold leading-none"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <form action={labelsAction} className="space-y-4">
+            {Array.from(selectedIds).map((id) => (
+              <input key={id} type="hidden" name="productId" value={id} />
+            ))}
+
+            {/* Hidden inputs transmitting values to server action */}
+            {isSingle
+              ? LABEL_ITEMS.map((item) => (
+                  <input
+                    key={item.id}
+                    type="hidden"
+                    name={item.id}
+                    value={singleLabelsState[item.id] ? "true" : "false"}
+                  />
+                ))
+              : LABEL_ITEMS.map((item) => {
+                  const state = bulkFields[item.id];
+                  if (state === "keep") return null;
+                  return (
+                    <input
+                      key={item.id}
+                      type="hidden"
+                      name={item.id}
+                      value={state === "set-true" ? "true" : "false"}
+                    />
+                  );
+                })}
+
+            {/* Save changes button */}
+            <button
+              type="submit"
+              disabled={labelsPending || (!isSingle && modifiedBulkCount === 0)}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-action hover:bg-action/90 text-white font-bold py-2.5 text-sm shadow transition disabled:opacity-50"
+            >
+              <Icon name="save" className="h-4 w-4" />
+              <span>
+                {labelsPending
+                  ? "Saving changes…"
+                  : isSingle
+                    ? "Save changes"
+                    : modifiedBulkCount > 0
+                      ? `Save changes (${modifiedBulkCount} ${modifiedBulkCount === 1 ? "update" : "updates"})`
+                      : "Save changes"}
+              </span>
+            </button>
+
+            {!isSingle && (
+              <div className="flex items-center justify-between text-xs text-primary-muted px-0.5">
+                <span>Click: Keep &rarr; Yes &rarr; No</span>
+                {modifiedBulkCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setBulkFields({ ...initialBulkLabelsAndVisibilityFields })}
+                    className="text-action hover:underline font-medium"
+                  >
+                    Reset all
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Checkbox list */}
+            <div className="space-y-2 pt-1">
+              {LABEL_ITEMS.map((item) => {
+                if (isSingle) {
+                  const checked = singleLabelsState[item.id];
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between py-1.5 px-2 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100"
+                    >
+                      <label
+                        htmlFor={`sticky-label-${item.id}`}
+                        className="flex items-center gap-3 text-sm font-medium text-primary cursor-pointer select-none flex-1"
+                      >
+                        <input
+                          id={`sticky-label-${item.id}`}
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            setSingleLabelsState((prev) => ({
+                              ...prev,
+                              [item.id]: e.target.checked,
+                            }))
+                          }
+                          className="h-4 w-4 rounded border-gray-300 text-action focus:ring-action cursor-pointer"
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                      <span
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                          checked
+                            ? "text-emerald-700 bg-emerald-50 border border-emerald-200/60"
+                            : "text-slate-500 bg-slate-100"
+                        }`}
+                      >
+                        {checked ? "Yes" : "No"}
+                      </span>
+                    </div>
+                  );
+                }
+
+                // Bulk mode: tri-state
+                const state = bulkFields[item.id];
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between py-1.5 px-2 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100"
+                  >
+                    <label
+                      htmlFor={`sticky-label-${item.id}`}
+                      className={`flex items-center gap-3 text-sm cursor-pointer select-none flex-1 ${
+                        state !== "keep" ? "font-semibold text-primary" : "text-primary-muted"
+                      }`}
+                    >
+                      <input
+                        id={`sticky-label-${item.id}`}
+                        type="checkbox"
+                        checked={state === "set-true"}
+                        aria-checked={
+                          state === "set-true" ? "true" : state === "set-false" ? "false" : "mixed"
+                        }
+                        ref={(el) => {
+                          if (el) el.indeterminate = state === "keep";
+                        }}
+                        onClick={() =>
+                          setBulkFields((prev) => ({
+                            ...prev,
+                            [item.id]: cycleTriState(prev[item.id]),
+                          }))
+                        }
+                        onChange={() => {
+                          // Handled by onClick
+                        }}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`h-4 w-4 rounded flex items-center justify-center text-xs font-bold transition select-none ${
+                          state === "set-true"
+                            ? "bg-action text-white border border-action shadow-xs"
+                            : state === "set-false"
+                              ? "bg-rose-500 text-white border border-rose-500 shadow-xs"
+                              : "bg-slate-100 text-slate-400 border border-slate-300"
+                        }`}
+                      >
+                        {state === "set-true" && (
+                          <Icon name="check" className="h-3 w-3 stroke-[3]" />
+                        )}
+                        {state === "set-false" && (
+                          <svg
+                            aria-hidden="true"
+                            className="h-2.5 w-2.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
+                        {state === "keep" && (
+                          <svg
+                            aria-hidden="true"
+                            className="h-2.5 w-2.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
+                        )}
+                      </span>
+                      <span>{item.label}</span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setBulkFields((prev) => ({
+                          ...prev,
+                          [item.id]: cycleTriState(prev[item.id]),
+                        }))
+                      }
+                      className="cursor-pointer"
+                    >
+                      {state === "keep" && (
+                        <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                          — Keep current
+                        </span>
+                      )}
+                      {state === "set-true" && (
+                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+                          ✓ Set to Yes
+                        </span>
+                      )}
+                      {state === "set-false" && (
+                        <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-full">
+                          ✕ Set to No
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Applied Feedback Notice */}
       {productState.phase === "applied" && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-emerald-600 text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
@@ -390,6 +764,20 @@ export function StickyBulkActionBar({
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-danger text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
           <Icon name="circle-alert" className="h-4 w-4" />
           {thresholdState.message}
+        </div>
+      )}
+
+      {/* Labels & Visibility notification */}
+      {labelsResult.status === "ok" && labelsResult.message && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-emerald-600 text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
+          <Icon name="check" className="h-4 w-4" />
+          {labelsResult.message}
+        </div>
+      )}
+      {labelsResult.status === "error" && labelsResult.message && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-danger text-white px-5 py-2.5 shadow-xl text-sm font-semibold flex items-center gap-2">
+          <Icon name="circle-alert" className="h-4 w-4" />
+          {labelsResult.message}
         </div>
       )}
     </>

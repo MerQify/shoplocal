@@ -265,23 +265,34 @@ export default async function CategoryPage({
               brandLabel={selectedBrand?.name}
             />
           ) : (
-            <ProductGrid density={gridDensity}>
-              {items.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  cdnBaseUrl={CDN_BASE_URL ?? ""}
-                  cartQuantity={cartQuantities.get(product.id) ?? 0}
-                  favouriteState={favouriteState(product.id)}
-                />
-              ))}
-            </ProductGrid>
+            <>
+              <Pagination
+                mode="sequential"
+                label="Product pages"
+                position="top"
+                page={isFirstPage && !nextCursor ? undefined : categoryPageNumber(query)}
+                prevHref={isFirstPage ? null : prevCategoryPageHref(slug, query)}
+                nextHref={nextCursor ? nextCategoryPageHref(slug, query, nextCursor) : null}
+              />
+              <ProductGrid density={gridDensity}>
+                {items.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    cdnBaseUrl={CDN_BASE_URL ?? ""}
+                    cartQuantity={cartQuantities.get(product.id) ?? 0}
+                    favouriteState={favouriteState(product.id)}
+                  />
+                ))}
+              </ProductGrid>
+            </>
           )}
           {/* Keyset paging (specs/architecture.md): Previous through the cursor stack, Next by
               cursor, and the page number from the stack's depth. No total, so no page list. */}
           <Pagination
             mode="sequential"
             label="Product pages"
+            position="bottom"
             page={isFirstPage && !nextCursor ? undefined : categoryPageNumber(query)}
             prevHref={isFirstPage ? null : prevCategoryPageHref(slug, query)}
             nextHref={nextCursor ? nextCategoryPageHref(slug, query, nextCursor) : null}

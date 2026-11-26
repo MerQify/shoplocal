@@ -6,6 +6,28 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Category sortOrder preservation for icon displays, alphabetical sorting for text/lists, and dual top/bottom pagination (#1763).**
+  - **Icon Categories Sort Order Preservation:** Updated `listTopLevelCategories` and `getCategoryBySlug` in `lib/repositories/categories.ts` to return departments and subcategories respecting the database `sortOrder` (`orderBy: [{ sortOrder: "asc" }, { name: "asc" }]`) rather than overriding them with alphabetical collation. Ensures visual category and subcategory icon rails (`DepartmentScroller`, `DepartmentHero`, `SubcategoryLinks`) across the homepage, `/categories`, `/categories/[slug]`, `/search`, `/bundles`, and `/help` honour store-configured ordering.
+  - **Cloudflare Edge KV Cache Invalidation:** Bumped `METADATA_VERSION` from 1 to 2 in `lib/cloudflare-metadata.ts` to invalidate stale cached category payloads across all Cloudflare Workers, ensuring live storefronts immediately serve the database-configured `sortOrder` (e.g. Meat & Poultry first).
+  - **Alphabetical Collation for Text & Lists:** Preserved natural A–Z alphabetical collation across text lists, dropdown selectors, category forms, and filters (`toCategoryOptionGroups`, `listCategoryTreeForStorefront`, and `/staff/categories`).
+  - **Dual Top & Bottom Table & List Pagination:** Deployed pagination controls at both the top (above table/list) and bottom (below table/list) across all 6 paginated views in the application: `/staff/products`, `/staff/orders`, `/staff/customers`, `/categories/[slug]`, `/search`, and `/account/orders`. Each instance passes its explicit `position="top"` or `position="bottom"` prop, providing unique accessible landmarks and jump-form element IDs.
+
+- **Tri-state partial label preservation in bulk action bar (#1759).**
+  - **Tri-State Attribute Controls (Keep / Yes / No):** Upgraded bulk mode in `StickyBulkActionBar` to initialize all 8 labels to `— Keep current` (`"keep"`). Clicking any label cycles through `Keep current` -> `✓ Set to Yes` (`"set-true"`) -> `✕ Set to No` (`"set-false"`) -> `Keep current`, allowing staff to update one or a subset of labels across selected products without unintentionally overwriting other attributes.
+  - **Partial Database Updates:** Modified `bulkUpdateProductLabelsAndVisibility` in `lib/repositories/products.ts` and `bulkUpdateLabelsAndVisibilityAction` in `features/admin/catalogue.ts` to execute partial SQL updates that only modify explicitly targeted attributes, preserving all untouched columns in PostgreSQL.
+  - **Single vs. Bulk Mode Distinction:** Retained direct 2-state toggling (`Yes` / `No`) when a single product is selected, reflecting that product's current attribute values.
+
+- **Fix server action export for sticky bar labels state (#1759).**
+  - **Server Action Purity Compliance:** Moved `initialBulkLabelsAndVisibilityState` from `features/admin/catalogue.ts` (`"use server"`) to plain module `lib/catalogue-form.ts`, resolving Next.js `ensureServerEntryExports` runtime violation.
+
+
+- **Sticky action bar labels and visibility options (#1759).**
+  - **Labels & Visibility Floating Popover:** Added an interactive "Labels & visibility" floating card to `StickyBulkActionBar` on `/staff/products`, matching the drilldown editor design with Active/Archived and selection badges, full-width "Save changes" action button, and granular controls for 8 product attributes: `Halal`, `Fresh`, `Organic`, `Vegetarian`, `Gluten free`, `Featured on homepage`, `Visible in the shop`, and `Customers can add a note to this item`.
+  - **Single & Bulk Operational Modes:** When a single product is checked, pre-populates all 8 toggles with that product's current values; when multiple products are checked, allows staff to assign/remove labels and toggle visibility across all selected items simultaneously.
+  - **Safe Bulk Transaction & Restriction Protection:** Implemented `bulkUpdateProductLabelsAndVisibility` in `lib/repositories/products.ts` and `lib/products-service.ts` using WebSocket transaction (`getPrismaWs()`). Safely protects against `Product_restricted_inactive_check` violation by preventing restricted products from being set to `isActive: true` while updating their labels and notes, reporting count of restricted products kept hidden.
+  - **Server Action & Edge Cache Invalidation:** Added `bulkUpdateLabelsAndVisibilityAction` in `features/admin/catalogue.ts` authenticated with `requireVendorRole("STAFF", "ADMIN")`, invalidating Cloudflare KV metadata cache (`invalidateVendorMetadata`) and revalidating `/staff/products` and `/staff/inventory`.
+
+
 - **Targeted product image generation for selected items and multi-scenario bulk actions.**
   - **Selected Items Image Generation:** Scoped the "Auto-fill Missing Images" action on `/staff/products` to explicitly selected products by default, avoiding unintended catalogue-wide generation when specific products are checked.
   - **Multi-Scenario Generic Service:** Consolidated image generation onto a unified, reusable `generateProductImages` service in `lib/products-service.ts` and repository query `findTargetProductsForImage` in `lib/repositories/products.ts`, supporting 5 operational modes: selected items, single product, filtered sets, all missing, and retrying failed generations without interfering with background jobs.

@@ -33,6 +33,9 @@ import {
   listProductsForAdminPage as listProductsForAdminPageRepo,
   bulkSetInventoryQuantities as bulkSetInventoryQuantitiesRepo,
   bulkSetLowStockThresholds as bulkSetLowStockThresholdsRepo,
+  bulkUpdateProductLabelsAndVisibility as bulkUpdateProductLabelsAndVisibilityRepo,
+  type BulkUpdateLabelsAndVisibilityInput,
+  type BulkUpdateLabelsAndVisibilityResult,
   matchProductListTerms,
   promoteProductImage as promoteProductImageRepo,
   quickUpdateInventory as quickUpdateInventoryRepo,
@@ -629,4 +632,13 @@ export async function bulkSetLowStockThresholds(
   threshold: number,
 ) {
   return bulkSetLowStockThresholdsRepo(getPrismaWs(), vendorId, productIds, threshold);
+}
+
+/** #1759 — bulk update product labels and visibility for selected products; uses WebSocket client. */
+export async function bulkUpdateProductLabelsAndVisibility(
+  vendorId: string,
+  productIds: readonly string[],
+  data: BulkUpdateLabelsAndVisibilityInput,
+): Promise<BulkUpdateLabelsAndVisibilityResult> {
+  return bulkUpdateProductLabelsAndVisibilityRepo(getPrismaWs(), vendorId, productIds, data);
 }

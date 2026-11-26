@@ -92,7 +92,7 @@ export async function listTopLevelCategories(
     imageKey: c.imageKey,
     imageUrl: composeCategoryImageUrl(c.imageKey, c.slug, cdnBaseUrl),
   }));
-  return sortNamedEntities(summaries);
+  return summaries;
 }
 
 /**
@@ -190,7 +190,7 @@ export async function getCategoryBySlug(
       imageKey: true,
       children: {
         where: { vendorId, isActive: true },
-        orderBy: { sortOrder: "asc" },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
         select: { id: true, slug: true, name: true, imageKey: true },
       },
       parent: {
@@ -201,7 +201,7 @@ export async function getCategoryBySlug(
           imageKey: true,
           children: {
             where: { vendorId, isActive: true },
-            orderBy: { sortOrder: "asc" },
+            orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
             select: { id: true, slug: true, name: true, imageKey: true },
           },
         },
@@ -215,15 +215,13 @@ export async function getCategoryBySlug(
     name: row.name,
     imageKey: row.imageKey,
     imageUrl: composeCategoryImageUrl(row.imageKey, row.slug, cdnBaseUrl),
-    children: sortNamedEntities(
-      (row.children ?? []).map((child) => ({
-        id: child.id,
-        slug: child.slug,
-        name: child.name,
-        imageKey: child.imageKey,
-        imageUrl: composeCategoryImageUrl(child.imageKey, child.slug, cdnBaseUrl),
-      })),
-    ),
+    children: (row.children ?? []).map((child) => ({
+      id: child.id,
+      slug: child.slug,
+      name: child.name,
+      imageKey: child.imageKey,
+      imageUrl: composeCategoryImageUrl(child.imageKey, child.slug, cdnBaseUrl),
+    })),
     parent: row.parent
       ? {
           id: row.parent.id,
@@ -231,15 +229,13 @@ export async function getCategoryBySlug(
           name: row.parent.name,
           imageKey: row.parent.imageKey,
           imageUrl: composeCategoryImageUrl(row.parent.imageKey, row.parent.slug, cdnBaseUrl),
-          children: sortNamedEntities(
-            (row.parent.children ?? []).map((c) => ({
-              id: c.id,
-              slug: c.slug,
-              name: c.name,
-              imageKey: c.imageKey,
-              imageUrl: composeCategoryImageUrl(c.imageKey, c.slug, cdnBaseUrl),
-            })),
-          ),
+          children: (row.parent.children ?? []).map((c) => ({
+            id: c.id,
+            slug: c.slug,
+            name: c.name,
+            imageKey: c.imageKey,
+            imageUrl: composeCategoryImageUrl(c.imageKey, c.slug, cdnBaseUrl),
+          })),
         }
       : null,
   };

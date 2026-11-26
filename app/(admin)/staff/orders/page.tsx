@@ -157,6 +157,14 @@ export default async function StaffOrdersPage({
         </div>
       ) : (
         <>
+          <Pagination
+            mode="sequential"
+            label="Order pages"
+            position="top"
+            nextHref={nextCursor ? staffOrdersHref(query, nextCursor) : null}
+            firstHref={cursor ? staffOrdersHref(query) : null}
+          />
+
           {/* Bound to each row's checkbox by `form="bulk-advance"`, not by DOM
               nesting — a <form> cannot contain another <form>, and every row
               below still needs its own single-order "Mark X" form untouched.
@@ -264,6 +272,7 @@ export default async function StaffOrdersPage({
       <Pagination
         mode="sequential"
         label="Order pages"
+        position="bottom"
         nextHref={nextCursor ? staffOrdersHref(query, nextCursor) : null}
         firstHref={cursor ? staffOrdersHref(query) : null}
       />

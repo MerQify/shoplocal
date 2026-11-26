@@ -163,6 +163,53 @@ export const initialCatalogueState: CatalogueFormState = {
   saved: false,
 };
 
+export interface BulkLabelsAndVisibilityState {
+  status: "idle" | "ok" | "error";
+  message: string | null;
+}
+
+export const initialBulkLabelsAndVisibilityState: BulkLabelsAndVisibilityState = {
+  status: "idle",
+  message: null,
+};
+
+export type TriState = "keep" | "set-true" | "set-false";
+
+export const PRODUCT_LABEL_ATTRIBUTES = [
+  "isHalal",
+  "isFresh",
+  "isOrganic",
+  "isVegetarian",
+  "isGlutenFree",
+  "isFeatured",
+  "isActive",
+  "allowsCustomNote",
+] as const;
+
+export type ProductLabelAttribute = (typeof PRODUCT_LABEL_ATTRIBUTES)[number];
+
+export interface BulkLabelsAndVisibilityFields {
+  isHalal: TriState;
+  isFresh: TriState;
+  isOrganic: TriState;
+  isVegetarian: TriState;
+  isGlutenFree: TriState;
+  isFeatured: TriState;
+  isActive: TriState;
+  allowsCustomNote: TriState;
+}
+
+export const initialBulkLabelsAndVisibilityFields: BulkLabelsAndVisibilityFields = {
+  isHalal: "keep",
+  isFresh: "keep",
+  isOrganic: "keep",
+  isVegetarian: "keep",
+  isGlutenFree: "keep",
+  isFeatured: "keep",
+  isActive: "keep",
+  allowsCustomNote: "keep",
+};
+
 /** First and last code point of Unicode's Combining Diacritical Marks block. */
 const COMBINING_MARK_FIRST = 0x300;
 const COMBINING_MARK_LAST = 0x36f;
