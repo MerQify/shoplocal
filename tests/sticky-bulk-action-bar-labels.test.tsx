@@ -15,7 +15,6 @@ vi.mock("@/features/admin/product-quantities", () => ({
 vi.mock("@/features/admin/catalogue", () => ({
   bulkSetLowStockThresholdAction: vi.fn().mockReturnValue({ status: "idle", message: null }),
   bulkUpdateLabelsAndVisibilityAction: vi.fn().mockReturnValue({ status: "idle", message: null }),
-  initialBulkLabelsAndVisibilityState: { status: "idle", message: null },
 }));
 
 afterEach(() => {

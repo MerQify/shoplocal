@@ -10,6 +10,7 @@ import {
   parseProductForm,
   readForm,
   readSubmittedCategory,
+  type BulkLabelsAndVisibilityState,
   type CatalogueFormState,
 } from "@/lib/catalogue-form";
 import {
@@ -257,16 +258,6 @@ export async function bulkSetLowStockThresholdAction(
     };
   }
 }
-
-export interface BulkLabelsAndVisibilityState {
-  status: "idle" | "ok" | "error";
-  message: string | null;
-}
-
-export const initialBulkLabelsAndVisibilityState: BulkLabelsAndVisibilityState = {
-  status: "idle",
-  message: null,
-};
 
 /**
  * #1759 — Bulk update product labels and visibility for selected products.

@@ -6,6 +6,10 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Fix server action export for sticky bar labels state (#1759).**
+  - **Server Action Purity Compliance:** Moved `initialBulkLabelsAndVisibilityState` from `features/admin/catalogue.ts` (`"use server"`) to plain module `lib/catalogue-form.ts`, resolving Next.js `ensureServerEntryExports` runtime violation.
+
+
 - **Sticky action bar labels and visibility options (#1759).**
   - **Labels & Visibility Floating Popover:** Added an interactive "Labels & visibility" floating card to `StickyBulkActionBar` on `/staff/products`, matching the drilldown editor design with Active/Archived and selection badges, full-width "Save changes" action button, and granular controls for 8 product attributes: `Halal`, `Fresh`, `Organic`, `Vegetarian`, `Gluten free`, `Featured on homepage`, `Visible in the shop`, and `Customers can add a note to this item`.
   - **Single & Bulk Operational Modes:** When a single product is checked, pre-populates all 8 toggles with that product's current values; when multiple products are checked, allows staff to assign/remove labels and toggle visibility across all selected items simultaneously.
