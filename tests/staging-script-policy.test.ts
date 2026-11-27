@@ -8,8 +8,8 @@ describe("staging browser policy", () => {
     const rules: Array<{
       source: string;
       headers: Array<{ key: string; value: string }>;
-      has?: Array<{ value: string }>;
-    }> = await config.headers();
+      has?: Array<{ value?: string }>;
+    }> = (await config.headers?.()) ?? [];
     const trial = rules.find((rule) =>
       rule.headers.some((h) => h.key === "Content-Security-Policy-Report-Only"),
     );
