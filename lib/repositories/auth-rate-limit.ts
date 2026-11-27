@@ -1,15 +1,11 @@
-import type { getPrisma } from "@/lib/db";
+import type { getPrismaWs } from "@/lib/db";
 import { ATTEMPT_RECORD_RETENTION_HOURS } from "@/lib/data-retention";
 
 export const AUTH_RATE_LIMIT_WINDOW_MS = 60_000;
 const WINDOW_MS = AUTH_RATE_LIMIT_WINDOW_MS;
 const MAX_ATTEMPTS = 5;
 
-// #468 — this table had no retention sweep at all and grew without bound. Retention only
-// has to exceed WINDOW_MS; SWEEP_PROBABILITY is deliberately low so the sweep's extra
-// deleteMany doesn't add latency to every request. deleteMany is confirmed safe on the
-// HTTP adapter (getPrisma()) per CLAUDE.md — unlike updateMany/createMany — so no
-// getPrismaWs() is needed here.
+// Occasionally prune expired reservations and inactive lock rows.
 const RETENTION_MS = ATTEMPT_RECORD_RETENTION_HOURS * 60 * 60 * 1000;
 const SWEEP_PROBABILITY = 0.01;
 
@@ -22,37 +18,60 @@ async function hashIp(ip: string): Promise<string> {
     .join("");
 }
 
-/**
- * Fixed-window rate limit for authentication (P9.1, #431).
- * Mirrors order lookup throttle: backed by Postgres, best-effort.
- * Disabling Better Auth's default memory limiter in favor of this Workers-compatible logic.
- *
- * `prisma` is an explicit parameter (#409) so this throttle can be exercised
- * against a real database from a plain `tsx` script.
- */
+/** Reserve the IP and optional account slots under PostgreSQL row locks. */
 export async function checkAuthRateLimit(
-  prisma: ReturnType<typeof getPrisma>,
+  prisma: ReturnType<typeof getPrismaWs>,
   vendorId: string,
   ip: string,
+  accountKey?: string,
 ): Promise<{ allowed: boolean }> {
   const ipHash = await hashIp(ip);
-  const since = new Date(Date.now() - WINDOW_MS);
-
-  const count = await prisma.authenticationAttempt.count({
-    where: { vendorId, ipHash, createdAt: { gte: since } },
-  });
-
-  if (count >= MAX_ATTEMPTS) {
-    return { allowed: false };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await prisma.$transaction(
+        async (tx) => {
+          const attempts = tx.authenticationAttempt;
+          // Upsert takes a row lock until commit. Always acquire the source lock before
+          // the account lock. Readers at READ COMMITTED then see the preceding reservation.
+          const lock = async (key: string) => {
+            const id = JSON.stringify([vendorId, key]);
+            const createdAt = new Date();
+            await attempts.upsert({
+              where: { id },
+              create: { id, vendorId, ipHash: "reservation-lock", createdAt },
+              update: { createdAt },
+            });
+          };
+          await lock(ipHash);
+          const since = new Date(Date.now() - WINDOW_MS);
+          const count = await attempts.count({
+            where: { vendorId, ipHash, createdAt: { gte: since } },
+          });
+          if (count >= MAX_ATTEMPTS) return { allowed: false };
+          await attempts.create({ data: { vendorId, ipHash } });
+          if (accountKey) {
+            await lock(accountKey);
+            const where = {
+              vendorId,
+              ipHash: accountKey,
+              createdAt: { gte: new Date(Date.now() - 5 * WINDOW_MS) },
+            };
+            if ((await attempts.count({ where })) >= 10) return { allowed: false };
+            await attempts.create({ data: { vendorId, ipHash: accountKey } });
+          }
+          if (Math.random() < SWEEP_PROBABILITY) {
+            await attempts.deleteMany({
+              where: { createdAt: { lt: new Date(Date.now() - RETENTION_MS) } },
+            });
+          }
+          return { allowed: true };
+        },
+        { isolationLevel: "ReadCommitted" },
+      );
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      if (code !== "P2034" && code !== "40001" && code !== "23505" && code !== "P2002") throw error;
+    }
   }
-
-  await prisma.authenticationAttempt.create({ data: { vendorId, ipHash } });
-
-  if (Math.random() < SWEEP_PROBABILITY) {
-    await prisma.authenticationAttempt.deleteMany({
-      where: { createdAt: { lt: new Date(Date.now() - RETENTION_MS) } },
-    });
-  }
-
-  return { allowed: true };
+  return { allowed: false };
 }

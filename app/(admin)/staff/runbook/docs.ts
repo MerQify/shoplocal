@@ -4815,6 +4815,18 @@ export const DOC_ARTICLES: any[] = [
     "content": "\n# Sticky Action Bar Labels & Visibility\n\nTracking issue [#1759](https://github.com/sriahead/merqify/issues/1759).\n\n## Design & Architecture\n\n1. **UI Component (`StickyBulkActionBar.tsx`):**\n   - Add a `Labels & visibility` button to the floating sticky action bar.\n   - When opened, renders a floating popover card styled exactly like the `/staff/products/[id]` Labels & visibility card:\n     - Header: \"Labels & visibility\" with status/count pill.\n     - Action button: Full-width blue \"Save changes\" button with save icon.\n     - Checkbox list: Halal, Fresh, Organic, Vegetarian, Gluten free, Featured on homepage, Visible in the shop, Customers can add a note to this item.\n   - When 1 product is selected, initialize checkbox states to that product's current values.\n   - When multiple products are selected, default to unchecked (or preserved choices) and apply staff choices across all selected products.\n\n2. **Server Action & Repository:**\n   - Add `bulkUpdateProductLabelsAndVisibilityAction` in `features/admin/catalogue.ts` accepting `productId` list and boolean values for the 8 attributes.\n   - Add `bulkUpdateProductLabelsAndVisibility` in `lib/repositories/products.ts` executing inside a `getPrismaWs()` transaction:\n     - Separate unrestricted products from restricted products when `isActive: true` is requested.\n     - Update all selected products with the requested labels, featured status, and custom note permission.\n     - Invalidate Cloudflare metadata facets via `invalidateCachedCatalogueFacets(vendorId)`.\n     - Revalidate `/staff/products` and `/staff/inventory`.\n\n3. **Validation & Verification:**\n   - Unit tests covering individual product update, bulk products update, restriction safety handling, and action bar UI rendering.\n"
   },
   {
+    "id": "specs/2026-11-27-storefront-security/plan.md",
+    "title": "Storefront security controls",
+    "audience": [
+      "dev"
+    ],
+    "visibility": "internal",
+    "category": "spec",
+    "summary": "Reserve authentication attempts under row locks and evaluate script policy on staging.",
+    "lastUpdated": "2026-11-27",
+    "content": "\n# Implementation and evidence\n\nReserve source and account capacity in the existing attempts table with ordered row locks under PostgreSQL READ COMMITTED. Account keys use a tenant-scoped HMAC. The script policy trial is selected by staging hostname. Browser console violations inform any later enforcement decision.\n\nThe local focused run passed 239 checks. The independent PostgreSQL 16 integration run admitted five of twelve concurrent source requests and ten of fourteen concurrent account requests. Production release and signed-in staging sign-off remain separate.\n"
+  },
+  {
     "id": "specs/architecture.md",
     "title": "System Architecture — Merqify Platform",
     "audience": [

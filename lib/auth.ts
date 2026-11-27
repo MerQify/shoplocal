@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { getPrisma } from "./db";
+import { getPrisma, getPrismaWs } from "./db";
 import { getEnv, type AppEnv } from "./config";
 import { getEmailService } from "./email";
 import { getCurrentVendorProfile, getCurrentVendorSender } from "./vendor-service";
@@ -83,7 +83,7 @@ const SENSITIVE_AUTH_PATHS = [
 
 /** Whether a request path is one of Better Auth's credential/token-issuing endpoints. */
 export function isSensitiveAuthPath(pathname: string): boolean {
-  return SENSITIVE_AUTH_PATHS.some((p) => pathname.endsWith(p));
+  return SENSITIVE_AUTH_PATHS.some((p) => pathname.replace(/\/+$/, "").endsWith(p));
 }
 
 /**
@@ -122,10 +122,57 @@ export async function authOnRequest(req: Request): Promise<Response | undefined>
     return rateLimitRefusalResponse();
   }
 
-  const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for") ?? "unknown";
+  const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+  let accountKey: string | undefined;
+  if (req.method === "POST" && url.pathname.replace(/\/+$/, "").endsWith("/sign-in/email")) {
+    const reader = req.clone().body?.getReader();
+    if (!reader) return new Response(null, { status: 400 });
+    let email: unknown;
+    try {
+      const bytes = new Uint8Array(16384);
+      let length = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value.length > bytes.length - length) {
+          void reader.cancel().catch(() => {});
+          return new Response(null, { status: 413 });
+        }
+        bytes.set(value, length);
+        length += value.length;
+      }
+      const copy = new Response(bytes.subarray(0, length), { headers: req.headers });
+      const mime = copy.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+      email =
+        mime === "application/json"
+          ? ((await copy.json()) as { email?: unknown } | null)?.email
+          : (await copy.formData()).get("email");
+    } catch {
+      return new Response(null, { status: 400 });
+    }
+    if (typeof email !== "string" || !email.trim() || email.length > 254) {
+      return new Response(null, { status: 400 });
+    }
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(getEnv().BETTER_AUTH_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const digest = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(JSON.stringify([vendorId, email.trim().toLowerCase()])),
+    );
+    accountKey =
+      "account:" +
+      Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  }
 
   const { checkAuthRateLimit } = await import("./repositories/auth-rate-limit");
-  const limit = await checkAuthRateLimit(getPrisma(), vendorId, ip);
+  const limit = await checkAuthRateLimit(getPrismaWs(), vendorId, ip, accountKey);
 
   if (!limit.allowed) {
     return rateLimitRefusalResponse();

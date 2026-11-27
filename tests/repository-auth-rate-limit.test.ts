@@ -6,7 +6,9 @@ const create = vi.fn();
 const deleteMany = vi.fn();
 
 const mockPrisma = {
+  $transaction: (callback: (tx: unknown) => unknown) => callback(mockPrisma),
   authenticationAttempt: {
+    upsert: vi.fn(),
     count,
     create,
     deleteMany,
@@ -48,6 +50,27 @@ describe("checkAuthRateLimit", () => {
     expect(result.allowed).toBe(false);
     expect(count).toHaveBeenCalledTimes(1);
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it("charges the source but rejects an account at its backoff threshold", async () => {
+    count.mockResolvedValueOnce(0).mockResolvedValueOnce(10);
+    expect(await checkAuthRateLimit(mockPrisma, "vendor", "source", "account:hash")).toEqual({
+      allowed: false,
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(count.mock.calls[1][0].where).toMatchObject({
+      vendorId: "vendor",
+      ipHash: "account:hash",
+    });
+  });
+
+  it("fails closed after repeated serialization conflicts", async () => {
+    const transaction = vi.fn().mockRejectedValue({ code: "40001" });
+    expect(
+      await checkAuthRateLimit({ ...mockPrisma, $transaction: transaction }, "vendor", "source"),
+    ).toEqual({ allowed: false });
+    expect(transaction).toHaveBeenCalledTimes(3);
+    expect(transaction.mock.calls[0][1]).toEqual({ isolationLevel: "ReadCommitted" });
   });
 
   // #468
