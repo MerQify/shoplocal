@@ -33,7 +33,7 @@ export async function checkAuthRateLimit(
           const attempts = tx.authenticationAttempt;
           // Upsert takes a row lock until commit. Always acquire the source lock before
           // the account lock. Readers at READ COMMITTED then see the preceding reservation.
-          for (const key of accountKey ? [ipHash, accountKey] : [ipHash]) {
+          const lock = async (key: string) => {
             const id = JSON.stringify([vendorId, key]);
             const createdAt = new Date();
             await attempts.upsert({
@@ -41,7 +41,8 @@ export async function checkAuthRateLimit(
               create: { id, vendorId, ipHash: "reservation-lock", createdAt },
               update: { createdAt },
             });
-          }
+          };
+          await lock(ipHash);
           const since = new Date(Date.now() - WINDOW_MS);
           const count = await attempts.count({
             where: { vendorId, ipHash, createdAt: { gte: since } },
@@ -49,6 +50,7 @@ export async function checkAuthRateLimit(
           if (count >= MAX_ATTEMPTS) return { allowed: false };
           await attempts.create({ data: { vendorId, ipHash } });
           if (accountKey) {
+            await lock(accountKey);
             const where = {
               vendorId,
               ipHash: accountKey,
