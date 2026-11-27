@@ -1096,7 +1096,13 @@ field and the GitHub milestone already carry phase information (`#546`).
 - `feature/<slug>` → PR into **`staging`** (auto-deploys to `staging.aheedfoodcentre.nocaped.com`).
 - **`staging` → `main`** via PR, deploying to `aheedfoodcentre.nocaped.com`. Never push directly to
   `main`/`staging`.
-- **THIS REPOSITORY IS PUBLIC** — `gh api repos/sriahead/aheed-online-store --jq .visibility`
+- **The repository lives at `MerQify/shoplocal`** (the MerQify GitHub organisation), transferred on
+  2026-11-27 (#1771). The old names `sriahead/merqify` and `sriahead/aheed-online-store` redirect
+  to it, as `sriahead/merqify-image-hub` does to `MerQify/image-hub`. **Never create a repository
+  under any of those old names** — that silently ends the redirect, and every old link, clone and
+  remote breaks. Older specs and change-log rows keep the old names on purpose. The delivery board
+  (Project #2) did not move: board commands keep `--owner sriahead`.
+- **THIS REPOSITORY IS PUBLIC** — `gh api repos/MerQify/shoplocal --jq .visibility`
   returns `"public"`, confirmed 2026-09-07 (#644). That matters because this section spent weeks
   asserting a **private-repo, free-plan** limitation as a current constraint on what protection is
   available here, and it is not one: the paid-plan restriction on required reviewers applies to
@@ -1125,11 +1131,11 @@ field and the GitHub milestone already carry phase information (`#546`).
      Note **both branches ARE covered by repository
      rulesets**, and this line said "No branch protection at all, on either branch" until
      2026-09-02 (#537). **The check it cited cannot see rulesets.**
-     `gh api repos/sriahead/aheed-online-store/branches/main/protection` queries *classic* branch
+     `gh api repos/MerQify/shoplocal/branches/main/protection` queries *classic* branch
      protection and returns **`404 Branch not protected`** whether or not a ruleset is active, so
      P9.2's verification was structurally incapable of finding the thing it concluded was absent.
-     **Use `gh api repos/sriahead/aheed-online-store/rulesets` instead** (add `/<id>` for the
-     rules), and **`gh api repos/sriahead/aheed-online-store/rules/branches/<branch>` to ask what
+     **Use `gh api repos/MerQify/shoplocal/rulesets` instead** (add `/<id>` for the
+     rules), and **`gh api repos/MerQify/shoplocal/rules/branches/<branch>` to ask what
      actually applies to a branch** — that second endpoint is the one that catches a ruleset
      created successfully with a ref condition matching nothing, which a reading of the
      declaration alone cannot.

@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-27T06:58:43.818Z` · commit `65fbb956` · `412` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-27T19:29:54.833Z` · commit `73cfde95` · `413` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -396,6 +396,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Staff Products Sidebar Filters & Contextual Sticky Action Toolbar](specs/2026-11-24-staff-products-sidebar-and-sticky-action-bar/plan.md) | spec | 1.0.0 | 2026-11-24 | draft | internal | Implementation plan for a two-column sidebar layout, structured product table, and contextual sticky action bar on /staff/products. |
 | [Category Sorting (Icon sortOrder vs Text Alphabetical) and Dual Top/Bottom Pagination](specs/2026-11-26-category-sorting-and-dual-pagination/plan.md) | spec | 1.0.0 | 2026-11-26 | draft | internal | Preserves database sortOrder for icon categories while collating text/list categories alphabetically, and implements top and bottom dual pagination across all paginated pages. |
 | [Sticky Action Bar Labels & Visibility (plan)](specs/2026-11-26-sticky-bar-labels-and-visibility/plan.md) | spec | 1.0.0 | 2026-11-26 | approved | internal | Add a dedicated Labels & visibility popover to the sticky action bar on /staff/products matching the staff product edit card. |
+| [Repository references after the move to MerQify/shoplocal (plan)](specs/2026-11-27-org-move-references/plan.md) | spec | 1.0.0 | 2026-11-27 | approved | internal | Points the live code links and current docs at MerQify/shoplocal and MerQify/image-hub after the 2026-11-27 transfers, leaving the dated historical record unchanged. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |
 | [ADR-001 — Hosting, Database & Egress](specs/decisions/ADR-001-hosting.md) | adr | 2.0.0 | 2026-08-06 | approved | internal | Revised hosting decision — Cloudflare Workers + Neon Serverless Postgres + R2, superseding the original GCP Cloud Run + Cloud SQL design, for a vendor-agnostic serverless origin. |
 | [ADR-002 — Authentication Library](specs/decisions/ADR-002-auth-library.md) | adr | 1.0.0 | 2026-08-06 | approved | internal | Decision to use Better Auth (self-hosted, bearer tokens, RBAC) for email/password and Google Sign-In, rejecting hosted IdPs like Clerk/Auth0 for the MVP. |

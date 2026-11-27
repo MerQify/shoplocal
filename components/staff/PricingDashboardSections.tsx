@@ -684,7 +684,7 @@ export function RisksSection({ risks, header }: { risks: readonly Risk[]; header
               {r.issues.map((n) => (
                 <a
                   key={n}
-                  href={`https://github.com/sriahead/aheed-online-store/issues/${n}`}
+                  href={`https://github.com/MerQify/shoplocal/issues/${n}`}
                   className="ml-2 underline"
                   rel="noopener noreferrer"
                   target="_blank"
