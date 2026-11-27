@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- Reserve authentication attempts atomically and trial a stricter script policy on staging (#1769).
+
 - **Docs: backfilled the SDD record for 2026-11-21 to 2026-11-26.** `npm run sdd:audit` reported 34
   gaps on `staging`, because these slices shipped without a final Document pass. `specs/roadmap.md`
   gains 16 change-log rows covering 22 slice folders and the nine promotions PR #1710 to PR #1766

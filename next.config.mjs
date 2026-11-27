@@ -50,6 +50,22 @@ const nextConfig = {
     return [
       {
         source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value:
+              "(?:aheed-staging\\.merqify\\.com|staging\\.aheedfoodcentre\\.co\\.uk|afc-staging-origin\\.merqify\\.com|srimart-staging\\.merqify\\.com)",
+          },
+        ],
+        headers: [
+          {
+            key: "Content-Security-Policy-Report-Only",
+            value: "script-src 'self'; object-src 'none'; base-uri 'self'",
+          },
+        ],
+      },
+      {
+        source: "/:path*",
         headers: [
           {
             key: "Strict-Transport-Security",

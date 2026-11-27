@@ -4,7 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // resolvable under vitest (same reason getAuth() itself has no unit tests).
 // Mocking these lets buildSocialProviders, which touches neither, be tested
 // as the pure function it is.
-vi.mock("@/lib/db", () => ({ getPrisma: vi.fn() }));
+vi.mock("@/lib/db", () => ({ getPrisma: vi.fn(), getPrismaWs: vi.fn() }));
+vi.mock("@/lib/config", () => ({
+  getEnv: () => ({ BETTER_AUTH_SECRET: "test-only-account-backoff-key" }),
+}));
 vi.mock("@/lib/email", () => ({ getEmailService: vi.fn() }));
 
 // #469 — authOnRequest dynamically imports both of these; mocking lets it be
@@ -106,6 +109,28 @@ describe("authOnRequest (#469)", () => {
     expect(response).toBeUndefined();
     expect(checkAuthRateLimit).toHaveBeenCalledTimes(1);
     expect(checkAuthRateLimit.mock.calls[0][1]).toBe("vendor-1");
+  });
+
+  it("uses a stable tenant-specific account key and leaves the login body readable", async () => {
+    getCurrentVendorIdOrNull
+      .mockResolvedValueOnce("one")
+      .mockResolvedValueOnce("one")
+      .mockResolvedValueOnce("two");
+    checkAuthRateLimit.mockResolvedValue({ allowed: true });
+    const keys = [];
+    for (const email of ["User@example.org", "user@example.org", "user@example.org"]) {
+      const req = new Request("https://x/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      await authOnRequest(req);
+      expect(((await req.json()) as { email: string }).email).toBe(email);
+      keys.push(checkAuthRateLimit.mock.lastCall?.[3]);
+    }
+    expect(keys[0]).toMatch(/^account:[0-9a-f]{64}$/);
+    expect(keys[0]).toBe(keys[1]);
+    expect(keys[0]).not.toBe(keys[2]);
   });
 
   it("takes no action for a non-sensitive path, regardless of vendor resolution", async () => {
