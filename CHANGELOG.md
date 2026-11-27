@@ -6,6 +6,13 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Docs: backfilled the SDD record for 2026-11-21 to 2026-11-26.** `npm run sdd:audit` reported 34
+  gaps on `staging`, because these slices shipped without a final Document pass. `specs/roadmap.md`
+  gains 16 change-log rows covering 22 slice folders and the nine promotions PR #1710 to PR #1766
+  (including the two `release/*` promotions, and the `#1744` icon rollout reverted on staging). Ten
+  requirements-only slices gain a short indexed `plan.md`, and `ARTIFACT_INDEX.md` and the staff
+  runbook index are rebuilt. No code changes.
+
 - **Category sortOrder preservation for icon displays, alphabetical sorting for text/lists, and dual top/bottom pagination (#1763).**
   - **Icon Categories Sort Order Preservation:** Updated `listTopLevelCategories` and `getCategoryBySlug` in `lib/repositories/categories.ts` to return departments and subcategories respecting the database `sortOrder` (`orderBy: [{ sortOrder: "asc" }, { name: "asc" }]`) rather than overriding them with alphabetical collation. Ensures visual category and subcategory icon rails (`DepartmentScroller`, `DepartmentHero`, `SubcategoryLinks`) across the homepage, `/categories`, `/categories/[slug]`, `/search`, `/bundles`, and `/help` honour store-configured ordering.
   - **Cloudflare Edge KV Cache Invalidation:** Bumped `METADATA_VERSION` from 1 to 2 in `lib/cloudflare-metadata.ts` to invalidate stale cached category payloads across all Cloudflare Workers, ensuring live storefronts immediately serve the database-configured `sortOrder` (e.g. Meat & Poultry first).
