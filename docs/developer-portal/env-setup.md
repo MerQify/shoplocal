@@ -450,8 +450,8 @@ they are not interchangeable: `UK_LOCATION_REF_DIRECT_URL` as a **secret**, and
 not a credential, and a variable's value is readable, which makes it verifiable). Check both:
 
 ```bash
-gh api repos/sriahead/aheed-online-store/environments/<env>/variables --jq '.variables[] | "\(.name)=\(.value)"'
-gh api repos/sriahead/aheed-online-store/environments/<env>/secrets   --jq '.secrets[].name'
+gh api repos/MerQify/shoplocal/environments/<env>/variables --jq '.variables[] | "\(.name)=\(.value)"'
+gh api repos/MerQify/shoplocal/environments/<env>/secrets   --jq '.secrets[].name'
 ```
 
 ### Removing a postcode area, and checking coverage matches configuration
@@ -713,7 +713,7 @@ wordmark); setting a real one later is data-only, no deploy.
 ### Merqify Image Hub consumer keys (`#1671`)
 
 The store's image library (`/staff/image-library`) talks to the **Merqify Image Hub**, a separate
-service (`sriahead/merqify-image-hub`). The store needs only two optional Worker secrets:
+service (`MerQify/image-hub`). The store needs only two optional Worker secrets:
 
 | Variable | Value |
 |---|---|
@@ -1827,7 +1827,7 @@ section. All config goes through validated `lib/config` (zod); nothing reads `pr
   materialised an env file with two empty values and failed closed at `npm run ref:migrate` on the
   next scheduled production run, which is the right direction but looks like a broken workflow
   rather than a missing variable. **Check both endpoints, not one**:
-  `gh api repos/sriahead/aheed-online-store/environments/<env>/variables --jq '.variables[] | "\(.name)=\(.value)"'`
+  `gh api repos/MerQify/shoplocal/environments/<env>/variables --jq '.variables[] | "\(.name)=\(.value)"'`
   and `… /environments/<env>/secrets --jq '.secrets[].name'`. Variable *values* are readable, which
   makes `UK_LOCATION_REF_POSTCODE_AREAS=MK,RG` verifiable rather than merely present — a reason to
   prefer a variable for anything that is not actually a credential.

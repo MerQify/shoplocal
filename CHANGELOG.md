@@ -6,6 +6,12 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Repository references now name `MerQify/shoplocal` (#1771).** This repository moved from
+  `sriahead/merqify` to the MerQify organisation on 2026-11-27, and the Image Hub to
+  `MerQify/image-hub`. The staff pricing dashboard's issue links, the docs site's repository link,
+  two code comments and the current developer-portal and spec docs now name the new home. The
+  operator runbook records the old names, which redirect and must never be recreated. Dated specs,
+  the roadmap change log and this file keep the old names as a record. No behaviour change.
 - **Docs: backfilled the SDD record for 2026-11-21 to 2026-11-26.** `npm run sdd:audit` reported 34
   gaps on `staging`, because these slices shipped without a final Document pass. `specs/roadmap.md`
   gains 16 change-log rows covering 22 slice folders and the nine promotions PR #1710 to PR #1766

@@ -448,7 +448,7 @@ export function isIndexable(): boolean {
  * #1671 — the Merqify Image Hub, a separate service the store consumes (#1669).
  *
  * The store holds ONLY these two values: the hub's base URL and this Worker's own key, issued by
- * the hub operator (`npm run keys` in `sriahead/merqify-image-hub`). The hub's Neon, R2 and
+ * the hub operator (`npm run keys` in `MerQify/image-hub`). The hub's Neon, R2 and
  * Cloudflare credentials never come here (`secrets/image-hub-*.vars` are the operator's files).
  *
  * Optional, and kept out of `schema`/`getEnv()` for the same reason SEO and payments are: an

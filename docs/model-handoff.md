@@ -1304,7 +1304,7 @@ became untracked when that issue closed.
 
 ## The Merqify Image Hub is a separate service the store consumes (`#1669`; phase 1a in production 2026-11-20)
 
-- **It is not part of this repo.** `sriahead/merqify-image-hub` is its own repository, Cloudflare
+- **It is not part of this repo.** `MerQify/image-hub` is its own repository, Cloudflare
   account (**Merqify Image Hub**, `ba15695d24d8a84ea3a833270432d97a`), Neon project
   (`merqify-image-hub`) and Worker. It holds a central image library with licence, attribution,
   review status and usage records, behind a `/v1` API (`openapi.yaml` in that repo).
@@ -2635,7 +2635,7 @@ These are separate from, not a silent reordering of, the owner's High priorities
     **merged to staging on 2026-11-21** (PR #1715, `84bfb4e`) and verified there. **The files stay
     downloadable on production until the promotion**, which the owner must OK. After the promotion,
     rerun the sanity check in `docs/platform-admin-guide/platform-admin-guide.md` against production.
-    The repo (`sriahead/merqify`) is **public**, so the files stay in git history.
+    The repo (`MerQify/shoplocal`) is **public**, so the files stay in git history.
   - **Owner actions, outside code:** rotate the discount codes that were active on 2026-11-17, and
     decide on repo visibility. A private repo on GitHub's free plan loses the `staging`/`main`
     rulesets.

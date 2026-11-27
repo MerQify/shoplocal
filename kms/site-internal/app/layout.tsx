@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Layout
           navbar={<Navbar logo={<b>{platformName} Knowledge Centre</b>} />}
           pageMap={await getPageMap()}
-          docsRepositoryBase="https://github.com/sriahead/aheed-online-store"
+          docsRepositoryBase="https://github.com/MerQify/shoplocal"
           footer={
             <Footer>
               {platformName} Knowledge Centre — Internal — not for public distribution.

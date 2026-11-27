@@ -561,7 +561,7 @@ Because the key is relative and the base URL is env-resolved, moving buckets or 
 change, not a data migration of DB rows (see §4.2).
 
 **Images from the Merqify Image Hub are copied, never served from the hub (`#1671`, 2026-11-20).**
-The hub (`sriahead/merqify-image-hub`, its own Cloudflare account and Neon project) is a shared,
+The hub (`MerQify/image-hub`, its own Cloudflare account and Neon project) is a shared,
 reviewed image library that stores consume over its `/v1` API. Its client is `lib/image-hub/` and
 its only request-scoped caller is `lib/image-hub-service.ts`. The store holds only
 `IMAGE_HUB_URL` and its own `IMAGE_HUB_API_KEY`, never a hub credential.
