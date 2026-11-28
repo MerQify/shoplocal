@@ -340,6 +340,33 @@ export function buildProductStudioPrompt(
   return `${prefix} ${safeName}${categoryPart}, clean plain white background, professional commercial lighting, crisp focus, centered, 4k. ${guardrails}`;
 }
 
+const GENERIC_SUBJECT: Record<PhotographyDomain, string> = {
+  food: "fresh groceries",
+  electronics: "electronic goods",
+  household: "household goods",
+  beauty: "health and beauty products",
+  general: "retail products",
+};
+
+/**
+ * #1783 — the last-resort prompt when the safety filter refuses a product's own wording: the same
+ * photography style for its category, with no product name in it. The image shows the kind of
+ * goods rather than the exact product, which beats no image at all.
+ */
+export function buildCategoryFallbackPrompt(
+  productName: string,
+  categoryName?: string | null,
+  description?: string | null,
+): string {
+  const domain = detectPhotographyDomain(categoryName, description, productName);
+  const { prefix, guardrails } = getDomainPhotographyDetails(domain);
+  const subject =
+    categoryName && categoryName.trim()
+      ? `${sanitizePromptForSafety(categoryName.trim())} products`
+      : GENERIC_SUBJECT[domain];
+  return `${prefix} ${subject} as sold in a shop, clean plain white background, professional commercial lighting, crisp focus, centered, 4k. ${guardrails}`;
+}
+
 /**
  * A wide banner photo for a promotion. `subject` is what the promotion sells (the product, the
  * bundle's contents or the department); the headline only sets the mood and is never drawn as text.

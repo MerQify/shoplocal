@@ -39,3 +39,9 @@ correctly did not retry, and staff saw the raw API body.
   "small". Produce keeps the word: baby corn, baby spinach, baby potatoes. Still idempotent.
 - **R8:** When the filter still refuses after the retry rule, staff see a plain message (use a
   photo instead, report the product name) rather than the API's JSON body.
+- **R9:** Product generation (the staff product page, auto-fill, and the batch script) passes a
+  category-level fallback prompt: the same photography style for the product's category, with no
+  product name ("Commercial food photography of Chicken products as sold in a shop…"). On an
+  8007 block the service tries the reworded prompt (only if rewording changed it), then the
+  fallback, and stops at the first success. Owner's suggestion: food photography of the category
+  worked where the product name did not.

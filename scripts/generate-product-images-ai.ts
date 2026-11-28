@@ -13,7 +13,7 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 import { AwsClient } from "aws4fetch";
 import { parseEnvFile } from "./lib/env-file";
 import { importAsset, type HubCaller } from "../lib/image-hub/client";
-import { buildProductStudioPrompt } from "../lib/ai-image-prompts";
+import { buildCategoryFallbackPrompt, buildProductStudioPrompt } from "../lib/ai-image-prompts";
 import {
   MAX_IMAGE_ATTEMPT_FAILURES,
   PLACEHOLDER_IMAGE_SUFFIX,
@@ -230,7 +230,13 @@ async function main() {
         try {
           console.log(`    Calling Workers AI (${IMAGE_GENERATION_MODEL})...`);
           const aiSvc = getImageGenerationService();
-          const imageBuffer = await aiSvc.generateImage(prompt);
+          const imageBuffer = await aiSvc.generateImage(prompt, {
+            fallbackPrompt: buildCategoryFallbackPrompt(
+              prod.name,
+              prod.category?.name,
+              prod.description,
+            ),
+          });
 
           if (!imageBuffer) {
             console.error("    AI generation returned null. Recording failure attempt.");

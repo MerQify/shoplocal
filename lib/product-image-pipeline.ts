@@ -1,6 +1,6 @@
 import { getProductMetadataService } from "./product-metadata";
 import { getImageGenerationService, IMAGE_GENERATION_MODEL } from "./image-generation";
-import { buildProductStudioPrompt } from "./ai-image-prompts";
+import { buildCategoryFallbackPrompt, buildProductStudioPrompt } from "./ai-image-prompts";
 import type { AiMeter } from "./ai-meter";
 import type { AiBudgetCheck } from "./ai-budget-message";
 import { getStorage } from "./storage";
@@ -84,7 +84,13 @@ export async function runProductImagePipeline(
     if (!budget.allowed) return { budgetRefused: budget };
 
     const prompt = buildProductStudioPrompt(productName, options.categoryName, options.description);
-    imageBuffer = await aiSvc.generateImage(prompt);
+    imageBuffer = await aiSvc.generateImage(prompt, {
+      fallbackPrompt: buildCategoryFallbackPrompt(
+        productName,
+        options.categoryName,
+        options.description,
+      ),
+    });
 
     if (!imageBuffer) {
       // Both failed or AI not configured

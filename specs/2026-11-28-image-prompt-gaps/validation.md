@@ -22,6 +22,7 @@ Look for live animals, a "no food" mismatch or text in the images.
 |---|---|---|
 | R7 | `image-prompt-gaps.test.ts`, "'baby' never survives next to meat": 3 rewordings, each idempotent; the real product's prompt has no "baby"; 3 produce names left alone | Pass |
 | R8 | "explains a refusal in plain words rather than dumping the API body" | Pass |
+| R9 | "builds a category fallback prompt with no product name in it"; "falls back to the category prompt when the product wording is refused" (the real Baby Chicken prompt); "tries the reworded prompt before the category prompt, and stops at the first success" | Pass |
 
 **Still to check on staging after merge:** regenerate the AI photo for "Baby Chicken" on
 `staging.aheedfoodcentre.co.uk`.
