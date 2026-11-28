@@ -1,5 +1,6 @@
 import { getProductMetadataService } from "./product-metadata";
 import { getImageGenerationService, IMAGE_GENERATION_MODEL } from "./image-generation";
+import { buildProductStudioPrompt } from "./ai-image-prompts";
 import type { AiMeter } from "./ai-meter";
 import type { AiBudgetCheck } from "./ai-budget-message";
 import { getStorage } from "./storage";
@@ -78,7 +79,7 @@ export async function runProductImagePipeline(
     // fill (#523's recordImageAttemptFailure) must not write one off because today's budget ran out.
     if (!budget.allowed) return { budgetRefused: budget };
 
-    const prompt = `Product photo of ${productName} on a plain white background, studio lighting, top quality, centered.`;
+    const prompt = buildProductStudioPrompt(productName);
     imageBuffer = await aiSvc.generateImage(prompt);
 
     if (!imageBuffer) {

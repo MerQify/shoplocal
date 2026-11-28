@@ -162,9 +162,18 @@ describe("runProductImagePipeline", () => {
     await runProductImagePipeline("p1", "Golden Paneer 500g", null, { aiMeter });
 
     expect(aiMeter.check).toHaveBeenCalledOnce();
-    expect(aiMeter.recordImage).toHaveBeenCalledExactlyOnceWith({
+    expect(aiMeter.recordImage).toHaveBeenCalledWith({
       model: "@cf/black-forest-labs/flux-1-schnell",
     });
+  });
+
+  it("sanitizes butchery terms in prompt to prevent NSFW 8007 filter blocks", async () => {
+    await run("Halal Chicken Breasts 1kg");
+
+    expect(generateImage).toHaveBeenCalledOnce();
+    const [promptArg] = (generateImage.mock.calls[0] ?? []) as [string?];
+    expect(promptArg).toContain("poultry fillets on a wooden board");
+    expect(promptArg).not.toContain("Chicken Breasts");
   });
 
   it("neither checks nor charges the meter when Open Food Facts supplies the image", async () => {

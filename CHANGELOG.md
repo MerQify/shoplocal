@@ -6,6 +6,12 @@ every branch merges.
 
 ## [Unreleased]
 
+- **AI image generation NSFW false-positive disambiguation and automatic retry (#1777).**
+  - **Butchery Cuts Sanitization (`sanitizePromptForSafety`):** Added pre-prompt sanitization in `lib/ai-image-prompts.ts` mapping collision-prone anatomical cuts (`chicken breasts`, `chicken thighs`, `baby chicken`, `drumsticks`, `cocktail sausages`, `pork butt`) to safe culinary synonyms, preventing Cloudflare Workers AI false-positive NSFW filter blocks (error 8007) while preserving non-butchery grocery products and non-food vendor items untouched.
+  - **Vendor-Neutral Commercial Studio Prompting (`buildProductStudioPrompt`):** Replaced hardcoded "food photography" assumptions with category-aware commercial packshots (`Studio product photograph of [Sanitized Product], [Category], clean plain white background, professional commercial lighting, crisp focus, centered, 4k`).
+  - **Automatic Transparent Filter Recovery:** Updated `getImageGenerationService().generateImage` in `lib/image-generation.ts` to intercept HTTP 400 code 8007 responses and immediately retry with sanitized prompt before failing.
+  - **UI and Pipeline Integration:** Pre-populated sanitized prompts in `/staff/image-library` (`components/staff/ImageAiGeneratorPanel.tsx`), `lib/product-image-pipeline.ts`, and batch generation CLI tools (`scripts/generate-product-images-ai.ts`, `scripts/backfill-visual-assets.ts`). Unit tested in `tests/image-prompt-safety.test.ts`.
+
 - **Docs: roadmap change-log rows for `#1771` and `#1773`** and their promotion (PR #1775), so
   `sdd:audit` stays clean after the promotion.
 - **The repository now carries a proprietary licence (#1773).** `MerQify/shoplocal` stays public

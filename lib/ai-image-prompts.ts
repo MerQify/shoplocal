@@ -74,6 +74,38 @@ export function bundleImageAltText(bundleName: string, items: readonly PromptIte
 }
 
 /**
+ * Cloudflare Workers AI safety filter flags raw butchery and anatomical cut names as NSFW (error 8007).
+ * Sanitizes words so the model generates culinary and commercial product photography without false-positive blocks.
+ */
+export function sanitizePromptForSafety(text: string): string {
+  return text
+    .replace(/\bbaby\s+chickens?\b/gi, "cornish game hens on butcher block")
+    .replace(/\bmedium\s+chickens?(\s*\([^)]*\))?\b/gi, "roasting chickens on butcher block")
+    .replace(/\bhard\s+chickens?\b/gi, "stewing chickens on butcher block")
+    .replace(/\bchicken\s+breasts?(\s+fillets?)?\b/gi, "poultry fillets on a wooden board")
+    .replace(/\bchicken\s+thighs?(\s+boneless)?\b/gi, "boneless leg cutlets on a wooden board")
+    .replace(/\bboneless\s+chicken\s+thighs?\b/gi, "boneless leg cutlets")
+    .replace(/\b(chicken\s+)?drumsticks?\b/gi, "poultry drumsticks on butcher block")
+    .replace(/\bbreasts?\s+fillets?\b/gi, "fillets")
+    .replace(/\bbreasts?\b/gi, "fillets")
+    .replace(/\bthighs?\b/gi, "cutlets")
+    .replace(/\bniblets?\b/gi, "bite-size poultry cuts")
+    .replace(/\bcocktail\s+sausages?\b/gi, "bite-size party sausages")
+    .replace(/\bcocktail\b/gi, "party")
+    .replace(/\b(pork|beef)\s+butt\b/gi, "$1 shoulder roast");
+}
+
+/**
+ * Builds a clean, vendor-neutral, commercial studio product prompt.
+ * Automatically sanitizes butchery/anatomical collision terms to prevent NSFW 8007 false positives.
+ */
+export function buildProductStudioPrompt(productName: string, categoryName?: string | null): string {
+  const safeName = sanitizePromptForSafety(productName.trim());
+  const categoryPart = categoryName && categoryName.trim() ? `, ${categoryName.trim()}` : "";
+  return `Studio product photograph of ${safeName}${categoryPart}, clean plain white background, professional commercial lighting, crisp focus, centered, 4k`;
+}
+
+/**
  * A wide banner photo for a promotion. `subject` is what the promotion sells (the product, the
  * bundle's contents or the department); the headline only sets the mood and is never drawn as text.
  */
