@@ -15,3 +15,13 @@ pre-validation `/clear` below roughly 60% context.
 **Still to check on staging after merge:** generate one product photo for each of Toor Dal, Lamb
 Head, Whole Quail and a SriMart lamp; generate one bundle photo (BBQ Chicken Feast) and one banner.
 Look for live animals, a "no food" mismatch or text in the images.
+
+### #1783 follow-up
+
+| Req | Evidence | Result |
+|---|---|---|
+| R7 | `image-prompt-gaps.test.ts`, "'baby' never survives next to meat": 3 rewordings, each idempotent; the real product's prompt has no "baby"; 3 produce names left alone | Pass |
+| R8 | "explains a refusal in plain words rather than dumping the API body" | Pass |
+
+**Still to check on staging after merge:** regenerate the AI photo for "Baby Chicken" on
+`staging.aheedfoodcentre.co.uk`.

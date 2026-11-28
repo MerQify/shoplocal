@@ -284,7 +284,10 @@ export function sanitizePromptForSafety(text: string): string {
         "$1fresh raw dressed whole $2 ready to cook",
       )
       .replace(/\bgoat\b(?!\s+(?:meat|milk|cheese|butter|curd|yogh?urt))/gi, "goat meat")
-      .replace(/\bbaby\s+chickens?\b/gi, "fresh raw dressed whole baby poultry ready to cook")
+      // "baby" beside "raw" and "whole" trips the 8007 filter even when reworded (#1783), so it
+      // never survives next to meat; produce such as baby corn or baby spinach keeps it
+      .replace(/\bbaby\s+chickens?\b/gi, "fresh raw dressed whole small poultry ready to cook")
+      .replace(/\bbaby\s+(?=(?:lamb|goat|mutton|veal|beef|poultry|quails?|ducks?)\b)/gi, "small ")
       .replace(
         /\bmedium\s+chickens?(\s*\([^)]*\))?\b/gi,
         "fresh raw dressed whole roasting poultry ready to cook",

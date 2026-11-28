@@ -26,3 +26,16 @@ rewording. A review run against real names found five gaps. One of them, gap 1, 
   sanitising changed it. It never sends a doubled prompt.
 - **R6:** Existing behaviour holds: the #1777/#1779 tests pass, with expectations updated only
   where R2 deliberately changes them.
+
+## Follow-up from staging testing (#1783)
+
+Generating a photo for the AFC staging product "Baby Chicken" (4 pieces, category Chicken) still
+failed with 8007. The sanitiser produced "fresh raw dressed whole **baby** poultry ready to cook",
+and "baby" beside "raw" and "whole" trips the filter. That prompt was already reworded, so R5
+correctly did not retry, and staff saw the raw API body.
+
+- **R7:** "Baby Chicken" is reworded with no "baby" ("fresh raw dressed whole small poultry ready
+  to cook"), and "baby" before lamb, goat, mutton, veal, beef, poultry, quail or duck becomes
+  "small". Produce keeps the word: baby corn, baby spinach, baby potatoes. Still idempotent.
+- **R8:** When the filter still refuses after the retry rule, staff see a plain message (use a
+  photo instead, report the product name) rather than the API's JSON body.

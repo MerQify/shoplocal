@@ -6,6 +6,11 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Image prompts: "Baby Chicken" no longer blocked by the safety filter (#1783).** The rewording
+  kept the word "baby" ("fresh raw dressed whole baby poultry"), which the 8007 filter refuses.
+  "Baby" before meat or poultry now becomes "small"; baby corn, spinach and potatoes keep it. When
+  the filter still refuses, staff see a plain message instead of the API's JSON body.
+
 - **Image prompts: the gaps left by #1777 and #1779 are closed (#1781).**
   - **No more "no food" on food.** Products that the keyword lists missed, such as dal, ghee,
     plantain, tahini and Weetabix, fell into a "general" bucket whose guardrails said "no food".

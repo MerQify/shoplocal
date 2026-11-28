@@ -93,6 +93,11 @@ export function getImageGenerationService(): ImageGenerationService {
               "Cloudflare AI is temporarily at capacity. Please try again in a few seconds.",
             );
           }
+          if (blocked) {
+            throw new Error(
+              `AI generation failed: ${status} - the AI safety filter refused this product's wording (code 8007). Upload or pick a photo instead, and report the product name so the wording can be fixed.`,
+            );
+          }
           throw new Error(`AI generation failed: ${status} - ${text}`);
         }
       }

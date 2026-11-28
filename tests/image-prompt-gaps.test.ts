@@ -152,6 +152,25 @@ describe("rewording beyond chicken breasts and thighs (gap 4)", () => {
   });
 });
 
+describe("'baby' never survives next to meat (#1783)", () => {
+  it.each([
+    ["Baby Chicken", "fresh raw dressed whole small poultry ready to cook"],
+    ["Baby Lamb Chops", "small Lamb Chops"],
+    ["Baby Goat Curry Cut", "small goat meat Curry Cut"],
+  ])("rewords %s", (input, expected) => {
+    expect(sanitizePromptForSafety(input)).toBe(expected);
+    expect(sanitizePromptForSafety(expected)).toBe(expected);
+  });
+
+  it("keeps the real staging product's prompt free of 'baby'", () => {
+    expect(buildProductStudioPrompt("Baby Chicken", "Chicken", "4 pieces")).not.toMatch(/baby/i);
+  });
+
+  it.each(["Baby Corn", "Baby Spinach 200g", "Baby Potatoes"])("leaves produce %s alone", (n) => {
+    expect(sanitizePromptForSafety(n)).toBe(n);
+  });
+});
+
 describe("8007 retry only when rewording helps (gap 5)", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -171,6 +190,13 @@ describe("8007 retry only when rewording helps (gap 5)", () => {
       getImageGenerationService().generateImage("Product photo of Basmati Rice 5kg"),
     ).rejects.toThrow(/AI generation failed: 400/);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("explains a refusal in plain words rather than dumping the API body", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(blocked));
+    await expect(
+      getImageGenerationService().generateImage("Product photo of Basmati Rice 5kg"),
+    ).rejects.toThrow(/safety filter refused this product's wording \(code 8007\)/);
   });
 
   it("retries once with the reworded prompt, never a doubled one", async () => {
