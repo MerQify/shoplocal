@@ -6,6 +6,27 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Docs: roadmap change-log rows for `#1771` and `#1773`** and their promotion (PR #1775), so
+  `sdd:audit` stays clean after the promotion.
+- **The repository now carries a proprietary licence (#1773).** `MerQify/shoplocal` stays public
+  until it earns revenue, so a root `LICENSE` now states it plainly: all rights reserved, © 2026
+  Srikanth Gedela, trading as MerQify; viewing on GitHub is allowed, and anything else needs written
+  permission. Third-party dependencies keep their own licences and client material belongs to its
+  owners. `package.json` gains `"license": "UNLICENSED"` and `README.md` a "Licence" section. No
+  behaviour change.
+- **Repository references now name `MerQify/shoplocal` (#1771).** This repository moved from
+  `sriahead/merqify` to the MerQify organisation on 2026-11-27, and the Image Hub to
+  `MerQify/image-hub`. The staff pricing dashboard's issue links, the docs site's repository link,
+  two code comments and the current developer-portal and spec docs now name the new home. The
+  operator runbook records the old names, which redirect and must never be recreated. Dated specs,
+  the roadmap change log and this file keep the old names as a record. No behaviour change.
+- **Docs: backfilled the SDD record for 2026-11-21 to 2026-11-26.** `npm run sdd:audit` reported 34
+  gaps on `staging`, because these slices shipped without a final Document pass. `specs/roadmap.md`
+  gains 16 change-log rows covering 22 slice folders and the nine promotions PR #1710 to PR #1766
+  (including the two `release/*` promotions, and the `#1744` icon rollout reverted on staging). Ten
+  requirements-only slices gain a short indexed `plan.md`, and `ARTIFACT_INDEX.md` and the staff
+  runbook index are rebuilt. No code changes.
+
 - **Category sortOrder preservation for icon displays, alphabetical sorting for text/lists, and dual top/bottom pagination (#1763).**
   - **Icon Categories Sort Order Preservation:** Updated `listTopLevelCategories` and `getCategoryBySlug` in `lib/repositories/categories.ts` to return departments and subcategories respecting the database `sortOrder` (`orderBy: [{ sortOrder: "asc" }, { name: "asc" }]`) rather than overriding them with alphabetical collation. Ensures visual category and subcategory icon rails (`DepartmentScroller`, `DepartmentHero`, `SubcategoryLinks`) across the homepage, `/categories`, `/categories/[slug]`, `/search`, `/bundles`, and `/help` honour store-configured ordering.
   - **Cloudflare Edge KV Cache Invalidation:** Bumped `METADATA_VERSION` from 1 to 2 in `lib/cloudflare-metadata.ts` to invalidate stale cached category payloads across all Cloudflare Workers, ensuring live storefronts immediately serve the database-configured `sortOrder` (e.g. Meat & Poultry first).

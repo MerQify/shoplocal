@@ -172,7 +172,7 @@ pages require final review by Aheed's solicitor.
   and `required_status_checks` (requiring `docs-gates`, `quality / kms`, `quality / quality`). Both
   still set `required_approving_review_count: 0`, so an author can self-merge — but no longer with
   red checks, and no longer without a PR. Query rulesets with
-  `gh api repos/sriahead/aheed-online-store/rulesets`; the classic
+  `gh api repos/MerQify/shoplocal/rulesets`; the classic
   `/branches/<b>/protection` endpoint returns `404` regardless and cannot see them.
 
 ## Conventions

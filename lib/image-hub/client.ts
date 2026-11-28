@@ -1,5 +1,5 @@
 /**
- * #1671 — typed client for the Merqify Image Hub API (`sriahead/merqify-image-hub`, contract in
+ * #1671 — typed client for the Merqify Image Hub API (`MerQify/image-hub`, contract in
  * that repo's `openapi.yaml`).
  *
  * PURE ON PURPOSE, like `lib/repositories/*`: every function takes the hub config, the tenant slug

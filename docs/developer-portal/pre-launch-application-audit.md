@@ -25,7 +25,7 @@ production approval.
 | Priority | Finding and impact | Fix and closure evidence |
 | --- | --- | --- |
 | Critical | The original lockfile returned 3 critical and 14 high entries in the npm production audit. Package matches require runtime and feature reachability review. | Updated Next.js to 16.4.6, Better Auth to 1.7.27, proxy-addr to 2.0.8, and affected tooling. The candidate scan returned **0 critical, 5 high, 9 moderate**. Review the four Prisma CLI-chain entries and the application Zod 3 entry before release. |
-| Critical | The go-live checklist still requires the verified catalogue, business and legal information, named store admin, and demo-access removal. | Complete this last. Verify stock, prices, photos, allergens, delivery terms, and legal content. Obtain explicit approval for production changes and verify administrator access and demo removal. [Go-live checklist](https://github.com/sriahead/merqify/issues/1344) |
+| Critical | The go-live checklist still requires the verified catalogue, business and legal information, named store admin, and demo-access removal. | Complete this last. Verify stock, prices, photos, allergens, delivery terms, and legal content. Obtain explicit approval for production changes and verify administrator access and demo removal. [Go-live checklist](https://github.com/MerQify/shoplocal/issues/1344) |
 | High | Staff discovered-image imports accepted browser-supplied URLs and provenance and buffered responses before applying the byte cap. This exposed the server to unsafe outbound requests and unbounded responses. | The candidate resolves provider results server-side and checks approved HTTPS hosts, redirects, timeout, streamed size, and file signatures. Staff and batch imports share the downloader. Automated coverage passed. Staging needs a valid import and review with each provider. Code is in `lib/image-discovery/download.ts` and `lib/image-hub-service.ts`. |
 | High | Checkout persisted contact and delivery details across visits, exposing previous shopper information on shared devices. | The candidate removes both retired keys on storefront mount and retains validation retries in active form state. The consent banner and privacy notice describe the revised behaviour. Automated storage and checkout regression tests passed. Browser acceptance still applies. |
 | High | End-to-end, database-backed, and cross-browser acceptance is required for the release candidate. | Use synthetic accounts, test-mode payment and delivery fixtures, and isolated databases. Verify customer and staff journeys, concurrent allocations, and tenant boundaries. |
@@ -54,7 +54,7 @@ Device behaviour and accessibility require browser acceptance.
   reported `ok`. Both storefronts returned HTTP 200 on sign-in, registration, password-recovery
   and privacy routes, and redirected requests for empty checkout, staff image library, and account
   data. Chrome rendered Aheed's sign-in page at a mobile viewport. The deployed commit precedes
-  the local remediation and cannot certify it. [Staging deployment](https://github.com/sriahead/merqify/actions/runs/44909113121)
+  the local remediation and cannot certify it. [Staging deployment](https://github.com/MerQify/shoplocal/actions/runs/44909113121)
 - A newly created disposable Neon database received the repository's migrations. The concurrent
   slot booking, slot capacity, and express fulfilment tests passed there, as did all five stock
   safeguard tests. The earlier scratch target lacked a column required by the current schema.

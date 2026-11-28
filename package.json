@@ -2,6 +2,7 @@
   "name": "aheed-online-store",
   "version": "0.0.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Aheed Food Centre — walking skeleton (end-to-end smoke test on Cloudflare Workers + Neon).",
   "scripts": {
     "dev": "next dev --webpack",
