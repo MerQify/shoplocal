@@ -6,6 +6,12 @@ every branch merges.
 
 ## [Unreleased]
 
+- **The repository now carries a proprietary licence (#1773).** `MerQify/shoplocal` stays public
+  until it earns revenue, so a root `LICENSE` now states it plainly: all rights reserved, © 2026
+  Srikanth Gedela, trading as MerQify; viewing on GitHub is allowed, and anything else needs written
+  permission. Third-party dependencies keep their own licences and client material belongs to its
+  owners. `package.json` gains `"license": "UNLICENSED"` and `README.md` a "Licence" section. No
+  behaviour change.
 - **Repository references now name `MerQify/shoplocal` (#1771).** This repository moved from
   `sriahead/merqify` to the MerQify organisation on 2026-11-27, and the Image Hub to
   `MerQify/image-hub`. The staff pricing dashboard's issue links, the docs site's repository link,

@@ -44,3 +44,9 @@ Cloudflare local preview (real Workers runtime): `npm run preview` (reads `.dev.
 Branches: `feature/*` → **`staging`** (auto-deploy) → **`main`** (manual-approved production).
 
 Full architecture, migration strategy, and ADRs: `specs/architecture.md` and `specs/decisions/`.
+
+## Licence
+
+Proprietary — **all rights reserved**. This repository is public so it can be viewed; it is not
+open source, and copying, hosting or reusing the code needs written permission. See
+[`LICENSE`](LICENSE).
