@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildBundleImagePrompt,
+  buildCategoryFallbackPrompt,
   buildProductStudioPrompt,
   buildPromotionBannerPrompt,
   detectPhotographyDomain,
@@ -152,6 +153,35 @@ describe("rewording beyond chicken breasts and thighs (gap 4)", () => {
   });
 });
 
+describe("'baby' never survives next to meat (#1783)", () => {
+  it.each([
+    ["Baby Chicken", "fresh raw dressed whole small poultry ready to cook"],
+    ["Baby Lamb Chops", "small Lamb Chops"],
+    ["Baby Goat Curry Cut", "small goat meat Curry Cut"],
+  ])("rewords %s", (input, expected) => {
+    expect(sanitizePromptForSafety(input)).toBe(expected);
+    expect(sanitizePromptForSafety(expected)).toBe(expected);
+  });
+
+  it("keeps the real staging product's prompt free of 'baby'", () => {
+    expect(buildProductStudioPrompt("Baby Chicken", "Chicken", "4 pieces")).not.toMatch(/baby/i);
+  });
+
+  it("builds a category fallback prompt with no product name in it", () => {
+    const p = buildCategoryFallbackPrompt("Baby Chicken", "Chicken", "4 pieces");
+    expect(p).toMatch(/^Commercial food photography of Chicken products as sold in a shop/);
+    expect(p).not.toMatch(/baby/i);
+    expect(p).toContain("No live animals");
+    expect(buildCategoryFallbackPrompt("LED Desk Lamp", null)).toMatch(
+      /^Commercial electronic goods photography of electronic goods/,
+    );
+  });
+
+  it.each(["Baby Corn", "Baby Spinach 200g", "Baby Potatoes"])("leaves produce %s alone", (n) => {
+    expect(sanitizePromptForSafety(n)).toBe(n);
+  });
+});
+
 describe("8007 retry only when rewording helps (gap 5)", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -171,6 +201,43 @@ describe("8007 retry only when rewording helps (gap 5)", () => {
       getImageGenerationService().generateImage("Product photo of Basmati Rice 5kg"),
     ).rejects.toThrow(/AI generation failed: 400/);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("explains a refusal in plain words rather than dumping the API body", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(blocked));
+    await expect(
+      getImageGenerationService().generateImage("Product photo of Basmati Rice 5kg"),
+    ).rejects.toThrow(/safety filter refused this product's wording \(code 8007\)/);
+  });
+
+  it("falls back to the category prompt when the product wording is refused (#1783)", async () => {
+    const ok = {
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "image/png" }),
+      arrayBuffer: async () => new Uint8Array([1]).buffer,
+    };
+    const fetchMock = vi.fn().mockResolvedValueOnce(blocked).mockResolvedValueOnce(ok);
+    vi.stubGlobal("fetch", fetchMock);
+    const prompt = buildProductStudioPrompt("Baby Chicken", "Chicken", "4 pieces");
+    const fallbackPrompt = buildCategoryFallbackPrompt("Baby Chicken", "Chicken", "4 pieces");
+    await getImageGenerationService().generateImage(prompt, { fallbackPrompt });
+    // Already reworded, so the only retry is the category prompt
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).prompt).toBe(fallbackPrompt);
+  });
+
+  it("tries the reworded prompt before the category prompt, and stops at the first success", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(blocked);
+    vi.stubGlobal("fetch", fetchMock);
+    const raw = `Commercial food photography of Chicken Wings. ${FOOD_PROMPT_GUARDRAILS}`;
+    await expect(
+      getImageGenerationService().generateImage(raw, { fallbackPrompt: "category prompt" }),
+    ).rejects.toThrow(/code 8007/);
+    const sent = fetchMock.mock.calls.map((c) => JSON.parse(c[1].body).prompt as string);
+    expect(sent).toHaveLength(3);
+    expect(sent[1]).toContain("poultry wing joints");
+    expect(sent[2]).toBe("category prompt");
   });
 
   it("retries once with the reworded prompt, never a doubled one", async () => {

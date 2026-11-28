@@ -64,7 +64,7 @@ describe("AI Image Prompt Safety & Disambiguation", () => {
         "Fresh fresh raw boneless poultry cutlets ready to cook 500g",
       );
       expect(sanitizePromptForSafety("Baby Chicken Whole")).toBe(
-        "fresh raw dressed whole baby poultry ready to cook Whole",
+        "fresh raw dressed whole small poultry ready to cook Whole",
       );
       expect(sanitizePromptForSafety("Chicken Drumsticks Pack")).toBe(
         "fresh raw poultry drumsticks ready to cook Pack",
@@ -94,7 +94,7 @@ describe("AI Image Prompt Safety & Disambiguation", () => {
     it("builds a commercial food photography prompt with strict anti-live-animal guardrails for butchery items", () => {
       const prompt = buildProductStudioPrompt("Baby Chicken", "Halal Poultry");
       expect(prompt).toContain(
-        "Commercial food photography of fresh raw dressed whole baby poultry ready to cook, Halal Poultry",
+        "Commercial food photography of fresh raw dressed whole small poultry ready to cook, Halal Poultry",
       );
       expect(prompt).toContain(
         "No live animals, strictly no living birds, no feathers, no heads, no people, no hands",

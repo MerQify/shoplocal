@@ -284,7 +284,10 @@ export function sanitizePromptForSafety(text: string): string {
         "$1fresh raw dressed whole $2 ready to cook",
       )
       .replace(/\bgoat\b(?!\s+(?:meat|milk|cheese|butter|curd|yogh?urt))/gi, "goat meat")
-      .replace(/\bbaby\s+chickens?\b/gi, "fresh raw dressed whole baby poultry ready to cook")
+      // "baby" beside "raw" and "whole" trips the 8007 filter even when reworded (#1783), so it
+      // never survives next to meat; produce such as baby corn or baby spinach keeps it
+      .replace(/\bbaby\s+chickens?\b/gi, "fresh raw dressed whole small poultry ready to cook")
+      .replace(/\bbaby\s+(?=(?:lamb|goat|mutton|veal|beef|poultry|quails?|ducks?)\b)/gi, "small ")
       .replace(
         /\bmedium\s+chickens?(\s*\([^)]*\))?\b/gi,
         "fresh raw dressed whole roasting poultry ready to cook",
@@ -335,6 +338,33 @@ export function buildProductStudioPrompt(
   const categoryPart =
     categoryName && categoryName.trim() ? `, ${sanitizePromptForSafety(categoryName.trim())}` : "";
   return `${prefix} ${safeName}${categoryPart}, clean plain white background, professional commercial lighting, crisp focus, centered, 4k. ${guardrails}`;
+}
+
+const GENERIC_SUBJECT: Record<PhotographyDomain, string> = {
+  food: "fresh groceries",
+  electronics: "electronic goods",
+  household: "household goods",
+  beauty: "health and beauty products",
+  general: "retail products",
+};
+
+/**
+ * #1783 — the last-resort prompt when the safety filter refuses a product's own wording: the same
+ * photography style for its category, with no product name in it. The image shows the kind of
+ * goods rather than the exact product, which beats no image at all.
+ */
+export function buildCategoryFallbackPrompt(
+  productName: string,
+  categoryName?: string | null,
+  description?: string | null,
+): string {
+  const domain = detectPhotographyDomain(categoryName, description, productName);
+  const { prefix, guardrails } = getDomainPhotographyDetails(domain);
+  const subject =
+    categoryName && categoryName.trim()
+      ? `${sanitizePromptForSafety(categoryName.trim())} products`
+      : GENERIC_SUBJECT[domain];
+  return `${prefix} ${subject} as sold in a shop, clean plain white background, professional commercial lighting, crisp focus, centered, 4k. ${guardrails}`;
 }
 
 /**

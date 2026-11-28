@@ -11,13 +11,18 @@ import { sanitizePromptForSafety } from "./ai-image-prompts";
 /** #1017 — the image model, named so its per-image cost can be metered (lib/workers-ai.ts). */
 export const IMAGE_GENERATION_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 
+export interface GenerateImageOptions {
+  /** Tried last if the safety filter refuses `prompt`, e.g. a category-level prompt (#1783). */
+  fallbackPrompt?: string;
+}
+
 export interface ImageGenerationService {
-  generateImage(prompt: string): Promise<ArrayBuffer | null>;
+  generateImage(prompt: string, options?: GenerateImageOptions): Promise<ArrayBuffer | null>;
 }
 
 export function getImageGenerationService(): ImageGenerationService {
   return {
-    async generateImage(prompt: string) {
+    async generateImage(prompt: string, options?: GenerateImageOptions) {
       const env = getAiEnv();
       const accountId = env.CLOUDFLARE_ACCOUNT_ID;
       const apiToken = env.CLOUDFLARE_API_TOKEN;
@@ -58,31 +63,35 @@ export function getImageGenerationService(): ImageGenerationService {
         const text = res ? await res.text() : "Unknown error";
         const status = res ? res.status : 500;
 
-        // Auto-recover from Cloudflare AI NSFW / 8007 false-positive filter blocks. Retry only when
-        // rewording changes the prompt: re-sending the same words would be refused again, and
-        // feeding a whole prompt back into a prompt builder doubled it (#1781).
+        // Auto-recover from Cloudflare AI NSFW / 8007 false-positive filter blocks. First the
+        // reworded prompt, but only when rewording changes it: re-sending the same words would be
+        // refused again, and feeding a whole prompt back into a prompt builder doubled it (#1781).
+        // Then the caller's category-level prompt, which carries no product name (#1783).
         const blocked =
           status === 400 && (text.includes("8007") || text.toLowerCase().includes("nsfw"));
-        const fallbackPrompt = blocked ? sanitizePromptForSafety(prompt) : prompt;
-        if (blocked && fallbackPrompt !== prompt) {
-          console.warn(
-            `[ImageGeneration] Prompt blocked by filter (8007 NSFW). Retrying with safe prompt: "${fallbackPrompt}"`,
+        if (blocked) {
+          const candidates = [sanitizePromptForSafety(prompt), options?.fallbackPrompt].filter(
+            (p, i, all): p is string => !!p && p !== prompt && all.indexOf(p) === i,
           );
-
-          const retryRes = await fetch(
-            `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${IMAGE_GENERATION_MODEL}`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${apiToken}`,
-                "Content-Type": "application/json",
+          for (const candidate of candidates) {
+            console.warn(
+              `[ImageGeneration] Prompt blocked by filter (8007 NSFW). Retrying with: "${candidate}"`,
+            );
+            const retryRes = await fetch(
+              `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${IMAGE_GENERATION_MODEL}`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${apiToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ prompt: candidate }),
               },
-              body: JSON.stringify({ prompt: fallbackPrompt }),
-            },
-          );
-
-          if (retryRes.ok) {
-            res = retryRes;
+            );
+            if (retryRes.ok) {
+              res = retryRes;
+              break;
+            }
           }
         }
 
@@ -91,6 +100,11 @@ export function getImageGenerationService(): ImageGenerationService {
           if (status === 429) {
             throw new Error(
               "Cloudflare AI is temporarily at capacity. Please try again in a few seconds.",
+            );
+          }
+          if (blocked) {
+            throw new Error(
+              `AI generation failed: ${status} - the AI safety filter refused this product's wording (code 8007). Upload or pick a photo instead, and report the product name so the wording can be fixed.`,
             );
           }
           throw new Error(`AI generation failed: ${status} - ${text}`);
