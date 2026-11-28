@@ -38,6 +38,10 @@ export interface PipelineOptions {
    * on the AI fallback — an Open Food Facts image costs no neurons.
    */
   aiMeter: AiMeter;
+  /** Category name of the product for domain-specific photography prompt steering (#1779). */
+  categoryName?: string | null;
+  /** Product description for domain-specific photography prompt steering (#1779). */
+  description?: string | null;
 }
 
 /** The AI fallback was needed but the vendor's daily budget refused it (#1017). */
@@ -79,7 +83,7 @@ export async function runProductImagePipeline(
     // fill (#523's recordImageAttemptFailure) must not write one off because today's budget ran out.
     if (!budget.allowed) return { budgetRefused: budget };
 
-    const prompt = buildProductStudioPrompt(productName);
+    const prompt = buildProductStudioPrompt(productName, options.categoryName, options.description);
     imageBuffer = await aiSvc.generateImage(prompt);
 
     if (!imageBuffer) {
