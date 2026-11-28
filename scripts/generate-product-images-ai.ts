@@ -13,6 +13,7 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 import { AwsClient } from "aws4fetch";
 import { parseEnvFile } from "./lib/env-file";
 import { importAsset, type HubCaller } from "../lib/image-hub/client";
+import { buildProductStudioPrompt } from "../lib/ai-image-prompts";
 import {
   MAX_IMAGE_ATTEMPT_FAILURES,
   PLACEHOLDER_IMAGE_SUFFIX,
@@ -206,8 +207,7 @@ async function main() {
       for (const prod of products) {
         if (remaining <= 0) break;
 
-        const categoryPart = prod.category?.name ? `, ${prod.category.name}` : "";
-        const prompt = `Studio product photograph of ${prod.name}${categoryPart}, clean plain white background, professional commercial lighting, crisp focus, centered, 4k`;
+        const prompt = buildProductStudioPrompt(prod.name, prod.category?.name);
         const statusBadge = prod.isActive ? "[ACTIVE]" : "[INACTIVE]";
 
         console.log(`\n  • ${statusBadge} ${prod.name} (${prod.category?.name ?? "No category"})`);

@@ -1,4 +1,5 @@
 import { getAiEnv } from "./config";
+import { sanitizePromptForSafety } from "./ai-image-prompts";
 
 /**
  * ImageGenerationService port.
@@ -57,13 +58,44 @@ export function getImageGenerationService(): ImageGenerationService {
         const text = res ? await res.text() : "Unknown error";
         const status = res ? res.status : 500;
 
-        // If it's still 429 after retries, throw a clean error
-        if (status === 429) {
-          throw new Error(
-            "Cloudflare AI is temporarily at capacity. Please try again in a few seconds.",
+        // Auto-recover from Cloudflare AI NSFW / 8007 false-positive filter blocks
+        if (status === 400 && (text.includes("8007") || text.toLowerCase().includes("nsfw"))) {
+          const safePrompt = sanitizePromptForSafety(prompt);
+          const fallbackPrompt =
+            safePrompt !== prompt
+              ? safePrompt
+              : `Commercial studio product photograph of: ${prompt}, clean studio lighting, neutral background`;
+
+          console.warn(
+            `[ImageGeneration] Prompt blocked by filter (8007 NSFW). Retrying with safe prompt: "${fallbackPrompt}"`,
           );
+
+          const retryRes = await fetch(
+            `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${IMAGE_GENERATION_MODEL}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${apiToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ prompt: fallbackPrompt }),
+            },
+          );
+
+          if (retryRes.ok) {
+            res = retryRes;
+          }
         }
-        throw new Error(`AI generation failed: ${status} - ${text}`);
+
+        if (!res || !res.ok) {
+          // If it's still 429 after retries, throw a clean error
+          if (status === 429) {
+            throw new Error(
+              "Cloudflare AI is temporarily at capacity. Please try again in a few seconds.",
+            );
+          }
+          throw new Error(`AI generation failed: ${status} - ${text}`);
+        }
       }
 
       // The REST API for text-to-image returns binary by default unless response_format is used

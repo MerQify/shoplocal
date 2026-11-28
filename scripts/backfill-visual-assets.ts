@@ -5,6 +5,7 @@ import {
   buildBundleImagePrompt,
   buildPromotionBannerPrompt,
   bundleImageAltText,
+  sanitizePromptForSafety,
 } from "@/lib/ai-image-prompts";
 import { getImageGenerationService } from "@/lib/image-generation";
 import { getStorage } from "@/lib/storage";
@@ -18,20 +19,7 @@ function flag(name: string): string | undefined {
  * Cloudflare Workers AI safety filter flags raw butchery cut names as NSFW.
  * Sanitizes words so the model generates culinary food photography without false-positive blocks.
  */
-function safeForImageModel(text: string): string {
-  return text
-    .replace(/\bbaby\s+chickens?\b/gi, "cornish game hens on butcher block")
-    .replace(/\bmedium\s+chickens?(\s*\([^)]*\))?\b/gi, "roasting chickens on butcher block")
-    .replace(/\bhard\s+chickens?\b/gi, "stewing chickens on butcher block")
-    .replace(/\bchicken\s+breasts?\b/gi, "poultry fillets on a wooden board")
-    .replace(/\bchicken\s+thighs?(\s+boneless)?\b/gi, "boneless leg cutlets on a wooden board")
-    .replace(/\bboneless\s+chicken\s+thighs?\b/gi, "boneless leg cutlets")
-    .replace(/\bchicken\s+drumsticks?\b/gi, "poultry drumsticks on butcher block")
-    .replace(/\bdrumsticks?\b/gi, "poultry drumsticks")
-    .replace(/\bbreasts?\b/gi, "fillets")
-    .replace(/\bthighs?\b/gi, "cutlets")
-    .replace(/\bniblets?\b/gi, "bite-size poultry cuts");
-}
+const safeForImageModel = sanitizePromptForSafety;
 
 async function generateImageSafe(
   ai: ReturnType<typeof getImageGenerationService>,

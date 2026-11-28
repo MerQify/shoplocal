@@ -5,6 +5,7 @@ import {
   generateAiImageAction,
   listProductsForAiPromptAction,
 } from "@/features/admin/image-library";
+import { buildProductStudioPrompt } from "@/lib/ai-image-prompts";
 import type { AiPromptProductCandidate } from "@/lib/image-hub-service";
 import type { HubAsset } from "@/lib/image-hub/client";
 
@@ -36,10 +37,7 @@ export function ImageAiGeneratorPanel({ onGenerated }: ImageAiGeneratorPanelProp
 
   function handleSelectProduct(prod: AiPromptProductCandidate) {
     setSelectedProduct(prod);
-    const categoryPart = prod.categoryName ? `, ${prod.categoryName}` : "";
-    setPrompt(
-      `Studio product photograph of ${prod.name}${categoryPart}, clean plain white background, professional commercial lighting, crisp focus, centered, 4k`,
-    );
+    setPrompt(buildProductStudioPrompt(prod.name, prod.categoryName));
     setTitle(prod.name);
     setError(null);
   }
