@@ -99,7 +99,10 @@ export function sanitizePromptForSafety(text: string): string {
  * Builds a clean, vendor-neutral, commercial studio product prompt.
  * Automatically sanitizes butchery/anatomical collision terms to prevent NSFW 8007 false positives.
  */
-export function buildProductStudioPrompt(productName: string, categoryName?: string | null): string {
+export function buildProductStudioPrompt(
+  productName: string,
+  categoryName?: string | null,
+): string {
   const safeName = sanitizePromptForSafety(productName.trim());
   const categoryPart = categoryName && categoryName.trim() ? `, ${categoryName.trim()}` : "";
   return `Studio product photograph of ${safeName}${categoryPart}, clean plain white background, professional commercial lighting, crisp focus, centered, 4k`;

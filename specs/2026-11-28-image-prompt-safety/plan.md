@@ -1,3 +1,17 @@
+---
+id: image-prompt-safety
+title: "AI Image Generation NSFW Filter Disambiguation & Safe Retry (plan)"
+audience: [dev]
+type: spec
+status: draft
+version: "1.0.0"
+updated: 2026-11-28
+visibility: internal
+summary: "Prevents false-positive NSFW blocks (Cloudflare AI error 8007) on butchery cuts by adding pre-prompt word sanitization, vendor-neutral commercial studio packshot framing, and automatic transparent filter retry recovery."
+tags: [image-hub, workers-ai, prompt-safety, p10]
+related: ["#1777", "#1669", "#1701"]
+---
+
 # AI Image Generation NSFW Filter Disambiguation & Safe Retry (plan)
 
 Closes **#1777**.

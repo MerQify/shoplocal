@@ -4827,6 +4827,18 @@ export const DOC_ARTICLES: any[] = [
     "content": "\n# Repository references after the move to MerQify/shoplocal (plan)\n\nIssue [#1771](https://github.com/MerQify/shoplocal/issues/1771).\n\nOn 2026-11-27 this repository was transferred from `sriahead/merqify` to `MerQify/shoplocal`, and\nthe Image Hub from `sriahead/merqify-image-hub` to `MerQify/image-hub`. GitHub redirects both old\nnames (and the older `sriahead/aheed-online-store`), so nothing broke. The redirects last only while\nnobody creates a new repository under an old name, so the live code and the docs people follow\nshould name the real home.\n\n**Goal:** every *current* reference names `MerQify/shoplocal` or `MerQify/image-hub`; the operator\nrunbook records where the repository lives and why the old names must never be recreated.\n\n**Scope (this slice):**\n- Code: the issue link in `components/staff/PricingDashboardSections.tsx`, `docsRepositoryBase` in\n  `kms/site-internal/app/layout.tsx`, and the comments in `lib/config.ts` and\n  `lib/image-hub/client.ts`.\n- Living docs: `docs/developer-portal/env-setup.md`, `docs/developer-portal/sdd/operator-runbook.md`,\n  `docs/developer-portal/pre-launch-application-audit.md`, `specs/architecture.md`,\n  `specs/tech-stack.md`, and the current-state lines of `docs/model-handoff.md`.\n- Regenerated: `ARTIFACT_INDEX.md`, `app/(admin)/staff/runbook/docs.ts`.\n\n**Deliberately excluded:**\n- Dated slice folders under `specs/20*`, the `specs/roadmap.md` change log and `CHANGELOG.md`: they\n  record what was true when written, and the redirects resolve their links.\n- `--owner sriahead` in board commands: Project #2 stays on the `sriahead` account.\n- `MerQify/image-hub`'s own docs: a separate PR in that repository.\n- The stale `shoplocal.merqify.com` value in local `secrets/merqify-*.vars`: a configuration\n  question, not a reference.\n- Git history: never rewritten.\n"
   },
   {
+    "id": "specs/2026-11-28-image-prompt-safety/plan.md",
+    "title": "AI Image Generation NSFW Filter Disambiguation & Safe Retry (plan)",
+    "audience": [
+      "dev"
+    ],
+    "visibility": "internal",
+    "category": "spec",
+    "summary": "Prevents false-positive NSFW blocks (Cloudflare AI error 8007) on butchery cuts by adding pre-prompt word sanitization, vendor-neutral commercial studio packshot framing, and automatic transparent filter retry recovery.",
+    "lastUpdated": "2026-11-28",
+    "content": "\n# AI Image Generation NSFW Filter Disambiguation & Safe Retry (plan)\n\nCloses **#1777**.\n\n## Goal\n\nPrevent false-positive NSFW blocks (Cloudflare AI error 8007) on legitimate grocery butchery cuts without violating multi-tenant vendor neutrality by hardcoding \"food photography\".\n\n## Approach\n\n1. **Pre-prompt sanitization (`lib/ai-image-prompts.ts`)**: Replace collision-prone anatomical cuts with clean culinary descriptions.\n2. **Neutral studio framing (`lib/ai-image-prompts.ts`)**: Construct packshots anchored by category.\n3. **Automatic recovery (`lib/image-generation.ts`)**: Catch 8007 errors at the network boundary and retry with sanitized prompt.\n4. **Pipeline and UI alignment (`lib/product-image-pipeline.ts`, `components/staff/ImageAiGeneratorPanel.tsx`, CLI scripts)**: Pre-sanitize prompts before invoking generation.\n5. **Comprehensive testing**: Vitest unit test suite covering word sanitization, prompt composition, and network retry recovery.\n"
+  },
+  {
     "id": "specs/2026-11-28-proprietary-licence/plan.md",
     "title": "Proprietary licence for the public ShopLocal repository (plan)",
     "audience": [

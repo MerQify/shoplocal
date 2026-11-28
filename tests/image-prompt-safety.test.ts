@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  buildProductStudioPrompt,
-  sanitizePromptForSafety,
-} from "@/lib/ai-image-prompts";
+import { buildProductStudioPrompt, sanitizePromptForSafety } from "@/lib/ai-image-prompts";
 import { getImageGenerationService } from "@/lib/image-generation";
 
 vi.mock("@/lib/config", () => ({
@@ -30,9 +27,7 @@ describe("AI Image Prompt Safety & Disambiguation", () => {
       expect(sanitizePromptForSafety("Cocktail Sausages 400g")).toBe(
         "bite-size party sausages 400g",
       );
-      expect(sanitizePromptForSafety("Beef Butt Steak")).toBe(
-        "Beef shoulder roast Steak",
-      );
+      expect(sanitizePromptForSafety("Beef Butt Steak")).toBe("Beef shoulder roast Steak");
     });
 
     it("preserves non-butchery grocery items unchanged", () => {
@@ -42,12 +37,8 @@ describe("AI Image Prompt Safety & Disambiguation", () => {
     });
 
     it("preserves non-food vendor products unchanged (multi-tenant safety)", () => {
-      expect(sanitizePromptForSafety("USB-C Fast Charger 65W")).toBe(
-        "USB-C Fast Charger 65W",
-      );
-      expect(sanitizePromptForSafety("Wireless Optical Mouse")).toBe(
-        "Wireless Optical Mouse",
-      );
+      expect(sanitizePromptForSafety("USB-C Fast Charger 65W")).toBe("USB-C Fast Charger 65W");
+      expect(sanitizePromptForSafety("Wireless Optical Mouse")).toBe("Wireless Optical Mouse");
       expect(sanitizePromptForSafety("AA Alkaline Batteries 4-pack")).toBe(
         "AA Alkaline Batteries 4-pack",
       );
@@ -56,10 +47,7 @@ describe("AI Image Prompt Safety & Disambiguation", () => {
 
   describe("buildProductStudioPrompt", () => {
     it("builds a clean commercial studio prompt with category and sanitized product name", () => {
-      const prompt = buildProductStudioPrompt(
-        "Halal Chicken Breasts",
-        "Meat & Poultry",
-      );
+      const prompt = buildProductStudioPrompt("Halal Chicken Breasts", "Meat & Poultry");
       expect(prompt).toBe(
         "Studio product photograph of Halal poultry fillets on a wooden board, Meat & Poultry, clean plain white background, professional commercial lighting, crisp focus, centered, 4k",
       );
