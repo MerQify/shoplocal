@@ -1,5 +1,5 @@
 import { getAiEnv } from "./config";
-import { buildProductStudioPrompt, sanitizePromptForSafety } from "./ai-image-prompts";
+import { sanitizePromptForSafety } from "./ai-image-prompts";
 
 /**
  * ImageGenerationService port.
@@ -58,12 +58,13 @@ export function getImageGenerationService(): ImageGenerationService {
         const text = res ? await res.text() : "Unknown error";
         const status = res ? res.status : 500;
 
-        // Auto-recover from Cloudflare AI NSFW / 8007 false-positive filter blocks
-        if (status === 400 && (text.includes("8007") || text.toLowerCase().includes("nsfw"))) {
-          const safePrompt = sanitizePromptForSafety(prompt);
-          const fallbackPrompt =
-            safePrompt !== prompt ? safePrompt : buildProductStudioPrompt(prompt);
-
+        // Auto-recover from Cloudflare AI NSFW / 8007 false-positive filter blocks. Retry only when
+        // rewording changes the prompt: re-sending the same words would be refused again, and
+        // feeding a whole prompt back into a prompt builder doubled it (#1781).
+        const blocked =
+          status === 400 && (text.includes("8007") || text.toLowerCase().includes("nsfw"));
+        const fallbackPrompt = blocked ? sanitizePromptForSafety(prompt) : prompt;
+        if (blocked && fallbackPrompt !== prompt) {
           console.warn(
             `[ImageGeneration] Prompt blocked by filter (8007 NSFW). Retrying with safe prompt: "${fallbackPrompt}"`,
           );

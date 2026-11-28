@@ -6,6 +6,27 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Image prompts: the gaps left by #1777 and #1779 are closed (#1781).**
+  - **No more "no food" on food.** Products that the keyword lists missed, such as dal, ghee,
+    plantain, tahini and Weetabix, fell into a "general" bucket whose guardrails said "no food".
+    The food vocabulary now covers those staples. Anything still unplaced gets new
+    `GENERAL_PROMPT_GUARDRAILS`, which never say "no food".
+  - **Bundles and banners get the same treatment as products.** Bundle names and every item name,
+    and banner subjects and headlines, are reworded for the safety filter. Their guardrails follow
+    what is pictured, so "Medium Chicken" no longer reaches the model raw, and electronics bundles
+    are not called "appetising".
+  - **Heads are allowed where the goods have one** (lamb head, whole fish). A dressed whole chicken
+    is still pictured without one.
+  - **More rewording, and safer rewording.**
+    - **Added:** chicken wings, legs, feet and offal; whole birds and bird-only names (quail, duck,
+      poussin, turkey…); goat → goat meat.
+    - **Fixed:** sweetcorn niblets, moringa drumsticks and fruit or prawn cocktail are no longer
+      turned into poultry or a "party".
+    - **Idempotent:** the rewording is now idempotent; it used to rewrite its own drumsticks
+      output.
+  - **The 8007 retry** now runs only when rewording changes the prompt, and never sends a doubled
+    prompt.
+
 - **Domain-specific commercial photography prompts and anti-live-animal guardrails (#1779).**
   - **Commercial Photography Steering (`detectPhotographyDomain`):** Added domain detection in `lib/ai-image-prompts.ts` classifying products into Food/Grocery (`"Commercial food photography of..."`), Electronics/Tech (`"Commercial electronic goods photography of..."`), Household/Cleaning (`"Commercial household goods photography of..."`), Health/Beauty (`"Commercial health and beauty product photography of..."`), and General Studio (`"Commercial studio product photography of..."`) based on category name, product description, and product name.
   - **Culinary Dressed Cut Sanitization:** Refined `sanitizePromptForSafety` to convert butchery terms to explicit dressed cuts ready to cook (e.g., `baby chicken` -> `fresh raw dressed whole baby poultry ready to cook`, `chicken breasts` -> `fresh raw poultry fillets ready to cook`), eliminating trigger phrases like `"cornish game hens"` and `"on butcher block"` that caused diffusion models to render live farm birds standing on chopping boards.

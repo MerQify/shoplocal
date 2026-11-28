@@ -15,6 +15,7 @@ import {
   applyArtDirectionGuardrails,
   buildBundleImagePrompt,
   buildPromotionBannerPrompt,
+  FOOD_PROMPT_GUARDRAILS,
   IMAGE_PROMPT_GUARDRAILS,
 } from "@/lib/ai-image-prompts";
 import { buildPromotionPrompt } from "@/lib/promotions-ai";
@@ -153,10 +154,13 @@ describe("AI Visual Art Direction & Generation Standards (#1602)", () => {
     ]);
 
     expect(prompt).toContain("Family BBQ Pack");
-    expect(prompt).toContain("4 × Chicken Thighs, 2 × Lamb Chops");
+    // #1781: item names are reworded for the safety filter, and a meat bundle gets food guardrails
+    expect(prompt).toContain(
+      "4 × fresh raw boneless poultry cutlets ready to cook, 2 × Lamb Chops",
+    );
     expect(prompt).toContain("clean neutral surface");
     expect(prompt).toContain("three-quarter view");
-    expect(prompt).toContain(IMAGE_PROMPT_GUARDRAILS);
+    expect(prompt).toContain(FOOD_PROMPT_GUARDRAILS);
   });
 
   it("buildPromotionBannerPrompt enforces asymmetric composition with empty space for text overlay", () => {
@@ -165,7 +169,7 @@ describe("AI Visual Art Direction & Generation Standards (#1602)", () => {
     expect(prompt).toContain("Wide commercial banner photograph");
     expect(prompt).toContain("Generous empty space on the left for overlaid text");
     expect(prompt).toContain("subject on the right");
-    expect(prompt).toContain(IMAGE_PROMPT_GUARDRAILS);
+    expect(prompt).toContain(FOOD_PROMPT_GUARDRAILS);
   });
 
   it("applyArtDirectionGuardrails wraps raw prompts with composition and negative constraints", () => {
