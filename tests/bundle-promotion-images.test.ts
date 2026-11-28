@@ -4,6 +4,7 @@ import {
   buildPromotionBannerPrompt,
   bundleImageAltText,
   describeItems,
+  FOOD_PROMPT_GUARDRAILS,
   IMAGE_PROMPT_GUARDRAILS,
 } from "@/lib/ai-image-prompts";
 import { buildGeneratedBundleImageKey, isBundleImageKey } from "@/lib/bundle-image";
@@ -90,8 +91,9 @@ describe("prompts", () => {
       { name: "Chicken Wings", quantity: 1 },
       { name: "Lamb Chops", quantity: 3 },
     ]);
-    expect(prompt).toContain("3 × Lamb Chops, Chicken Wings");
-    expect(prompt).toContain(IMAGE_PROMPT_GUARDRAILS);
+    // #1781: item names are reworded for the safety filter, and a meat bundle gets food guardrails
+    expect(prompt).toContain("3 × Lamb Chops, fresh raw poultry wing joints ready to cook");
+    expect(prompt).toContain(FOOD_PROMPT_GUARDRAILS);
     expect(IMAGE_PROMPT_GUARDRAILS).toMatch(/No live animals/);
     expect(IMAGE_PROMPT_GUARDRAILS).toMatch(/No text/);
   });
@@ -135,7 +137,11 @@ describe("generate a bundle photo", () => {
     expect(response.status).toBe(200);
 
     expect(getVendorAiMeter).toHaveBeenCalledWith("v1", "BUNDLE_IMAGE");
-    expect(generateImage.mock.calls[0][0]).toContain("4 × Medium Chicken (1100–1200g)");
+    // #1781: the route's prompt carries the reworded item, never the raw "Medium Chicken"
+    expect(generateImage.mock.calls[0][0]).toContain(
+      "4 × fresh raw dressed whole roasting poultry ready to cook (1100–1200g)",
+    );
+    expect(generateImage.mock.calls[0][0]).not.toMatch(/medium chicken/i);
     expect(recordImage).toHaveBeenCalledOnce();
     const [key, , contentType] = putObject.mock.calls[0];
     expect(key).toMatch(/^bundles\/b1\/.+\.png$/);
