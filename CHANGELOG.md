@@ -6,6 +6,8 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Docs: roadmap change-log rows for `#1771` and `#1773`** and their promotion (PR #1775), so
+  `sdd:audit` stays clean after the promotion.
 - **The repository now carries a proprietary licence (#1773).** `MerQify/shoplocal` stays public
   until it earns revenue, so a root `LICENSE` now states it plainly: all rights reserved, © 2026
   Srikanth Gedela, trading as MerQify; viewing on GitHub is allowed, and anything else needs written
