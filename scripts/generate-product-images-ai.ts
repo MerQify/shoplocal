@@ -181,6 +181,7 @@ async function main() {
           slug: true,
           isActive: true,
           category: { select: { name: true } },
+          description: true,
         },
       });
 
@@ -207,7 +208,7 @@ async function main() {
       for (const prod of products) {
         if (remaining <= 0) break;
 
-        const prompt = buildProductStudioPrompt(prod.name, prod.category?.name);
+        const prompt = buildProductStudioPrompt(prod.name, prod.category?.name, prod.description);
         const statusBadge = prod.isActive ? "[ACTIVE]" : "[INACTIVE]";
 
         console.log(`\n  • ${statusBadge} ${prod.name} (${prod.category?.name ?? "No category"})`);

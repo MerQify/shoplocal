@@ -1,5 +1,5 @@
 import { getAiEnv } from "./config";
-import { sanitizePromptForSafety } from "./ai-image-prompts";
+import { buildProductStudioPrompt, sanitizePromptForSafety } from "./ai-image-prompts";
 
 /**
  * ImageGenerationService port.
@@ -62,9 +62,7 @@ export function getImageGenerationService(): ImageGenerationService {
         if (status === 400 && (text.includes("8007") || text.toLowerCase().includes("nsfw"))) {
           const safePrompt = sanitizePromptForSafety(prompt);
           const fallbackPrompt =
-            safePrompt !== prompt
-              ? safePrompt
-              : `Commercial studio product photograph of: ${prompt}, clean studio lighting, neutral background`;
+            safePrompt !== prompt ? safePrompt : buildProductStudioPrompt(prompt);
 
           console.warn(
             `[ImageGeneration] Prompt blocked by filter (8007 NSFW). Retrying with safe prompt: "${fallbackPrompt}"`,

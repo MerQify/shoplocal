@@ -11,7 +11,7 @@
 
 # Artifact Index
 
-_Generated from front-matter across the repo. Last build: `2026-11-28T09:12:32.375Z` · commit `a9e171b7` · `415` artifacts._
+_Generated from front-matter across the repo. Last build: `2026-11-28T10:32:18.185Z` · commit `ab598dc0` · `416` artifacts._
 
 **Legend** — Status: `draft` → `review` → `approved` → `deprecated` ·
 Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre).
@@ -397,6 +397,7 @@ Visibility: `internal` (dev/staff site, behind Access) · `public` (help centre)
 | [Category Sorting (Icon sortOrder vs Text Alphabetical) and Dual Top/Bottom Pagination](specs/2026-11-26-category-sorting-and-dual-pagination/plan.md) | spec | 1.0.0 | 2026-11-26 | draft | internal | Preserves database sortOrder for icon categories while collating text/list categories alphabetically, and implements top and bottom dual pagination across all paginated pages. |
 | [Sticky Action Bar Labels & Visibility (plan)](specs/2026-11-26-sticky-bar-labels-and-visibility/plan.md) | spec | 1.0.0 | 2026-11-26 | approved | internal | Add a dedicated Labels & visibility popover to the sticky action bar on /staff/products matching the staff product edit card. |
 | [Repository references after the move to MerQify/shoplocal (plan)](specs/2026-11-27-org-move-references/plan.md) | spec | 1.0.0 | 2026-11-27 | approved | internal | Points the live code links and current docs at MerQify/shoplocal and MerQify/image-hub after the 2026-11-27 transfers, leaving the dated historical record unchanged. |
+| [Explicit Domain Commercial Photography Prompts & Anti-Live-Animal Guardrails (plan)](specs/2026-11-28-explicit-photography-prompts/plan.md) | spec | 1.0.0 | 2026-11-28 | draft | internal | Explicitly steers AI image generation with domain photography styles (food photography, electronic goods photography, etc.) based on category, description, and product name, and enforces anti-live-animal guardrails with ready-to-cook dressed poultry cuts. |
 | [AI Image Generation NSFW Filter Disambiguation & Safe Retry (plan)](specs/2026-11-28-image-prompt-safety/plan.md) | spec | 1.0.0 | 2026-11-28 | draft | internal | Prevents false-positive NSFW blocks (Cloudflare AI error 8007) on butchery cuts by adding pre-prompt word sanitization, vendor-neutral commercial studio packshot framing, and automatic transparent filter retry recovery. |
 | [Proprietary licence for the public ShopLocal repository (plan)](specs/2026-11-28-proprietary-licence/plan.md) | spec | 1.0.0 | 2026-11-28 | approved | internal | Adds an all-rights-reserved LICENSE, the UNLICENSED package.json marker and a README note, so the public MerQify/shoplocal repository states plainly that it is not open source. |
 | [System Architecture — Merqify Platform](specs/architecture.md) | doc | 1.50.0 | 2026-11-20 | approved | internal | The technical source of truth for infrastructure and Clean Architecture layering — Cloudflare Workers + Neon + S3-compatible storage, vendor-agnostic and multi-tenant (vendor-scoped) by design. |

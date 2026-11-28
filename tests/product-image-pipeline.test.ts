@@ -172,7 +172,7 @@ describe("runProductImagePipeline", () => {
 
     expect(generateImage).toHaveBeenCalledOnce();
     const [promptArg] = (generateImage.mock.calls[0] ?? []) as [string?];
-    expect(promptArg).toContain("poultry fillets on a wooden board");
+    expect(promptArg).toContain("poultry fillets ready to cook");
     expect(promptArg).not.toContain("Chicken Breasts");
   });
 

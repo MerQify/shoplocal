@@ -6,6 +6,13 @@ every branch merges.
 
 ## [Unreleased]
 
+- **Domain-specific commercial photography prompts and anti-live-animal guardrails (#1779).**
+  - **Commercial Photography Steering (`detectPhotographyDomain`):** Added domain detection in `lib/ai-image-prompts.ts` classifying products into Food/Grocery (`"Commercial food photography of..."`), Electronics/Tech (`"Commercial electronic goods photography of..."`), Household/Cleaning (`"Commercial household goods photography of..."`), Health/Beauty (`"Commercial health and beauty product photography of..."`), and General Studio (`"Commercial studio product photography of..."`) based on category name, product description, and product name.
+  - **Culinary Dressed Cut Sanitization:** Refined `sanitizePromptForSafety` to convert butchery terms to explicit dressed cuts ready to cook (e.g., `baby chicken` -> `fresh raw dressed whole baby poultry ready to cook`, `chicken breasts` -> `fresh raw poultry fillets ready to cook`), eliminating trigger phrases like `"cornish game hens"` and `"on butcher block"` that caused diffusion models to render live farm birds standing on chopping boards.
+  - **Strict Negative Exclusions:** Appended domain-specific guardrails to all product studio prompts (`FOOD_PROMPT_GUARDRAILS` / `NON_FOOD_PROMPT_GUARDRAILS`) explicitly enforcing `"No live animals, strictly no living birds, no feathers, no heads, no people, no hands"` and restricting food imagery to goods ready to cook or in retail packaging.
+  - **Pipeline and Script Updates:** Extended `PipelineOptions` in `lib/product-image-pipeline.ts` to accept `categoryName` and `description`, and updated `scripts/generate-product-images-ai.ts` to pass category and description to `buildProductStudioPrompt`.
+
+
 - **AI image generation NSFW false-positive disambiguation and automatic retry (#1777).**
   - **Butchery Cuts Sanitization (`sanitizePromptForSafety`):** Added pre-prompt sanitization in `lib/ai-image-prompts.ts` mapping collision-prone anatomical cuts (`chicken breasts`, `chicken thighs`, `baby chicken`, `drumsticks`, `cocktail sausages`, `pork butt`) to safe culinary synonyms, preventing Cloudflare Workers AI false-positive NSFW filter blocks (error 8007) while preserving non-butchery grocery products and non-food vendor items untouched.
   - **Vendor-Neutral Commercial Studio Prompting (`buildProductStudioPrompt`):** Replaced hardcoded "food photography" assumptions with category-aware commercial packshots (`Studio product photograph of [Sanitized Product], [Category], clean plain white background, professional commercial lighting, crisp focus, centered, 4k`).
